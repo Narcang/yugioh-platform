@@ -17,7 +17,7 @@ const GameRoom: React.FC = () => {
     const { profile, user } = useAuth(); // Get user profile
     const username = profile?.username || user?.email?.split('@')[0] || 'Duelist';
 
-    const { remoteStream, remoteUsername } = useWebRTC(currentRoomId, localStream, username);
+    const { remoteStream, remoteUsername, sendCard, latestReceivedCard } = useWebRTC(currentRoomId, localStream, username);
 
     return (
         <div className="game-room-container" style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden' }}>
@@ -27,7 +27,11 @@ const GameRoom: React.FC = () => {
                 opponentName={remoteUsername || 'Opponent'}
                 selfName={username}
             />
-            <RightPanel remoteStream={remoteStream} />
+            <RightPanel
+                remoteStream={remoteStream}
+                onDeclareCard={sendCard}
+                lastReceivedCard={latestReceivedCard}
+            />
 
             <DiceModal />
             <TurnNotification />
