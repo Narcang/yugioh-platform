@@ -21,6 +21,23 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
     // Ref to queue ICE candidates received before remote description is ready
     const iceCandidatesQueue = useRef<RTCIceCandidate[]>([]);
 
+    // NEW STATES FOR CARD DECLARATIONS
+    const [latestReceivedCard, setLatestReceivedCard] = useState<any | null>(null);
+
+    // NEW FUNCTION: Send card declaration
+    const sendCard = (cardData: any) => {
+        if (channel.current) {
+            console.log("Sending card via WebRTC channel:", cardData.name);
+            channel.current.send({
+                type: 'broadcast',
+                event: 'card-declared',
+                payload: cardData
+            }).catch(err => console.error("Error sending card:", err));
+        } else {
+            console.error("No channel to send card!");
+        }
+    };
+
     useEffect(() => {
         if (!roomId) return; // Allow connection even if localStream is null (Receive-Only)
 
@@ -145,6 +162,11 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
                     });
                 }
             })
+            // LISTEN FOR CARD DECLARATIONS
+            .on('broadcast', { event: 'card-declared' }, ({ payload }) => {
+                console.log("Card Received via Network:", payload);
+                setLatestReceivedCard(payload);
+            })
             .subscribe((status) => {
                 if (status === 'SUBSCRIBED') {
                     channel.current?.send({
@@ -162,5 +184,5 @@ export const useWebRTC = (roomId: string | null, localStream: MediaStream | null
         };
     }, [roomId, localStream]);
 
-    return { remoteStream, isConnected, remoteUsername };
+    return { remoteStream, isConnected, remoteUsername, sendCard, latestReceivedCard };
 };
