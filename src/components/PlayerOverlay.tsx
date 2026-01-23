@@ -8,41 +8,14 @@ interface PlayerOverlayProps {
 
 const PlayerOverlay: React.FC<PlayerOverlayProps> = ({ name, isSelf }) => {
     const [lifePoints, setLifePoints] = useState(8000);
-    const [isEditing, setIsEditing] = useState<'add' | 'subtract' | null>(null);
-    const [inputValue, setInputValue] = useState('');
-    const inputRef = useRef<HTMLInputElement>(null);
-
-    // Focus input when editing starts
-    useEffect(() => {
-        if (isEditing && inputRef.current) {
-            inputRef.current.focus();
-        }
-    }, [isEditing]);
-
-    const handleEditStart = (mode: 'add' | 'subtract') => {
-        setIsEditing(mode);
-        setInputValue('');
-    };
-
-    const handleConfirm = () => {
-        const amount = parseInt(inputValue, 10);
-        if (!isNaN(amount) && isEditing) {
-            setLifePoints(prev => isEditing === 'add' ? prev + amount : prev - amount);
-        }
-        setIsEditing(null);
-        setInputValue('');
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter') {
-            handleConfirm();
-        } else if (e.key === 'Escape') {
-            setIsEditing(null);
-        }
-    };
+    // Simplified Mode: Direct +/- 1000
+    // No input field needed as per user request
 
     return (
-        <div className="player-overlay">
+        <div
+            className="player-overlay"
+            onClick={(e) => e.stopPropagation()} // Prevent Full Screen toggle on click
+        >
             {/* Top Bar with Name and Life Points */}
             <div className="overlay-header">
 
@@ -51,42 +24,24 @@ const PlayerOverlay: React.FC<PlayerOverlayProps> = ({ name, isSelf }) => {
                     {isSelf && (
                         <button
                             className="lp-btn"
-                            onClick={() => handleEditStart('subtract')}
-                            title="Subtract LP"
+                            onClick={() => setLifePoints(prev => Math.max(0, prev - 1000))}
+                            title="-1000 LP"
                         >
                             −
                         </button>
                     )}
 
                     <div className="lp-value-container">
-                        {isEditing ? (
-                            <div className="lp-input-wrapper">
-                                <span className="lp-operator">
-                                    {isEditing === 'add' ? '+' : '−'}
-                                </span>
-                                <input
-                                    ref={inputRef}
-                                    type="number"
-                                    className="lp-input"
-                                    value={inputValue}
-                                    onChange={(e) => setInputValue(e.target.value)}
-                                    onKeyDown={handleKeyDown}
-                                    onBlur={() => setTimeout(() => setIsEditing(null), 200)}
-                                    placeholder="0"
-                                />
-                            </div>
-                        ) : (
-                            <div className="lp-value">
-                                {lifePoints}
-                            </div>
-                        )}
+                        <div className="lp-value">
+                            {lifePoints}
+                        </div>
                     </div>
 
                     {isSelf && (
                         <button
                             className="lp-btn"
-                            onClick={() => handleEditStart('add')}
-                            title="Add LP"
+                            onClick={() => setLifePoints(prev => prev + 1000)}
+                            title="+1000 LP"
                         >
                             +
                         </button>
