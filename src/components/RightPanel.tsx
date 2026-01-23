@@ -254,8 +254,14 @@ const RightPanel: React.FC<RightPanelProps> = ({ remoteStream, onDeclareCard, la
                     </div>
                 ) : (
                     <div className="log-view">
-                        <div className="empty-log">
-                            Nessuna attività
+                        <div className="debug-log-container" style={{ padding: '10px', fontSize: '11px', fontFamily: 'monospace', color: '#888' }}>
+                            <div style={{ marginBottom: '10px', color: '#FCD34D' }}>DEBUG STATUS</div>
+                            <div>Stream: {remoteStream ? "ACTIVE" : "NO STREAM"}</div>
+                            <div>Sync Listener: {lastReceivedCard ? "ACTIVE" : "WAITING"}</div>
+                            <div style={{ marginTop: '10px', borderTop: '1px solid #333', paddingTop: '5px' }}>EVENT LOG:</div>
+                            {scannedCards.map(c => (
+                                <div key={c.id + "-log"}>[{new Date(c.timestamp).toLocaleTimeString()}] Rx: {c.name}</div>
+                            ))}
                         </div>
                     </div>
                 )}
