@@ -315,20 +315,21 @@ const RightPanel: React.FC<RightPanelProps> = ({ remoteStream, onDeclareCard, la
                     font-weight: bold;
                 }
                 .card-display-large {
-                    width: 100%;
-                    aspect-ratio: 0.7; /* Card ratio roughly */
-                    border-radius: 8px;
+                    width: 60%;
+                    margin: 0 auto; /* Center it */
+                    aspect-ratio: 0.65;
+                    border-radius: 6px;
                     overflow: hidden;
                     position: relative;
                     cursor: pointer;
-                    border: 2px solid #FCD34D; /* Gold effect for latest */
-                    box-shadow: 0 0 15px rgba(252, 211, 77, 0.2);
+                    border: 2px solid #FCD34D;
+                    box-shadow: 0 0 10px rgba(252, 211, 77, 0.2);
                     background: #222;
                 }
                 .card-display-large img {
                     width: 100%;
                     height: 100%;
-                    object-fit: cover;
+                    object-fit: contain; /* Ensure full art visible */
                 }
                 .card-name-overlay {
                     position: absolute;
