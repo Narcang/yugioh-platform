@@ -5,6 +5,7 @@ import { useLayout } from '@/context/LayoutContext';
 import CreateRoomModal, { RoomData } from './CreateRoomModal';
 import AuthModal from './AuthModal';
 import UserAccountSettings from './UserAccountSettings';
+import Footer from './Footer';
 
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
@@ -517,6 +518,8 @@ const Lobby: React.FC = () => {
 
             <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
             <UserAccountSettings isOpen={isUserSettingsOpen} onClose={() => setIsUserSettingsOpen(false)} />
+
+            <Footer />
         </div>
     );
 };

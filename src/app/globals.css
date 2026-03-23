@@ -808,23 +808,25 @@ input:checked+.slider:before {
 /* Lobby Styles */
 .lobby-container {
   width: 100vw;
-  height: 100vh;
+  min-height: 100vh;
   background: #000000;
   color: #fff;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: space-between;
   align-items: center;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .lobby-content {
   width: 100%;
   max-width: 1200px;
-  height: 90vh;
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 40px;
-  padding: 0 24px;
+  padding: 40px 24px;
 }
 
 .lobby-header {
@@ -993,7 +995,6 @@ input:checked+.slider:before {
   flex-direction: column;
   gap: 8px;
   flex: 1;
-  overflow-y: auto;
 }
 
 .room-list-header {
