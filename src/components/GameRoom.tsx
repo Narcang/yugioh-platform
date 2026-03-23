@@ -18,7 +18,24 @@ const GameRoom: React.FC = () => {
     const { profile, user } = useAuth(); // Get user profile
     const username = profile?.username || user?.email?.split('@')[0] || 'Duelist';
 
-    const { remoteStream, remoteUsername, sendCard, latestReceivedCard, dataChannelState, sendLP, latestReceivedLP, sendPhase, latestReceivedPhase, sendPassTurn, latestReceivePassTurn } = useWebRTC(currentRoomId, localStream, username);
+    const {
+        remoteStream,
+        remoteUsername,
+        sendCard,
+        latestReceivedCard,
+        dataChannelState,
+        sendLP,
+        latestReceivedLP,
+        sendPhase,
+        latestReceivedPhase,
+        sendPassTurn,
+        latestReceivePassTurn,
+        iceConnectionState,
+        connectionLogs,
+        sendPing,
+        reconnect
+    } = useWebRTC(currentRoomId, localStream, username);
+
     const { setCurrentPhase, switchTurn, currentTurn, isTurnChanging } = useLayout();
     const lastProcessedTurnRef = React.useRef<number>(0);
 
@@ -60,6 +77,10 @@ const GameRoom: React.FC = () => {
                 onDeclareCard={sendCard}
                 lastReceivedCard={latestReceivedCard}
                 dataChannelState={dataChannelState}
+                iceConnectionState={iceConnectionState}
+                connectionLogs={connectionLogs}
+                sendPing={sendPing}
+                reconnect={reconnect}
             />
 
             <DiceModal />

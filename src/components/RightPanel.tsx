@@ -6,6 +6,10 @@ interface RightPanelProps {
     onDeclareCard?: (card: any) => void;
     lastReceivedCard?: any | null;
     dataChannelState?: string;
+    iceConnectionState?: string;
+    connectionLogs?: string[];
+    sendPing?: () => void;
+    reconnect?: () => void;
 }
 
 interface CardData {
@@ -27,8 +31,8 @@ interface SearchResult {
     text?: string; // For One Piece
 }
 
-const RightPanel: React.FC<RightPanelProps> = ({ remoteStream, onDeclareCard, lastReceivedCard, dataChannelState }) => {
-    const { gameType } = useLayout();
+const RightPanel: React.FC<RightPanelProps> = ({ remoteStream, onDeclareCard, lastReceivedCard, dataChannelState, iceConnectionState, connectionLogs, sendPing, reconnect }) => {
+    const { gameType, currentRoomId } = useLayout();
 
     // DEBUG: Log gameType on mount and changes
     useEffect(() => {
@@ -318,12 +322,25 @@ const RightPanel: React.FC<RightPanelProps> = ({ remoteStream, onDeclareCard, la
                     </div>
                 ) : (
                     <div className="log-view">
-                        <div className="debug-log-container" style={{ padding: '10px', fontSize: '11px', fontFamily: 'monospace', color: '#888' }}>
+                        <div className="debug-log-container" style={{ padding: '10px', fontSize: '11px', fontFamily: 'monospace', color: '#888', height: '100%', overflowY: 'auto' }}>
                             <div style={{ marginBottom: '10px', color: '#FCD34D' }}>DEBUG STATUS</div>
+                            <div style={{ wordBreak: 'break-all', fontSize: '10px', marginBottom: '5px' }}>
+                                Room: <span style={{ color: '#fff' }}>{currentRoomId}</span>
+                            </div>
+                            <button
+                                onClick={sendPing}
+                                style={{ background: '#333', color: 'white', border: '1px solid #555', padding: '2px 6px', fontSize: '10px', cursor: 'pointer', marginBottom: '5px' }}
+                            >
+                                SEND SIGNAL PING
+                            </button>
                             <div>Stream: {remoteStream ? "ACTIVE" : "NO STREAM"}</div>
+                            <div>ICE State: {iceConnectionState || "unknown"}</div>
                             <div>DataChannel: {dataChannelState || "CLOSED"}</div>
-                            <div>Sync Listener: {lastReceivedCard ? "ACTIVE" : "WAITING"}</div>
-                            <div style={{ marginTop: '10px', borderTop: '1px solid #333', paddingTop: '5px' }}>EVENT LOG:</div>
+                            <div style={{ marginTop: '10px', borderTop: '1px solid #333', paddingTop: '5px' }}>CONNECTION LOG:</div>
+                            {connectionLogs && connectionLogs.map((log, i) => (
+                                <div key={i} style={{ marginBottom: '2px', color: log.includes('Error') ? '#EF4444' : '#ccc' }}>{log}</div>
+                            ))}
+                            <div style={{ marginTop: '10px', borderTop: '1px solid #333', paddingTop: '5px' }}>GAME LOG:</div>
                             {scannedCards.map(c => (
                                 <div key={c.id + "-log"}>[{new Date(c.timestamp).toLocaleTimeString()}] Rx: {c.name}</div>
                             ))}
