@@ -9,7 +9,7 @@ interface UserAccountSettingsProps {
 }
 
 const UserAccountSettings: React.FC<UserAccountSettingsProps> = ({ isOpen, onClose }) => {
-    const { user, profile, signOut } = useAuth();
+    const { user, profile, signOut, refreshProfile } = useAuth();
     const [activeTab, setActiveTab] = useState<'profile' | 'account' | 'app'>('profile');
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -63,6 +63,8 @@ const UserAccountSettings: React.FC<UserAccountSettingsProps> = ({ isOpen, onClo
                 });
 
             if (error) throw error;
+
+            await refreshProfile();
         } catch (err) {
             console.error("Error updating profile:", err);
         } finally {
