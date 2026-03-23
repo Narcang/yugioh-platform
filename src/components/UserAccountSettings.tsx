@@ -63,19 +63,8 @@ const UserAccountSettings: React.FC<UserAccountSettingsProps> = ({ isOpen, onClo
                 });
 
             if (error) throw error;
-
-            // Refresh global auth context
-            // Assuming refreshProfile is available from useAuth, which we checked earlier
-            // @ts-ignore
-            if (typeof useAuth().refreshProfile === 'function') {
-                // @ts-ignore
-                await useAuth().refreshProfile();
-            }
-
-            alert("Profilo aggiornato con successo!");
         } catch (err) {
             console.error("Error updating profile:", err);
-            alert("Errore durante l'aggiornamento del profilo");
         } finally {
             setLoading(false);
         }
