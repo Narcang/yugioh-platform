@@ -1,12 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Server-side Supabase client using the service role key so we can
-// cache new cards discovered via external APIs.
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+
+// Read client: uses the anon key (always available, respects RLS SELECT policies)
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
+
+// Write client: uses the service role key to cache new cards from external APIs.
+// Falls back gracefully to the anon client if the key is not configured.
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseWriter = serviceKey
+  ? createClient(SUPABASE_URL, serviceKey)
+  : supabase;
 
 const POKEMON_API_KEY = process.env.POKEMON_TCG_API_KEY ?? '';
 
@@ -110,7 +118,7 @@ async function searchPokemon(q: string) {
               supertype: (c.supertype as string) ?? '',
             };
           });
-          await supabase
+          await supabaseWriter
             .from('pokemon_cards')
             .upsert(rows, { onConflict: 'id' });
           results = [
@@ -186,7 +194,7 @@ async function searchMagic(q: string) {
               oracle_text: (c.oracle_text as string) ?? '',
             };
           });
-          await supabase
+          await supabaseWriter
             .from('magic_cards')
             .upsert(rows, { onConflict: 'id' });
           results = [
