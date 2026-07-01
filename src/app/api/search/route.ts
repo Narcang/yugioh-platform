@@ -105,7 +105,8 @@ async function searchPokemon(q: string) {
           (c: Record<string, unknown>) => !existing.has(c.id as string)
         );
         if (newCards.length > 0) {
-          const rows = newCards.map((c: Record<string, unknown>) => {
+          type PokemonRow = { id: string; name: string; image_url: string; set_name: string; number: string; types: string[]; supertype: string };
+          const rows: PokemonRow[] = newCards.map((c: Record<string, unknown>) => {
             const images = c.images as Record<string, string> | undefined;
             const set = c.set as Record<string, string> | undefined;
             return {
@@ -123,7 +124,7 @@ async function searchPokemon(q: string) {
             .upsert(rows, { onConflict: 'id' });
           results = [
             ...results,
-            ...rows.map((r) => ({
+            ...rows.map((r: PokemonRow) => ({
               id: r.id,
               name: r.name,
               image_url: r.image_url,
@@ -176,7 +177,8 @@ async function searchMagic(q: string) {
           (c: Record<string, unknown>) => !existing.has(c.id as string)
         );
         if (newCards.length > 0) {
-          const rows = newCards.map((c: Record<string, unknown>) => {
+          type MagicRow = { id: string; name: string; image_url: string; set_name: string; rarity: string; cmc: number; type: string; oracle_text: string };
+          const rows: MagicRow[] = newCards.map((c: Record<string, unknown>) => {
             const imageUris = c.image_uris as Record<string, string> | undefined;
             const cardFaces = c.card_faces as Array<{ image_uris?: Record<string, string> }> | undefined;
             const image_url =
@@ -199,7 +201,7 @@ async function searchMagic(q: string) {
             .upsert(rows, { onConflict: 'id' });
           results = [
             ...results,
-            ...rows.map((r) => ({
+            ...rows.map((r: MagicRow) => ({
               id: r.id,
               name: r.name,
               image_url: r.image_url,
