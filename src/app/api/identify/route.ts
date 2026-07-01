@@ -1,38 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-// THE PYTHON SERVER IP
-const BASE_URL = process.env.PYTHON_API_URL || "http://127.0.0.1:8000";
-const PYTHON_API_URL = `${BASE_URL}/identify`;
-
-export async function POST(req: NextRequest) {
-    try {
-        const formData = await req.formData();
-        const file = formData.get('file');
-
-        if (!file) {
-            return NextResponse.json({ error: "No file provided" }, { status: 400 });
-        }
-
-        // Create a new FormData to send to the Python server
-        const backendFormData = new FormData();
-        backendFormData.append('file', file);
-
-        // Forward the request to the Python server
-        const response = await fetch(PYTHON_API_URL, {
-            method: 'POST',
-            body: backendFormData,
-        });
-
-        if (!response.ok) {
-            console.error("Python Server Error:", response.status, response.statusText);
-            return NextResponse.json({ error: "Recognition server error" }, { status: response.status });
-        }
-
-        const data = await response.json();
-        return NextResponse.json(data);
-
-    } catch (error) {
-        console.error("Proxy Error:", error);
-        return NextResponse.json({ error: "Internal Proxy Error" }, { status: 500 });
-    }
+/**
+ * Card scanner (pHash image identification) is temporarily disabled.
+ * The Python/OpenCV backend that powered this feature has been decommissioned.
+ * It will be re-implemented as a Supabase Edge Function in a future update.
+ */
+export async function POST() {
+  return NextResponse.json(
+    { match: false, disabled: true, message: 'Card scanner temporarily unavailable' },
+    { status: 503 }
+  );
 }

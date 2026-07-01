@@ -1,98 +1,243 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-// THE PYTHON SERVER IP
-// Yugioh uses the stable remote server containing the full DB
-const YUGIOH_API_URL = "http://206.189.50.215:8000";
-// Pokemon uses the local server where we implemented caching
-const POKEMON_API_URL = process.env.PYTHON_API_URL || "http://127.0.0.1:8000";
+// Server-side Supabase client using the service role key so we can
+// cache new cards discovered via external APIs.
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+const POKEMON_API_KEY = process.env.POKEMON_TCG_API_KEY ?? '';
 
 export async function GET(req: NextRequest) {
-    try {
-        const { searchParams } = new URL(req.url);
-        const q = searchParams.get('q');
+  const { searchParams } = new URL(req.url);
+  const q = searchParams.get('q')?.trim() ?? '';
+  const gameType = searchParams.get('gameType') ?? 'Yugioh';
 
-        if (!q) {
-            return NextResponse.json({ results: [] });
-        }
+  if (q.length < 2) {
+    return NextResponse.json({ results: [] });
+  }
 
-        const gameType = searchParams.get('gameType') || 'Yugioh';
-        console.log(`[API] Searching for "${q}" in ${gameType}`);
-
-        // 1. POKEMON TCG - Using Python server
-        if (gameType === 'Pokemon') {
-            try {
-                console.log(`[API] Searching Pokemon via Python server: "${q}"`);
-
-                const pokeRes = await fetch(`${POKEMON_API_URL}/pokemon/search?q=${encodeURIComponent(q)}`);
-
-                if (!pokeRes.ok) {
-                    console.error(`[API] Pokemon server error: ${pokeRes.status}`);
-                    return NextResponse.json({ error: "Pokemon Server Error" }, { status: pokeRes.status });
-                }
-
-                const pokeData = await pokeRes.json();
-                console.log(`[API] Pokemon found ${pokeData.results?.length || 0} cards`);
-
-                return NextResponse.json(pokeData);
-            } catch (error: any) {
-                console.error('[API] Pokemon fetch error:', error.message);
-                return NextResponse.json({ results: [], error: error.message });
-            }
-        }
-
-        // 2. MAGIC THE GATHERING - Using Python server (Scryfall)
-        if (gameType === 'Magic' || gameType === 'Magic: The Gathering') {
-            try {
-                console.log(`[API] Searching Magic via Python server: "${q}"`);
-                // Magic uses the same local server as Pokemon for now
-                const magicRes = await fetch(`${POKEMON_API_URL}/magic/search?q=${encodeURIComponent(q)}`);
-
-                if (!magicRes.ok) {
-                    console.error(`[API] Magic server error: ${magicRes.status}`);
-                    return NextResponse.json({ error: "Magic Server Error" }, { status: magicRes.status });
-                }
-
-                const magicData = await magicRes.json();
-                console.log(`[API] Magic found ${magicData.results?.length || 0} cards`);
-                return NextResponse.json(magicData);
-            } catch (error: any) {
-                console.error('[API] Magic fetch error:', error.message);
-                return NextResponse.json({ results: [], error: error.message });
-            }
-        }
-
-        // 3. ONE PIECE - Using Python server
-        if (gameType === 'OnePiece' || gameType === 'One Piece') {
-            try {
-                console.log(`[API] Searching One Piece via Python server: "${q}"`);
-                const opRes = await fetch(`${POKEMON_API_URL}/onepiece/search?q=${encodeURIComponent(q)}`);
-
-                if (!opRes.ok) {
-                    console.error(`[API] One Piece server error: ${opRes.status}`);
-                    return NextResponse.json({ error: "One Piece Server Error" }, { status: opRes.status });
-                }
-
-                const opData = await opRes.json();
-                console.log(`[API] One Piece found ${opData.results?.length || 0} cards`);
-                return NextResponse.json(opData);
-            } catch (error: any) {
-                console.error('[API] One Piece fetch error:', error.message);
-                return NextResponse.json({ results: [], error: error.message });
-            }
-        }
-
-        // 4. YUGIOH - Using Python server
-        const yugiohRes = await fetch(`${YUGIOH_API_URL}/search?q=${encodeURIComponent(q)}`);
-
-        if (!yugiohRes.ok) {
-            return NextResponse.json({ error: "Search server error" }, { status: yugiohRes.status });
-        }
-
-        const data = await yugiohRes.json();
-        return NextResponse.json(data);
-
-    } catch (error) {
-        console.error("Search Proxy Error:", error);
-        return NextResponse.json({ error: "Internal Proxy Error" }, { status: 500 });
+  try {
+    switch (gameType) {
+      case 'Yugioh':
+        return await searchYugioh(q);
+      case 'Pokemon':
+        return await searchPokemon(q);
+      case 'Magic':
+      case 'Magic: The Gathering':
+        return await searchMagic(q);
+      case 'OnePiece':
+      case 'One Piece':
+        return await searchOnePiece(q);
+      default:
+        return NextResponse.json({ results: [] });
     }
+  } catch (err) {
+    console.error('[search] error:', err);
+    return NextResponse.json({ error: 'Search failed' }, { status: 500 });
+  }
+}
+
+// ----------------------------------------------------------------
+// Yu-Gi-Oh!
+// ----------------------------------------------------------------
+async function searchYugioh(q: string) {
+  const { data, error } = await supabase
+    .from('yugioh_cards')
+    .select('id, name_en, name_it, image_url')
+    .or(`name_en.ilike.%${q}%,name_it.ilike.%${q}%`)
+    .limit(20);
+
+  if (error) throw error;
+
+  const results = (data ?? []).map((c) => ({
+    id: c.id,
+    name: c.name_it ?? c.name_en,
+    image_url:
+      c.image_url ??
+      `https://images.ygoprodeck.com/images/cards_cropped/${c.id}.jpg`,
+  }));
+
+  return NextResponse.json({ results });
+}
+
+// ----------------------------------------------------------------
+// Pokemon
+// ----------------------------------------------------------------
+async function searchPokemon(q: string) {
+  const { data, error } = await supabase
+    .from('pokemon_cards')
+    .select('id, name, image_url, set_name, number')
+    .ilike('name', `%${q}%`)
+    .limit(20);
+
+  if (error) throw error;
+
+  let results = (data ?? []).map((c) => ({
+    id: c.id,
+    name: c.name,
+    image_url: c.image_url,
+    set: c.set_name,
+    number: c.number,
+  }));
+
+  // External fallback: PokemonTCG API
+  if (results.length < 5 && POKEMON_API_KEY) {
+    try {
+      const resp = await fetch(
+        `https://api.pokemontcg.io/v2/cards?q=name:"*${encodeURIComponent(q)}*"&pageSize=10`,
+        { headers: { 'X-Api-Key': POKEMON_API_KEY } }
+      );
+      if (resp.ok) {
+        const apiData = await resp.json();
+        const existing = new Set(results.map((r) => r.id));
+        const newCards = (apiData.data ?? []).filter(
+          (c: Record<string, unknown>) => !existing.has(c.id as string)
+        );
+        if (newCards.length > 0) {
+          const rows = newCards.map((c: Record<string, unknown>) => {
+            const images = c.images as Record<string, string> | undefined;
+            const set = c.set as Record<string, string> | undefined;
+            return {
+              id: c.id as string,
+              name: c.name as string,
+              image_url: images?.large ?? images?.small ?? '',
+              set_name: set?.name ?? '',
+              number: (c.number as string) ?? '',
+              types: (c.types as string[]) ?? [],
+              supertype: (c.supertype as string) ?? '',
+            };
+          });
+          await supabase
+            .from('pokemon_cards')
+            .upsert(rows, { onConflict: 'id' });
+          results = [
+            ...results,
+            ...rows.map((r) => ({
+              id: r.id,
+              name: r.name,
+              image_url: r.image_url,
+              set: r.set_name,
+              number: r.number,
+            })),
+          ].slice(0, 20);
+        }
+      }
+    } catch (e) {
+      console.error('[search/pokemon] external fallback failed:', e);
+    }
+  }
+
+  return NextResponse.json({ results });
+}
+
+// ----------------------------------------------------------------
+// Magic: The Gathering  (Scryfall)
+// ----------------------------------------------------------------
+async function searchMagic(q: string) {
+  const { data, error } = await supabase
+    .from('magic_cards')
+    .select('id, name, image_url, set_name, rarity, type, oracle_text')
+    .ilike('name', `%${q}%`)
+    .limit(20);
+
+  if (error) throw error;
+
+  let results = (data ?? []).map((c) => ({
+    id: c.id,
+    name: c.name,
+    image_url: c.image_url,
+    set: c.set_name,
+    rarity: c.rarity,
+    type: c.type,
+    oracle_text: c.oracle_text,
+  }));
+
+  // External fallback: Scryfall
+  if (results.length < 5) {
+    try {
+      const resp = await fetch(
+        `https://api.scryfall.com/cards/search?q=${encodeURIComponent(q)}`
+      );
+      if (resp.ok) {
+        const apiData = await resp.json();
+        const existing = new Set(results.map((r) => r.id));
+        const newCards = (apiData.data ?? []).filter(
+          (c: Record<string, unknown>) => !existing.has(c.id as string)
+        );
+        if (newCards.length > 0) {
+          const rows = newCards.map((c: Record<string, unknown>) => {
+            const imageUris = c.image_uris as Record<string, string> | undefined;
+            const cardFaces = c.card_faces as Array<{ image_uris?: Record<string, string> }> | undefined;
+            const image_url =
+              imageUris?.normal ??
+              cardFaces?.[0]?.image_uris?.normal ??
+              '';
+            return {
+              id: c.id as string,
+              name: c.name as string,
+              image_url,
+              set_name: (c.set_name as string) ?? '',
+              rarity: (c.rarity as string) ?? '',
+              cmc: (c.cmc as number) ?? 0,
+              type: (c.type_line as string) ?? '',
+              oracle_text: (c.oracle_text as string) ?? '',
+            };
+          });
+          await supabase
+            .from('magic_cards')
+            .upsert(rows, { onConflict: 'id' });
+          results = [
+            ...results,
+            ...rows.map((r) => ({
+              id: r.id,
+              name: r.name,
+              image_url: r.image_url,
+              set: r.set_name,
+              rarity: r.rarity,
+              type: r.type,
+              oracle_text: r.oracle_text,
+            })),
+          ].slice(0, 20);
+        }
+      }
+    } catch (e) {
+      console.error('[search/magic] external fallback failed:', e);
+    }
+  }
+
+  return NextResponse.json({ results });
+}
+
+// ----------------------------------------------------------------
+// One Piece
+// ----------------------------------------------------------------
+async function searchOnePiece(q: string) {
+  const { data, error } = await supabase
+    .from('onepiece_cards')
+    .select(
+      'id, name, image_url, set_name, rarity, type, text, color, cost, power, counter'
+    )
+    .ilike('name', `%${q}%`)
+    .limit(20);
+
+  if (error) throw error;
+
+  const results = (data ?? []).map((c) => ({
+    id: c.id,
+    name: c.name,
+    image_url: c.image_url,
+    set: c.set_name,
+    rarity: c.rarity,
+    type: c.type,
+    text: c.text,
+    color: c.color,
+    cost: c.cost,
+    power: c.power,
+    counter: c.counter,
+  }));
+
+  return NextResponse.json({ results });
 }
