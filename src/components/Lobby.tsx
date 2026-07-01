@@ -473,7 +473,29 @@ const Lobby: React.FC = () => {
                                         <span style={{ flex: 1, textAlign: 'center', color: isFull ? '#EF4444' : '#10B981' }}>
                                             {room.currentPlayers}/{room.maxPlayers}
                                         </span>
-                                        <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
+                                        <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                                            {isAdmin && (
+                                                <button
+                                                    title="Chiudi lobby (admin)"
+                                                    onClick={(e) => handleDeleteRoom(e, room.id)}
+                                                    style={{
+                                                        background: 'transparent',
+                                                        border: '1px solid #EF4444',
+                                                        color: '#EF4444',
+                                                        borderRadius: '4px',
+                                                        width: '28px',
+                                                        height: '28px',
+                                                        cursor: 'pointer',
+                                                        fontSize: '14px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        flexShrink: 0,
+                                                    }}
+                                                >
+                                                    ✕
+                                                </button>
+                                            )}
                                             <button
                                                 className={`action-btn ${isFull ? 'disabled' : ''}`}
                                                 onClick={() => handleRoomClick(room)}
