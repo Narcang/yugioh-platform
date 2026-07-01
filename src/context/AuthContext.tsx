@@ -8,12 +8,16 @@ interface Profile {
     username: string | null;
     avatar_url: string | null;
     full_name: string | null;
+    is_admin: boolean;
+    is_banned: boolean;
 }
 
 interface AuthContextType {
     user: User | null;
     session: Session | null;
     profile: Profile | null;
+    isAdmin: boolean;
+    isBanned: boolean;
     isLoading: boolean;
     signOut: () => Promise<void>;
     refreshProfile: () => Promise<void>;
@@ -138,8 +142,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    const isAdmin = profile?.is_admin === true;
+    const isBanned = profile?.is_banned === true;
+
     return (
-        <AuthContext.Provider value={{ user, session, profile, isLoading, signOut, refreshProfile }}>
+        <AuthContext.Provider value={{ user, session, profile, isAdmin, isBanned, isLoading, signOut, refreshProfile }}>
             {children}
         </AuthContext.Provider>
     );

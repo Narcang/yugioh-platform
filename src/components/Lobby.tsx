@@ -5,6 +5,7 @@ import { useLayout } from '@/context/LayoutContext';
 import CreateRoomModal, { RoomData } from './CreateRoomModal';
 import AuthModal from './AuthModal';
 import UserAccountSettings from './UserAccountSettings';
+import AdminPanel from './AdminPanel';
 import Footer from './Footer';
 
 import { supabase } from '@/lib/supabaseClient';
@@ -12,12 +13,13 @@ import { useAuth } from '@/context/AuthContext';
 
 const Lobby: React.FC = () => {
     const { setAppView, setCurrentRoomId, setIsSettingsOpen, setGameType, setCurrentPhase, setCurrentTurn } = useLayout();
-    const { user, profile, signOut } = useAuth();
+    const { user, profile, isAdmin, signOut } = useAuth();
     const [joinCode, setJoinCode] = useState('');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
     const [isUserSettingsOpen, setIsUserSettingsOpen] = useState(false);
+    const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
 
     // Supabase State
     const [rooms, setRooms] = useState<any[]>([]);
@@ -309,6 +311,17 @@ const Lobby: React.FC = () => {
                                 <div style={{ padding: '8px', borderBottom: '1px solid #333', marginBottom: '8px', color: '#888', fontSize: '12px' }}>
                                     {profile?.username || user.email}
                                 </div>
+                                {isAdmin && (
+                                    <button
+                                        style={{ width: '100%', textAlign: 'left', padding: '8px', background: 'none', border: 'none', color: '#F4C430', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                                        onClick={() => {
+                                            setIsAdminPanelOpen(true);
+                                            setIsProfileDropdownOpen(false);
+                                        }}
+                                    >
+                                        <span>🛡️</span> Pannello Admin
+                                    </button>
+                                )}
                                 <button
                                     style={{ width: '100%', textAlign: 'left', padding: '8px', background: 'none', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
                                     onClick={() => {
@@ -518,6 +531,7 @@ const Lobby: React.FC = () => {
 
             <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
             <UserAccountSettings isOpen={isUserSettingsOpen} onClose={() => setIsUserSettingsOpen(false)} />
+            <AdminPanel isOpen={isAdminPanelOpen} onClose={() => setIsAdminPanelOpen(false)} />
 
             <Footer />
         </div>
