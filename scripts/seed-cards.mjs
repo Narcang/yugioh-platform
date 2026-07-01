@@ -66,20 +66,24 @@ async function upsertBatch(table, rows, batchSize = 500) {
 // ----------------------------------------------------------------
 // 1. Yu-Gi-Oh! — fetch from YGOPRODeck API (paginated)
 // ----------------------------------------------------------------
-async function fetchAllYugiohCards(language = 'en') {
+async function fetchAllYugiohCards(lang) {
+  // The API default is English. For other languages pass ?language=XX
+  // language=en is NOT a valid param (returns 400).
   const PAGE_SIZE = 500;
+  const langParam = lang === 'en' ? '' : `&language=${lang}`;
+  const label = lang.toUpperCase();
   let offset = 0;
   let allCards = [];
 
   while (true) {
-    const url = `https://db.ygoprodeck.com/api/v7/cardinfo.php?num=${PAGE_SIZE}&offset=${offset}&language=${language}`;
+    const url = `https://db.ygoprodeck.com/api/v7/cardinfo.php?num=${PAGE_SIZE}&offset=${offset}${langParam}`;
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`YGOPRODeck ${language.toUpperCase()} fetch failed at offset ${offset}: ${res.status}`);
+    if (!res.ok) throw new Error(`YGOPRODeck [${label}] fetch failed at offset ${offset}: ${res.status}`);
     const data = await res.json();
     const cards = data.data ?? [];
     allCards = allCards.concat(cards);
-    process.stdout.write(`\r  ↳ [${language.toUpperCase()}] fetched ${allCards.length}/${data.meta?.total_rows ?? '?'} cards...`);
-    if (data.meta?.rows_remaining === 0 || cards.length < PAGE_SIZE) break;
+    process.stdout.write(`\r  ↳ [${label}] fetched ${allCards.length}/${data.meta?.total_rows ?? '?'} cards...`);
+    if ((data.meta?.rows_remaining ?? 0) === 0 || cards.length < PAGE_SIZE) break;
     offset += PAGE_SIZE;
   }
   console.log('');
@@ -89,6 +93,7 @@ async function fetchAllYugiohCards(language = 'en') {
 async function seedYugioh() {
   console.log('\n🃏  Seeding Yu-Gi-Oh! cards from YGOPRODeck API...');
 
+  // Fetch English (default) and Italian in parallel
   const [enCards, itCards] = await Promise.all([
     fetchAllYugiohCards('en'),
     fetchAllYugiohCards('it'),
