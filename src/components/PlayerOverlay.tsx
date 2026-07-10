@@ -1,22 +1,28 @@
 "use client";
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getDefaultLpStep } from '@/lib/gameConfig';
 
 interface PlayerOverlayProps {
     name: string;
     isSelf?: boolean;
     onLpChange?: (lp: number) => void;
     currentLP?: number;
+    initialLP?: number;
 }
 
-const PlayerOverlay: React.FC<PlayerOverlayProps> = ({ name, isSelf, onLpChange, currentLP }) => {
-    const [lifePoints, setLifePoints] = useState(8000);
-    // Use string for input to allow full editing (empty string, etc.)
-    const [stepInput, setStepInput] = useState<string>('1000');
+const PlayerOverlay: React.FC<PlayerOverlayProps> = ({ name, isSelf, onLpChange, currentLP, initialLP = 8000 }) => {
+    const [lifePoints, setLifePoints] = useState(initialLP);
+    const [stepInput, setStepInput] = useState<string>(() => String(getDefaultLpStep(initialLP)));
 
-    // Derived numeric value for logic
     const stepValue = parseInt(stepInput) || 0;
 
     const [isHovered, setIsHovered] = useState(false);
+
+    // Reset when entering a new game / format
+    useEffect(() => {
+        setLifePoints(initialLP);
+        setStepInput(String(getDefaultLpStep(initialLP)));
+    }, [initialLP]);
 
     // Sync from props (Remote updates)
     useEffect(() => {

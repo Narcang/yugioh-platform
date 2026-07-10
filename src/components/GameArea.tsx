@@ -14,7 +14,7 @@ interface GameAreaProps {
 
 const GameArea: React.FC<GameAreaProps> = ({ remoteStream, opponentName = 'Opponent', selfName = 'Duelist', sendLP, latestReceivedLP }) => {
     const { localStream, isVideoEnabled, error } = useMedia();
-    const { layoutMode, spotlightTarget, setLayoutMode, setSpotlightTarget, videoFitMode } = useLayout();
+    const { layoutMode, spotlightTarget, setLayoutMode, setSpotlightTarget, videoFitMode, baseLifePoints, currentRoomId } = useLayout();
     const videoRef = useRef<HTMLVideoElement>(null);
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
@@ -89,8 +89,10 @@ const GameArea: React.FC<GameAreaProps> = ({ remoteStream, opponentName = 'Oppon
                 )}
 
                 <PlayerOverlay
+                    key={`opponent-${currentRoomId}-${baseLifePoints}`}
                     name={opponentName}
-                    currentLP={latestReceivedLP ?? 8000} // Show synchronized LP
+                    initialLP={baseLifePoints}
+                    currentLP={latestReceivedLP ?? baseLifePoints}
                 />
 
                 <div className="mute-icon-container">
@@ -132,9 +134,11 @@ const GameArea: React.FC<GameAreaProps> = ({ remoteStream, opponentName = 'Oppon
                 )}
 
                 <PlayerOverlay
+                    key={`self-${currentRoomId}-${baseLifePoints}`}
                     name={selfName}
                     isSelf
-                    onLpChange={sendLP} // Pass handler
+                    initialLP={baseLifePoints}
+                    onLpChange={sendLP}
                 />
 
             </div>

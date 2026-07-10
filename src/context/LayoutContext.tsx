@@ -1,5 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { getBaseLifePoints, getFirstPhase } from '@/lib/gameConfig';
 
 type LayoutMode = 'grid' | 'fullscreen' | 'boxed'; // grid=50/50, fullscreen=100/0, boxed=PIP
 type SpotlightTarget = 'self' | 'opponent';
@@ -36,6 +37,9 @@ interface LayoutContextType {
     setCurrentPhase: (phase: string) => void;
     gameType: string;
     setGameType: (type: string) => void;
+    gameFormat: string;
+    setGameFormat: (format: string) => void;
+    baseLifePoints: number;
 }
 
 const LayoutContext = createContext<LayoutContextType | undefined>(undefined);
@@ -63,7 +67,18 @@ export const LayoutProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     // Phase State
     const [currentPhase, setCurrentPhase] = useState<string>('Draw Phase');
-    const [gameType, setGameType] = useState<string>('Yugioh');
+    const [gameType, setGameTypeState] = useState<string>('Yugioh');
+    const [gameFormat, setGameFormatState] = useState<string>('Advanced (TCG)');
+
+    const setGameType = (type: string) => {
+        setGameTypeState(type);
+    };
+
+    const setGameFormat = (format: string) => {
+        setGameFormatState(format);
+    };
+
+    const baseLifePoints = getBaseLifePoints(gameType, gameFormat);
 
 
     // Timer Countdown
@@ -110,17 +125,7 @@ export const LayoutProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         // Let's do: Start Animation -> Change State -> End Animation
 
         // Reset Phase on Turn Switch
-        // NOTE: We should reset to the first phase of the *current* game type.
-        // For now, hardcode generic or handle in Sidebar/GameRoom where GameType is known?
-        // Actually, we can check gameType here now.
-        let firstPhase = 'Draw Phase';
-        if (gameType === 'Magic') firstPhase = 'Beginning Phase';
-        else if (gameType === 'Pokemon') firstPhase = 'Draw Phase';
-        else if (gameType === 'One Piece') firstPhase = 'Refresh Phase';
-        else if (gameType === 'Dragon Ball') firstPhase = 'Charge Phase';
-        else if (gameType === 'Riftbound') firstPhase = 'Awaken Phase';
-
-        setCurrentPhase(firstPhase);
+        setCurrentPhase(getFirstPhase(gameType));
 
         setTimeout(() => {
             setIsTurnChanging(false);
@@ -159,6 +164,9 @@ export const LayoutProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             setCurrentPhase,
             gameType,
             setGameType,
+            gameFormat,
+            setGameFormat,
+            baseLifePoints,
         }}>
             {children}
         </LayoutContext.Provider>

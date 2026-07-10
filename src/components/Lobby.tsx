@@ -10,9 +10,10 @@ import Footer from './Footer';
 
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
+import { getFirstPhase } from '@/lib/gameConfig';
 
 const Lobby: React.FC = () => {
-    const { setAppView, setCurrentRoomId, setIsSettingsOpen, setGameType, setCurrentPhase, setCurrentTurn } = useLayout();
+    const { setAppView, setCurrentRoomId, setIsSettingsOpen, setGameType, setGameFormat, setCurrentPhase, setCurrentTurn } = useLayout();
     const { user, profile, isAdmin, signOut } = useAuth();
     const [joinCode, setJoinCode] = useState('');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -95,38 +96,56 @@ const Lobby: React.FC = () => {
         const targetRoomId = roomToJoin?.id || joinCode;
         if (!targetRoomId) return;
 
+        // If joining by code, fetch room details first
+        let room = roomToJoin;
+        if (!room) {
+            const { data } = await supabase
+                .from('rooms')
+                .select('id, host_id, format, settings, current_players, max_players')
+                .eq('id', targetRoomId)
+                .single();
+            if (data) {
+                room = {
+                    id: data.id,
+                    hostId: data.host_id,
+                    format: data.format,
+                    gameType: data.settings?.gameType || 'Yugioh',
+                    currentPlayers: data.current_players,
+                    maxPlayers: data.max_players,
+                };
+            }
+        }
+
+        if (!room) {
+            alert('Stanza non trovata');
+            return;
+        }
+
         // In a real app we'd check if full logic on server or with RLS, but here we optimistically update.
-        if (roomToJoin) {
-            // Fix: If user is the host, DO NOT increment player count
-            const isHost = user && user.id === roomToJoin.hostId;
+        if (room) {
+            const isHost = user && user.id === room.hostId;
 
             if (!isHost) {
                 const { error } = await supabase
                     .from('rooms')
-                    .update({ current_players: Math.min(roomToJoin.currentPlayers + 1, roomToJoin.maxPlayers) })
+                    .update({ current_players: Math.min(room.currentPlayers + 1, room.maxPlayers) })
                     .eq('id', targetRoomId);
 
                 if (error) console.error("Error updating player count:", error);
             }
         }
 
-        // Set Game Type
-        const gameType = roomToJoin?.gameType || roomToJoin?.settings?.gameType || 'Yugioh';
+        // Set Game Type & Format
+        const gameType = room?.gameType || room?.settings?.gameType || 'Yugioh';
+        const format = room?.format || 'Advanced (TCG)';
         setGameType(gameType);
-
-        let firstPhase = 'Draw Phase';
-        if (gameType === 'Magic') firstPhase = 'Beginning Phase';
-        else if (gameType === 'Pokemon') firstPhase = 'Draw Phase';
-        else if (gameType === 'One Piece') firstPhase = 'Refresh Phase';
-        else if (gameType === 'Dragon Ball') firstPhase = 'Charge Phase';
-        else if (gameType === 'Riftbound') firstPhase = 'Awaken Phase';
-
-        setCurrentPhase(firstPhase);
+        setGameFormat(format);
+        setCurrentPhase(getFirstPhase(gameType));
 
         // If I am joining and NOT the host, I go second (opponent turn)
         // If I am re-joining my own room, I assume I'm still P1? 
         // For simplicity: Joiner = Guest = Opponent Turn. Host = Self Turn.
-        const isHost = user && user.id === roomToJoin?.hostId;
+        const isHost = user && user.id === room?.hostId;
         if (isHost) {
             setCurrentTurn('self');
         } else {
@@ -170,18 +189,10 @@ const Lobby: React.FC = () => {
             }
 
             setIsCreateModalOpen(false);
-            // Auto Join properly
             const newGameType = newRoom.settings.gameType;
             setGameType(newGameType);
-
-            let firstPhase = 'Draw Phase';
-            if (newGameType === 'Magic') firstPhase = 'Beginning Phase';
-            else if (newGameType === 'Pokemon') firstPhase = 'Draw Phase';
-            else if (newGameType === 'One Piece') firstPhase = 'Refresh Phase';
-            else if (newGameType === 'Dragon Ball') firstPhase = 'Charge Phase';
-            else if (newGameType === 'Riftbound') firstPhase = 'Awaken Phase';
-
-            setCurrentPhase(firstPhase);
+            setGameFormat(data.format);
+            setCurrentPhase(getFirstPhase(newGameType));
 
             // Creator goes first
             setCurrentTurn('self');
