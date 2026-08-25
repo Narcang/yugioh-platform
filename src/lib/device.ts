@@ -6,15 +6,18 @@
 
 export const MOBILE_BREAKPOINT = 820;
 
+/** Largest shortest-side of a device we still treat as handheld (covers tablets) */
+const HANDHELD_MAX_SHORT_SIDE = 900;
+
 /**
- * Phone or tablet, regardless of orientation. A handheld gets the rear camera
- * by default so it frames the table. Orientation is deliberately ignored: a
- * phone held sideways is wider than the layout breakpoint but still has a
- * camera pointed at the cards.
+ * Phone or tablet: a handheld gets the rear camera by default so it frames the
+ * table. Measured on the screen's shortest side rather than the viewport, so
+ * the answer does not change when the player rotates the device — and tall
+ * phones (a Pixel is 915px in portrait) are not mistaken for desktops.
  */
 export function isHandheldDevice(): boolean {
     if (typeof window === 'undefined') return false;
     const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
-    const smallScreen = window.matchMedia('(max-height: 900px)').matches;
-    return coarsePointer && smallScreen;
+    const shortestSide = Math.min(window.screen.width, window.screen.height);
+    return coarsePointer && shortestSide <= HANDHELD_MAX_SHORT_SIDE;
 }

@@ -1626,14 +1626,22 @@ input:checked+.slider:before {
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
 
-/* ─────────────────────────────────────────────────────────────────────
-   Mobile game room (keep the breakpoint in sync with lib/device.ts)
+/* ═════════════════════════════════════════════════════════════════════
+   Handheld game room (keep the breakpoint in sync with lib/device.ts)
 
-   Phones hold the camera over the table, so the fields must be full width
-   and stacked. The side rails become a bottom bar and a bottom sheet, which
-   frees the whole viewport for the video feeds.
-   ───────────────────────────────────────────────────────────────────── */
-@media (max-width: 820px) {
+   Three blocks, applied in cascade order:
+     1. chrome shared by every handheld orientation
+     2. portrait: fields stacked, controls in a bottom bar
+     3. landscape: fields side by side, controls in a compact left rail
+
+   Landscape cannot be selected by width — a rotated phone is often wider
+   than the 820px breakpoint — so it is matched by short viewport height plus
+   a coarse pointer, which excludes short desktop windows.
+   ═════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Shared handheld chrome ── */
+@media (max-width: 820px),
+(orientation: landscape) and (max-height: 600px) and (pointer: coarse) {
 
   /* dvh keeps the layout stable while the browser chrome hides on scroll */
   body,
@@ -1641,27 +1649,7 @@ input:checked+.slider:before {
     height: 100dvh;
   }
 
-  .game-room-container {
-    flex-direction: column;
-  }
-
-  /* ── Fields stacked in a single column ── */
   .game-area {
-    width: 100%;
-    min-height: 0;
-    padding-bottom: calc(var(--mobile-bar-height) + env(safe-area-inset-bottom));
-  }
-
-  .game-area.grid.players-2,
-  .game-area.grid.players-3,
-  .game-area.grid.players-4 {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .game-area.grid .player-slot.self,
-  .game-area.grid .player-slot.remote {
-    border-right: none;
     min-height: 0;
   }
 
@@ -1682,12 +1670,31 @@ input:checked+.slider:before {
     font-size: 20px;
   }
 
-  .floating-controls {
-    bottom: calc(var(--mobile-bar-height) + env(safe-area-inset-bottom) + 12px);
-    left: 12px;
+  /* Collapsing is a desktop affordance, so make sure nothing stays hidden */
+  .sidebar .sidebar-group,
+  .sidebar.collapsed .sidebar-group {
+    opacity: 1;
+    pointer-events: auto;
   }
 
-  /* Picture-in-picture thumbnails sized for a phone, stacked down the side */
+  .sidebar .divider,
+  .sidebar .spacer,
+  .sidebar .logo-group,
+  .sidebar .help-group,
+  .sidebar .profile-group,
+  .sidebar .collapse-btn {
+    display: none;
+  }
+
+  .sidebar .mobile-only {
+    display: flex;
+  }
+
+  .sidebar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Picture-in-picture thumbnails sized for a phone */
   .game-area.boxed .player-slot.minimized {
     width: 88px;
     height: 118px;
@@ -1707,7 +1714,50 @@ input:checked+.slider:before {
     top: 390px;
   }
 
-  /* ── Sidebar becomes a fixed bottom control bar ── */
+  .sheet-handle {
+    display: block;
+    flex: 0 0 auto;
+    width: 44px;
+    height: 5px;
+    margin: 10px auto 4px;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background: var(--border-color);
+    cursor: pointer;
+  }
+}
+
+/* ── 2. Portrait: one column of fields, bottom control bar ── */
+@media (max-width: 820px) and (orientation: portrait) {
+
+  .game-room-container {
+    flex-direction: column;
+  }
+
+  .game-area {
+    width: 100%;
+    padding-bottom: calc(var(--mobile-bar-height) + env(safe-area-inset-bottom));
+  }
+
+  .game-area.grid.players-2,
+  .game-area.grid.players-3,
+  .game-area.grid.players-4 {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .game-area.grid .player-slot.self,
+  .game-area.grid .player-slot.remote {
+    border-right: none;
+    min-height: 0;
+  }
+
+  .floating-controls {
+    bottom: calc(var(--mobile-bar-height) + env(safe-area-inset-bottom) + 12px);
+    left: 12px;
+  }
+
   .sidebar,
   .sidebar.collapsed,
   .sidebar.collapsed:hover {
@@ -1733,31 +1783,11 @@ input:checked+.slider:before {
     scrollbar-width: none;
   }
 
-  .sidebar::-webkit-scrollbar {
-    display: none;
-  }
-
   .sidebar .sidebar-group,
   .sidebar.collapsed .sidebar-group {
     flex-direction: row;
     flex: 0 0 auto;
     gap: 0;
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  /* Vertical-only chrome and desktop-only affordances */
-  .sidebar .divider,
-  .sidebar .spacer,
-  .sidebar .logo-group,
-  .sidebar .help-group,
-  .sidebar .profile-group,
-  .sidebar .collapse-btn {
-    display: none;
-  }
-
-  .sidebar .mobile-only {
-    display: flex;
   }
 
   /* Compact the two tallest controls so the bar stays one row high */
@@ -1787,7 +1817,7 @@ input:checked+.slider:before {
     gap: 3px;
   }
 
-  /* ── Card panel becomes a bottom sheet, docked above the control bar ── */
+  /* Card panel slides up, docked above the control bar */
   .right-panel {
     position: fixed;
     left: 0;
@@ -1810,17 +1840,104 @@ input:checked+.slider:before {
   .right-panel.open {
     transform: translateY(0);
   }
+}
 
-  .sheet-handle {
-    display: block;
-    flex: 0 0 auto;
+/* ── 3. Landscape: fields side by side, compact left rail ──
+   Rotating the phone is how players fit a whole row of cards in frame, so
+   here width is the scarce-but-plentiful axis and height is precious: the
+   controls go back to a rail (a bar would eat ~12% of the height). */
+@media (orientation: landscape) and (max-height: 600px) and (pointer: coarse) {
+
+  .game-room-container {
+    flex-direction: row;
+  }
+
+  .game-area {
+    padding-bottom: 0;
+  }
+
+  /* Two players sit next to each other rather than as two letterboxed strips.
+     3-4 players keep the desktop grids, which already assume a wide area. */
+  .game-area.grid.players-2 {
+    flex-direction: row;
+  }
+
+  .game-area.grid.players-2 .player-slot {
+    border-bottom: none;
+  }
+
+  .game-area.grid.players-2 .player-slot.remote {
+    border-right: 1px solid var(--border-color);
+  }
+
+  .floating-controls {
+    bottom: 12px;
+    left: 12px;
+  }
+
+  /* Narrow rail with small icons; scrolls if a game adds more controls */
+  .sidebar,
+  .sidebar.collapsed,
+  .sidebar.collapsed:hover {
+    position: relative;
     width: 44px;
-    height: 5px;
-    margin: 10px auto 4px;
-    padding: 0;
-    border: none;
-    border-radius: 999px;
-    background: var(--border-color);
-    cursor: pointer;
+    height: 100%;
+    flex: 0 0 44px;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 2px;
+    padding: 6px 0;
+    padding-left: env(safe-area-inset-left);
+    background-color: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
+    border-top: none;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+  }
+
+  .sidebar .icon-btn {
+    padding: 3px;
+  }
+
+  .sidebar .icon-btn svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .pass-turn-btn svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .phase-btn {
+    font-size: 9px;
+    min-width: 0;
+    padding: 0 2px;
+  }
+
+  .turn-tracker {
+    margin-top: 4px;
+  }
+
+  /* Card panel slides in from the right, leaving the rail reachable */
+  .right-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(62vw, 360px);
+    height: 100dvh;
+    border-top: none;
+    border-left: 1px solid var(--border-color);
+    box-shadow: -8px 0 28px rgba(0, 0, 0, 0.7);
+    overflow: hidden;
+    transform: translateX(100%);
+    transition: transform 0.28s ease;
+    z-index: 70;
+  }
+
+  .right-panel.open {
+    transform: translateX(0);
   }
 }
