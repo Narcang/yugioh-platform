@@ -25,6 +25,7 @@ import {
 import {
     DeckMeta,
     LoadedDeck,
+    cardFullImageUrl,
     cardImageUrl,
     deckToRows,
     loadDeck,
@@ -61,6 +62,9 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
     const [saveError, setSaveError] = useState<string | null>(null);
     const [savedAt, setSavedAt] = useState<number | null>(null);
     const [zoomed, setZoomed] = useState<DeckCard | null>(null);
+    // Follows the pointer through the list and keeps the last card once it
+    // leaves, so the panel never blinks back to empty while you read it.
+    const [hovered, setHovered] = useState<DeckCard | null>(null);
 
     const isOwner = !!user && !!meta && meta.owner_id === user.id;
     const canEdit = isOwner;
@@ -101,6 +105,10 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
         () => DECK_SECTIONS.filter((s) => s !== 'extra' || rules.hasExtraDeck !== false),
         [rules.hasExtraDeck]
     );
+
+    // Before anything is hovered the panel shows the first card rather than a
+    // hole in the layout.
+    const preview = hovered ?? deck.main[0]?.card ?? deck.extra[0]?.card ?? null;
 
     const addCard = useCallback((result: CardSearchResult) => {
         const card = toDeckCard(result);
@@ -310,6 +318,25 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
             )}
 
             <div className="builder-layout">
+                <aside className="builder-preview" aria-hidden="true">
+                    <div className="preview-sticky">
+                        {preview ? (
+                            <>
+                                <img
+                                    key={preview.cardId}
+                                    src={cardFullImageUrl(preview.cardId)}
+                                    alt={preview.name}
+                                />
+                                <span className="preview-name">{preview.name}</span>
+                            </>
+                        ) : (
+                            <div className="preview-blank">
+                                Passa il mouse su una carta per vederla qui.
+                            </div>
+                        )}
+                    </div>
+                </aside>
+
                 <div className="builder-main">
                     {canEdit && (
                         <div className="builder-search">
@@ -354,13 +381,22 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
                                                 rules.banlist === 'ocg' ? entry.card.banOcg : entry.card.banTcg
                                             );
                                             return (
-                                                <li key={entry.card.cardId} className="deck-entry">
+                                                <li
+                                                    key={entry.card.cardId}
+                                                    className="deck-entry"
+                                                    onMouseEnter={() => setHovered(entry.card)}
+                                                    onFocus={() => setHovered(entry.card)}
+                                                >
                                                     <button
                                                         className="thumb"
                                                         onClick={() => setZoomed(entry.card)}
                                                         aria-label={`Ingrandisci ${entry.card.name}`}
                                                     >
-                                                        <img src={entry.card.imageUrl ?? ''} alt={entry.card.name} />
+                                                        <img
+                                                            src={cardFullImageUrl(entry.card.cardId)}
+                                                            alt={entry.card.name}
+                                                            loading="lazy"
+                                                        />
                                                         <span className="qty">×{entry.quantity}</span>
                                                     </button>
 
@@ -437,7 +473,7 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
             {zoomed && (
                 <div className="card-zoom" onClick={() => setZoomed(null)}>
                     <div className="card-zoom-inner" onClick={(e) => e.stopPropagation()}>
-                        <img src={zoomed.imageUrl ?? ''} alt={zoomed.name} />
+                        <img src={cardFullImageUrl(zoomed.cardId)} alt={zoomed.name} />
                         <div>
                             <h3>{zoomed.name}</h3>
                             <p>{zoomed.frameType}</p>
@@ -455,9 +491,56 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
                 }
                 .builder-layout {
                     display: grid;
-                    grid-template-columns: minmax(0, 1fr) 300px;
+                    grid-template-columns: minmax(0, 1fr) 290px;
                     gap: 24px;
                     align-items: start;
+                }
+
+                .builder-preview {
+                    /* A hover preview is meaningless without a pointer, so on
+                       touch the column is not reserved at all. */
+                    display: none;
+                }
+                .preview-sticky {
+                    position: sticky;
+                    top: 76px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 10px;
+                }
+                .preview-sticky img {
+                    width: 100%;
+                    border-radius: 10px;
+                    display: block;
+                    background: #0d0d0d;
+                    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+                }
+                .preview-name {
+                    font-size: 0.85rem;
+                    color: #d4d4d4;
+                    text-align: center;
+                    line-height: 1.3;
+                }
+                .preview-blank {
+                    aspect-ratio: 0.686;
+                    border: 1px dashed #333;
+                    border-radius: 10px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    text-align: center;
+                    padding: 20px;
+                    color: #737373;
+                    font-size: 0.8rem;
+                }
+
+                @media (hover: hover) and (min-width: 1100px) {
+                    .builder-layout {
+                        grid-template-columns: 250px minmax(0, 1fr) 290px;
+                    }
+                    .builder-preview {
+                        display: block;
+                    }
                 }
                 .builder-search {
                     margin-bottom: 24px;
@@ -516,12 +599,16 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
                     border: 1px solid #262626;
                     border-radius: 8px;
                     padding: 8px;
+                    transition: border-color 0.12s;
+                }
+                .deck-entry:hover {
+                    border-color: #4d4d4d;
                 }
                 .thumb {
                     position: relative;
                     flex-shrink: 0;
-                    width: 38px;
-                    height: 54px;
+                    width: 44px;
+                    height: 64px;
                     padding: 0;
                     border: none;
                     background: #0d0d0d;
@@ -532,7 +619,7 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
                 .thumb img {
                     width: 100%;
                     height: 100%;
-                    object-fit: cover;
+                    object-fit: contain;
                 }
                 .qty {
                     position: absolute;

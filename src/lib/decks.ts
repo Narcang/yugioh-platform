@@ -48,8 +48,17 @@ export interface DeckCardRow {
 export const DECKS_TABLE = 'decks';
 export const DECK_CARDS_TABLE = 'deck_cards';
 
+/** Just the artwork, cropped square. Used for deck covers. */
 export function cardImageUrl(cardId: string): string {
   return `https://images.ygoprodeck.com/images/cards_cropped/${cardId}.jpg`;
+}
+
+/**
+ * The whole card, frame and text included. The cropped art alone is not enough
+ * to tell two cards apart in a list, let alone read one.
+ */
+export function cardFullImageUrl(cardId: string): string {
+  return `https://images.ygoprodeck.com/images/cards/${cardId}.jpg`;
 }
 
 interface YugiohCardRow {
