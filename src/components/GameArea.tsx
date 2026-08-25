@@ -88,6 +88,7 @@ const GameArea: React.FC<GameAreaProps> = ({
         currentRoomId,
         maxPlayers,
         matchMode,
+        setIsCardPanelOpen,
     } = useLayout();
     const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -104,6 +105,8 @@ const GameArea: React.FC<GameAreaProps> = ({
     const totalSlots = slots.length + 1;
 
     const handlePlayerClick = (target: string) => {
+        // On mobile the card sheet covers the fields, so tapping one dismisses it
+        setIsCardPanelOpen(false);
         setSpotlightTarget(target);
         if (layoutMode === 'grid') setLayoutMode('fullscreen');
     };

@@ -15,9 +15,9 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ sendPhase, passTurn, isMyTurn, activePlayerName, turnPosition, playerCount }) => {
-    const { isMicMuted, isVideoEnabled, toggleMic, toggleVideo } = useMedia();
+    const { isMicMuted, isVideoEnabled, toggleMic, toggleVideo, facingMode, hasMultipleCameras, flipCamera } = useMedia();
     const { user, profile } = useAuth();
-    const { layoutMode, spotlightTarget, setLayoutMode, setSpotlightTarget, isSidebarCollapsed, setIsSidebarCollapsed, setIsSettingsOpen, setIsDiceModalOpen, currentRoomId, currentPhase, setCurrentPhase, gameType } = useLayout();
+    const { layoutMode, spotlightTarget, setLayoutMode, setSpotlightTarget, isSidebarCollapsed, setIsSidebarCollapsed, setIsSettingsOpen, setIsDiceModalOpen, isCardPanelOpen, setIsCardPanelOpen, currentRoomId, currentPhase, setCurrentPhase, gameType } = useLayout();
 
     const GAME_PHASES: Record<string, string[]> = {
         'Yugioh': ['Draw Phase', 'Standby Phase', 'Main Phase 1', 'Battle Phase', 'Main Phase 2', 'End Phase'],
@@ -41,7 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sendPhase, passTurn, isMyTurn, active
     return (
         <nav className={`sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
             {/* 0. Logo (Top) */}
-            <div className="sidebar-group">
+            <div className="sidebar-group logo-group">
                 <div className="icon-btn logo-btn">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zm0 9l2.5-1.25L12 8.5l-2.5 1.25L12 11zm0 2.5l-5-2.5-5 2.5L12 22l10-8.5-5-2.5-5 2.5z" /></svg>
                 </div>
@@ -51,7 +51,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sendPhase, passTurn, isMyTurn, active
             {/* 0.5 Phase Controller */}
             <div className="sidebar-group">
                 <button
-                    className="icon-btn"
+                    className={`icon-btn phase-btn ${isMyTurn ? '' : 'is-disabled'}`}
                     title={`Fase Corrente: ${currentPhase}. Clicca per avanzare.`}
                     onClick={() => {
                         if (!isMyTurn) return;
@@ -76,31 +76,17 @@ const Sidebar: React.FC<SidebarProps> = ({ sendPhase, passTurn, isMyTurn, active
                             sendPhase(nextPhase);
                         }
                     }}
-                    style={{
-                        color: isMyTurn ? '#F59E0B' : '#666', // Amber for phases
-                        cursor: isMyTurn ? 'pointer' : 'not-allowed',
-                        opacity: isMyTurn ? 1 : 0.5,
-                        fontSize: '10px',
-                        fontWeight: 'bold',
-                        width: 'auto',
-                        padding: '0 5px',
-                        minWidth: '40px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        lineHeight: '1.2'
-                    }}
                 >
-                    <span style={{ fontSize: '14px', marginBottom: '2px' }}>▶</span>
+                    <span className="phase-arrow">▶</span>
                     <span>{currentPhase.split(' ')[0]}</span>
-                    <span>{currentPhase.split(' ').slice(1).join(' ')}</span>
+                    <span className="phase-label-rest">{currentPhase.split(' ').slice(1).join(' ')}</span>
                 </button>
             </div>
 
             {/* 1. Passa il turno */}
             <div className="sidebar-group">
                 <button
-                    className="icon-btn"
+                    className={`icon-btn pass-turn-btn ${isMyTurn ? '' : 'is-disabled'}`}
                     title={isMyTurn
                         ? 'Passa il turno'
                         : `Turno di ${activePlayerName ?? 'un altro giocatore'}`}
@@ -108,13 +94,8 @@ const Sidebar: React.FC<SidebarProps> = ({ sendPhase, passTurn, isMyTurn, active
                         if (!isMyTurn) return;
                         passTurn();
                     }}
-                    style={{
-                        color: isMyTurn ? '#3B82F6' : '#666',
-                        cursor: isMyTurn ? 'pointer' : 'not-allowed',
-                        opacity: isMyTurn ? 1 : 0.5
-                    }}
                 >
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '32px', height: '32px' }}><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                 </button>
 
                 {playerCount > 2 && (
@@ -154,6 +135,18 @@ const Sidebar: React.FC<SidebarProps> = ({ sendPhase, passTurn, isMyTurn, active
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10" /><line x1="1" y1="1" x2="23" y2="23"></line></svg>
                     )}
                 </button>
+
+                {hasMultipleCameras && (
+                    <button
+                        className="icon-btn mobile-only"
+                        onClick={flipCamera}
+                        title={facingMode === 'environment'
+                            ? 'Passa alla camera frontale'
+                            : 'Passa alla camera posteriore (inquadra il tavolo)'}
+                    >
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 3h4a2 2 0 0 1 2 2v4" /><path d="M9 21H5a2 2 0 0 1-2-2v-4" /><path d="M3 9V5a2 2 0 0 1 2-2h4" /><path d="M21 15v4a2 2 0 0 1-2 2h-4" /><circle cx="12" cy="12" r="3" /></svg>
+                    </button>
+                )}
             </div>
 
             <div className="divider" style={{ width: '40%', height: '1px', background: 'var(--border-color)', margin: '10px auto' }}></div>
@@ -189,7 +182,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sendPhase, passTurn, isMyTurn, active
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><rect x="12" y="12" width="7" height="7" /></svg>
                 </button>
                 <button
-                    className="icon-btn"
+                    className="icon-btn collapse-btn"
                     title={isSidebarCollapsed ? "Blocca Barra Laterale" : "Nascondi pannello di gioco"}
                     onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
                 >
@@ -207,6 +200,13 @@ const Sidebar: React.FC<SidebarProps> = ({ sendPhase, passTurn, isMyTurn, active
 
             {/* 8. Invita, 9. Impostazioni, 10. Dadi */}
             <div className="sidebar-group">
+                <button
+                    className={`icon-btn mobile-only ${isCardPanelOpen ? 'active' : ''}`}
+                    title={isCardPanelOpen ? 'Chiudi le carte' : 'Cerca e mostra carte'}
+                    onClick={() => setIsCardPanelOpen(!isCardPanelOpen)}
+                >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 17l10 5 10-5M2 12l10 5 10-5M2 7l10 5 10-5" /></svg>
+                </button>
                 <button
                     className="icon-btn"
                     title="Invita giocatori"
@@ -234,7 +234,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sendPhase, passTurn, isMyTurn, active
             <div className="divider" style={{ width: '40%', height: '1px', background: 'var(--border-color)', margin: '10px auto' }}></div>
 
             {/* 11. Shortcuts, 12. FAQ, 13. Intro */}
-            <div className="sidebar-group">
+            <div className="sidebar-group help-group">
                 <button className="icon-btn" title="Tasti di scelta Rapida">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z" /></svg>
                 </button>
@@ -249,7 +249,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sendPhase, passTurn, isMyTurn, active
             <div className="spacer" style={{ flex: 1 }}></div>
 
             {/* User profile at bottom */}
-            <div className="sidebar-group">
+            <div className="sidebar-group profile-group">
                 <div className="user-avatar" title={profile?.username || 'User'}>
                     {profile?.avatar_url ? (
                         <img src={profile.avatar_url} alt="User" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />

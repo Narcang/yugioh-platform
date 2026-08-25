@@ -32,7 +32,7 @@ interface SearchResult {
 }
 
 const RightPanel: React.FC<RightPanelProps> = ({ remoteStream, onDeclareCard, lastReceivedCard, dataChannelState, iceConnectionState, connectionLogs, sendPing, reconnect }) => {
-    const { gameType, currentRoomId } = useLayout();
+    const { gameType, currentRoomId, isCardPanelOpen, setIsCardPanelOpen } = useLayout();
 
     // DEBUG: Log gameType on mount and changes
     useEffect(() => {
@@ -220,7 +220,14 @@ const RightPanel: React.FC<RightPanelProps> = ({ remoteStream, onDeclareCard, la
     };
 
     return (
-        <aside className="right-panel">
+        <aside className={`right-panel ${isCardPanelOpen ? 'open' : ''}`}>
+            {/* Grab bar: only rendered as a sheet handle on mobile */}
+            <button
+                className="sheet-handle"
+                onClick={() => setIsCardPanelOpen(false)}
+                aria-label="Chiudi il pannello carte"
+            />
+
             {/* Tab Header */}
             <div className="panel-tabs">
                 <button

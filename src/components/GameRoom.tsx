@@ -69,7 +69,7 @@ const GameRoom: React.FC = () => {
     }, [activePlayerId, myId]);
 
     return (
-        <div className="game-room-container" style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden' }}>
+        <div className="game-room-container">
             <Sidebar
                 sendPhase={sendPhase}
                 passTurn={passTurn}

@@ -1,5 +1,8 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { isHandheldDevice } from '@/lib/device';
+
+export type FacingMode = 'user' | 'environment';
 
 interface MediaContextType {
     localStream: MediaStream | null;
@@ -19,6 +22,9 @@ interface MediaContextType {
     zoom: number;
     setZoomLevel: (level: number) => Promise<void>;
     zoomCapabilities: { min: number, max: number, step: number } | null;
+    facingMode: FacingMode;
+    hasMultipleCameras: boolean;
+    flipCamera: () => Promise<void>;
 }
 
 const MediaContext = createContext<MediaContextType | undefined>(undefined);
@@ -40,6 +46,13 @@ export const MediaProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     const [zoom, setZoom] = useState(1);
     const [zoomCapabilities, setZoomCapabilities] = useState<{ min: number, max: number, step: number } | null>(null);
+    const [facingMode, setFacingMode] = useState<FacingMode>('user');
+
+    /** Browsers may hand us a different camera than requested, so trust the track. */
+    const readFacingMode = (stream: MediaStream, fallback: FacingMode): FacingMode => {
+        const reported = stream.getVideoTracks()[0]?.getSettings().facingMode;
+        return reported === 'environment' || reported === 'user' ? reported : fallback;
+    };
 
     const checkCapabilities = (stream: MediaStream) => {
         const track = stream.getVideoTracks()[0];
@@ -56,13 +69,17 @@ export const MediaProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     useEffect(() => {
         const initStream = async () => {
+            // On phones the useful shot is the table, not the player's face
+            const preferRear = isHandheldDevice();
+
             try {
                 // First try requesting both video and audio
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    video: true,
+                    video: preferRear ? { facingMode: { ideal: 'environment' } } : true,
                     audio: true
                 });
                 setLocalStream(stream);
+                setFacingMode(readFacingMode(stream, preferRear ? 'environment' : 'user'));
                 checkCapabilities(stream);
                 setIsLoading(false);
                 setError(null);
@@ -175,6 +192,38 @@ export const MediaProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         }
     };
 
+    const flipCamera = async () => {
+        const next: FacingMode = facingMode === 'environment' ? 'user' : 'environment';
+
+        try {
+            // 'ideal' rather than 'exact': some phones report odd facing modes
+            // and would reject the request outright.
+            const camStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: { ideal: next } },
+                audio: false,
+            });
+
+            const newVideoTrack = camStream.getVideoTracks()[0];
+            if (!newVideoTrack) return;
+
+            // Swap the video track only, so the mic session and mute state survive
+            const audioTracks = localStream?.getAudioTracks() ?? [];
+            localStream?.getVideoTracks().forEach(track => track.stop());
+
+            const merged = new MediaStream([...audioTracks, newVideoTrack]);
+            setLocalStream(merged);
+            setIsVideoEnabled(true);
+            setFacingMode(readFacingMode(merged, next));
+            checkCapabilities(merged);
+            setZoom(1);
+            setSelectedVideoDeviceId(newVideoTrack.getSettings().deviceId);
+            setError(null);
+        } catch (err) {
+            console.error('Failed to flip camera:', err);
+            setError('Impossibile cambiare fotocamera.');
+        }
+    };
+
     const setZoomLevel = async (level: number) => {
         if (!localStream) return;
         const track = localStream.getVideoTracks()[0];
@@ -208,7 +257,10 @@ export const MediaProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             changeDevice,
             zoom,
             setZoomLevel,
-            zoomCapabilities
+            zoomCapabilities,
+            facingMode,
+            hasMultipleCameras: videoDevices.length > 1,
+            flipCamera
         }}>
             {children}
         </MediaContext.Provider>
