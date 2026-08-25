@@ -14,26 +14,12 @@ const TurnNotification: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        if (isTurnChanging) {
-            // Logic: `isTurnChanging` becomes true BEFORE currentTurn changes.
-            // currentTurn is still the OLD turn (who pressed the button).
-            // If I am 'self', I am passing to 'opponent'.
-            // So if currentTurn is 'self', the turn is leaving me. I should NOT see "IL TUO TURNO".
-            // If currentTurn is 'opponent', the turn is coming to me. I SHOULD see "IL TUO TURNO".
-
-            // Wait, if I am 'self', `switchTurn` is called.
-            // currentTurn is 'self'.
-            // We want to show "IL TUO TURNO" ONLY if it is BECOMING my turn.
-            // So if currentTurn is 'opponent'.
-
-            if (currentTurn === 'opponent') {
-                setVisible(true);
-
-                const timer = setTimeout(() => {
-                    setVisible(false);
-                }, 3000); // Increased duration for dramatic effect
-                return () => clearTimeout(timer);
-            }
+        // The turn is applied before the animation starts, so `currentTurn` already
+        // holds the new owner: announce it only when the seat is ours.
+        if (isTurnChanging && currentTurn === 'self') {
+            setVisible(true);
+            const timer = setTimeout(() => setVisible(false), 3000);
+            return () => clearTimeout(timer);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isTurnChanging]); // CRITICAL: Run only when isTurnChanging toggles, ignore currentTurn layout updates

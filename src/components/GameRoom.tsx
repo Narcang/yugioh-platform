@@ -13,7 +13,7 @@ import { useWebRTC } from '@/hooks/useWebRTC';
 
 
 const GameRoom: React.FC = () => {
-    const { currentRoomId } = useLayout();
+    const { currentRoomId, matchMode } = useLayout();
     const { localStream } = useMedia();
     const { profile, user } = useAuth(); // Get user profile
     const username = profile?.username || user?.email?.split('@')[0] || 'Duelist';
@@ -27,16 +27,21 @@ const GameRoom: React.FC = () => {
         sendLP,
         sendPhase,
         latestReceivedPhase,
-        sendPassTurn,
-        latestReceivePassTurn,
+        myId,
+        myTeam,
+        setMyTeam,
+        turnOrder,
+        activePlayerId,
+        activePlayerName,
+        isMyTurn,
+        passTurn,
         iceConnectionState,
         connectionLogs,
         sendPing,
         reconnect
-    } = useWebRTC(currentRoomId, localStream, username);
+    } = useWebRTC(currentRoomId, localStream, username, matchMode);
 
-    const { setCurrentPhase, switchTurn, currentTurn, isTurnChanging } = useLayout();
-    const lastProcessedTurnRef = React.useRef<number>(0);
+    const { setCurrentPhase, applyTurn, setCurrentTurn, currentTurn, isTurnChanging } = useLayout();
 
     React.useEffect(() => {
         // Only update phase from opponent if it's THEIR turn and we aren't switching
@@ -45,29 +50,42 @@ const GameRoom: React.FC = () => {
         }
     }, [latestReceivedPhase, setCurrentPhase, currentTurn, isTurnChanging]);
 
+    // Mirror the mesh turn into the layout state that drives the UI
+    const lastAppliedTurnRef = React.useRef<string | null>(null);
+    const isFirstTurnRef = React.useRef(true);
     React.useEffect(() => {
-        if (latestReceivePassTurn && latestReceivePassTurn > lastProcessedTurnRef.current) {
-            // Opponent passed turn. It is now my turn.
-            if (currentTurn === 'opponent') {
-                switchTurn();
-                lastProcessedTurnRef.current = latestReceivePassTurn;
+        if (!activePlayerId || lastAppliedTurnRef.current === activePlayerId) return;
+        lastAppliedTurnRef.current = activePlayerId;
+        const mine = activePlayerId === myId;
 
-                // FORCE RESET: Broadcast "Draw Phase" start to ensure opponent sees it too.
-                setTimeout(() => {
-                    sendPhase('Draw Phase');
-                }, 500);
-            }
+        // Entering the room should not trigger the turn announcement
+        if (isFirstTurnRef.current) {
+            isFirstTurnRef.current = false;
+            setCurrentTurn(mine ? 'self' : 'opponent');
+            return;
         }
-    }, [latestReceivePassTurn, currentTurn, switchTurn, sendPhase]);
-
+        applyTurn(mine ? 'self' : 'opponent', activePlayerId);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activePlayerId, myId]);
 
     return (
         <div className="game-room-container" style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden' }}>
-            <Sidebar sendPhase={sendPhase} sendPassTurn={sendPassTurn} />
+            <Sidebar
+                sendPhase={sendPhase}
+                passTurn={passTurn}
+                isMyTurn={isMyTurn}
+                activePlayerName={activePlayerName}
+                turnPosition={turnOrder.indexOf(activePlayerId ?? '') + 1}
+                playerCount={turnOrder.length}
+            />
             <GameArea
                 peers={peers}
                 selfName={username}
                 sendLP={sendLP}
+                myId={myId}
+                myTeam={myTeam}
+                onTeamChange={setMyTeam}
+                activePlayerId={activePlayerId}
             />
             <RightPanel
                 remoteStream={remoteStream}

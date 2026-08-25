@@ -4,11 +4,16 @@ import { useMedia } from '@/context/MediaContext';
 import { useLayout } from '@/context/LayoutContext';
 import PlayerOverlay from './PlayerOverlay';
 import type { RemotePeer } from '@/hooks/useWebRTC';
+import type { TeamId } from '@/lib/gameConfig';
 
 interface GameAreaProps {
     peers: RemotePeer[];
     selfName?: string;
     sendLP?: (lp: number) => void;
+    myId: string;
+    myTeam: TeamId;
+    onTeamChange: (team: TeamId) => void;
+    activePlayerId: string | null;
 }
 
 /** Renders one remote peer's video feed */
@@ -63,7 +68,15 @@ const RemoteSlot: React.FC<{
     );
 };
 
-const GameArea: React.FC<GameAreaProps> = ({ peers, selfName = 'Duelist', sendLP }) => {
+const GameArea: React.FC<GameAreaProps> = ({
+    peers,
+    selfName = 'Duelist',
+    sendLP,
+    myId,
+    myTeam,
+    onTeamChange,
+    activePlayerId,
+}) => {
     const { localStream, isVideoEnabled, error } = useMedia();
     const {
         layoutMode,
@@ -117,12 +130,7 @@ const GameArea: React.FC<GameAreaProps> = ({ peers, selfName = 'Duelist', sendLP
         return '';
     };
 
-    // In 2v2 the local player is paired with the first remote peer
-    const teamOf = (slotIndex: number | 'self'): string | undefined => {
-        if (matchMode !== 'teams' || totalSlots !== 4) return undefined;
-        if (slotIndex === 'self') return 'A';
-        return slotIndex === 0 ? 'A' : 'B';
-    };
+    const showTeams = matchMode === 'teams' && maxPlayers === 4;
 
     return (
         <div className={`game-area ${layoutMode} players-${totalSlots}`}>
@@ -131,7 +139,7 @@ const GameArea: React.FC<GameAreaProps> = ({ peers, selfName = 'Duelist', sendLP
                 return (
                     <div
                         key={target}
-                        className={`player-slot remote ${getSlotClass(target)}`}
+                        className={`player-slot remote ${getSlotClass(target)} ${peer && peer.id === activePlayerId ? 'active-turn' : ''}`}
                         onClick={() => peer && handlePlayerClick(target)}
                         style={{ cursor: peer ? 'pointer' : 'default' }}
                     >
@@ -140,7 +148,7 @@ const GameArea: React.FC<GameAreaProps> = ({ peers, selfName = 'Duelist', sendLP
                                 peer={peer}
                                 baseLifePoints={baseLifePoints}
                                 fitMode={videoFitMode}
-                                teamLabel={teamOf(index)}
+                                teamLabel={showTeams ? peer.team ?? undefined : undefined}
                             />
                         ) : (
                             <div className="video-placeholder">
@@ -155,7 +163,7 @@ const GameArea: React.FC<GameAreaProps> = ({ peers, selfName = 'Duelist', sendLP
 
             {/* Local player */}
             <div
-                className={`player-slot self ${getSlotClass('self')}`}
+                className={`player-slot self ${getSlotClass('self')} ${activePlayerId === myId ? 'active-turn' : ''}`}
                 onClick={() => handlePlayerClick('self')}
                 style={{ cursor: 'pointer' }}
             >
@@ -192,7 +200,8 @@ const GameArea: React.FC<GameAreaProps> = ({ peers, selfName = 'Duelist', sendLP
                     isSelf
                     initialLP={baseLifePoints}
                     onLpChange={sendLP}
-                    teamLabel={teamOf('self')}
+                    teamLabel={showTeams ? myTeam : undefined}
+                    onTeamToggle={showTeams ? () => onTeamChange(myTeam === 'A' ? 'B' : 'A') : undefined}
                 />
             </div>
 

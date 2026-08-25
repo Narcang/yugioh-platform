@@ -343,6 +343,54 @@ body {
   border-right: 1px solid var(--border-color);
 }
 
+/* Highlight the seat whose turn it is */
+.game-area .player-slot.active-turn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 15;
+  border: 2px solid #F0C75E;
+  box-shadow: inset 0 0 24px rgba(240, 199, 94, 0.35);
+  animation: activeTurnPulse 2s ease-in-out infinite;
+}
+
+@keyframes activeTurnPulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+.game-area .player-slot.active-turn.hidden::after {
+  display: none;
+}
+
+/* Turn tracker dots in the sidebar (3-4 player rooms) */
+.turn-tracker {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+.turn-tracker .turn-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #444;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.turn-tracker .turn-dot.active {
+  background: #F0C75E;
+  transform: scale(1.4);
+}
+
 /* Hidden slots in fullscreen spotlight mode */
 .game-area .player-slot.hidden {
   display: none;

@@ -6,13 +6,18 @@ import { useAuth } from '@/context/AuthContext';
 
 interface SidebarProps {
     sendPhase: (phase: string) => void;
-    sendPassTurn: () => void;
+    passTurn: () => void;
+    isMyTurn: boolean;
+    activePlayerName: string | null;
+    /** 1-based seat of the active player, 0 when unknown */
+    turnPosition: number;
+    playerCount: number;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ sendPhase, sendPassTurn }) => {
+const Sidebar: React.FC<SidebarProps> = ({ sendPhase, passTurn, isMyTurn, activePlayerName, turnPosition, playerCount }) => {
     const { isMicMuted, isVideoEnabled, toggleMic, toggleVideo } = useMedia();
     const { user, profile } = useAuth();
-    const { layoutMode, spotlightTarget, setLayoutMode, setSpotlightTarget, isSidebarCollapsed, setIsSidebarCollapsed, setIsSettingsOpen, setIsDiceModalOpen, currentRoomId, switchTurn, currentTurn, selfTimeLeft, timeLimit, currentPhase, setCurrentPhase, gameType } = useLayout();
+    const { layoutMode, spotlightTarget, setLayoutMode, setSpotlightTarget, isSidebarCollapsed, setIsSidebarCollapsed, setIsSettingsOpen, setIsDiceModalOpen, currentRoomId, currentPhase, setCurrentPhase, gameType } = useLayout();
 
     const GAME_PHASES: Record<string, string[]> = {
         'Yugioh': ['Draw Phase', 'Standby Phase', 'Main Phase 1', 'Battle Phase', 'Main Phase 2', 'End Phase'],
@@ -49,7 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sendPhase, sendPassTurn }) => {
                     className="icon-btn"
                     title={`Fase Corrente: ${currentPhase}. Clicca per avanzare.`}
                     onClick={() => {
-                        if (currentTurn !== 'self') return;
+                        if (!isMyTurn) return;
 
                         const phases = GAME_PHASES[gameType] || GAME_PHASES['Yugioh'];
                         const currentIndex = phases.indexOf(currentPhase);
@@ -59,9 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sendPhase, sendPassTurn }) => {
                         if (currentIndex !== -1 && currentIndex < phases.length - 1) {
                             nextPhase = phases[currentIndex + 1];
                         } else if (currentIndex === phases.length - 1) {
-                            // If last phase, switch turn
-                            switchTurn();
-                            sendPassTurn();
+                            passTurn();
                             return;
                         } else {
                             // Fallback/Reset if phase not found
@@ -74,9 +77,9 @@ const Sidebar: React.FC<SidebarProps> = ({ sendPhase, sendPassTurn }) => {
                         }
                     }}
                     style={{
-                        color: currentTurn === 'self' ? '#F59E0B' : '#666', // Amber for phases
-                        cursor: currentTurn === 'self' ? 'pointer' : 'not-allowed',
-                        opacity: currentTurn === 'self' ? 1 : 0.5,
+                        color: isMyTurn ? '#F59E0B' : '#666', // Amber for phases
+                        cursor: isMyTurn ? 'pointer' : 'not-allowed',
+                        opacity: isMyTurn ? 1 : 0.5,
                         fontSize: '10px',
                         fontWeight: 'bold',
                         width: 'auto',
@@ -98,19 +101,29 @@ const Sidebar: React.FC<SidebarProps> = ({ sendPhase, sendPassTurn }) => {
             <div className="sidebar-group">
                 <button
                     className="icon-btn"
-                    title={currentTurn === 'self' ? "Passa il turno" : "È il turno dell'avversario"}
+                    title={isMyTurn
+                        ? 'Passa il turno'
+                        : `Turno di ${activePlayerName ?? 'un altro giocatore'}`}
                     onClick={() => {
-                        switchTurn();
-                        sendPassTurn();
+                        if (!isMyTurn) return;
+                        passTurn();
                     }}
                     style={{
-                        color: currentTurn === 'self' ? '#3B82F6' : '#666',
-                        cursor: currentTurn === 'self' ? 'pointer' : 'not-allowed',
-                        opacity: currentTurn === 'self' ? 1 : 0.5
+                        color: isMyTurn ? '#3B82F6' : '#666',
+                        cursor: isMyTurn ? 'pointer' : 'not-allowed',
+                        opacity: isMyTurn ? 1 : 0.5
                     }}
                 >
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '32px', height: '32px' }}><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                 </button>
+
+                {playerCount > 2 && (
+                    <div className="turn-tracker" title={`Turno ${turnPosition} di ${playerCount}`}>
+                        {Array.from({ length: playerCount }, (_, i) => (
+                            <span key={i} className={`turn-dot ${i === turnPosition - 1 ? 'active' : ''}`} />
+                        ))}
+                    </div>
+                )}
             </div>
 
             <div className="spacer" style={{ flex: '0 0 50px' }}></div>

@@ -9,9 +9,11 @@ interface PlayerOverlayProps {
     currentLP?: number;
     initialLP?: number;
     teamLabel?: string;
+    /** When set, the badge becomes a button that swaps the player's team */
+    onTeamToggle?: () => void;
 }
 
-const PlayerOverlay: React.FC<PlayerOverlayProps> = ({ name, isSelf, onLpChange, currentLP, initialLP = 8000, teamLabel }) => {
+const PlayerOverlay: React.FC<PlayerOverlayProps> = ({ name, isSelf, onLpChange, currentLP, initialLP = 8000, teamLabel, onTeamToggle }) => {
     const [lifePoints, setLifePoints] = useState(initialLP);
     const [stepInput, setStepInput] = useState<string>(() => String(getDefaultLpStep(initialLP)));
 
@@ -141,7 +143,17 @@ const PlayerOverlay: React.FC<PlayerOverlayProps> = ({ name, isSelf, onLpChange,
                         </span>
                         <span className="player-name">{name}</span>
                         {teamLabel && (
-                            <span className="team-badge">Team {teamLabel}</span>
+                            onTeamToggle ? (
+                                <button
+                                    className="team-badge switchable"
+                                    onClick={(e) => { e.stopPropagation(); onTeamToggle(); }}
+                                    title="Cambia squadra"
+                                >
+                                    Team {teamLabel} ⇄
+                                </button>
+                            ) : (
+                                <span className="team-badge">Team {teamLabel}</span>
+                            )
                         )}
                     </div>
 
@@ -163,6 +175,15 @@ const PlayerOverlay: React.FC<PlayerOverlayProps> = ({ name, isSelf, onLpChange,
                     background: rgba(240, 199, 94, 0.15);
                     border: 1px solid rgba(240, 199, 94, 0.4);
                     color: #F0C75E;
+                }
+                .team-badge.switchable {
+                    cursor: pointer;
+                    font-family: inherit;
+                    transition: background 0.2s, border-color 0.2s;
+                }
+                .team-badge.switchable:hover {
+                    background: rgba(240, 199, 94, 0.35);
+                    border-color: #F0C75E;
                 }
                 .controls-row {
                     display: flex;

@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { RealtimeChannel } from '@supabase/supabase-js';
+import { MatchMode, TeamId, autoTeamFor, buildTurnOrder } from '@/lib/gameConfig';
 
 const ICE_SERVERS = {
     iceServers: [
@@ -41,12 +42,18 @@ export interface RemotePeer {
     username: string;
     stream: MediaStream | null;
     lifePoints: number | null;
+    team: TeamId | null;
 }
 
 interface PeerMeta {
     username: string;
     /** True when this client is responsible for creating offers to that peer */
     isOfferer: boolean;
+}
+
+interface PresencePayload {
+    username: string;
+    team?: TeamId;
 }
 
 /**
@@ -61,7 +68,8 @@ interface PeerMeta {
 export const useWebRTC = (
     roomId: string | null,
     localStream: MediaStream | null,
-    username: string = 'User'
+    username: string = 'User',
+    matchMode: MatchMode = 'ffa'
 ) => {
     const [peers, setPeers] = useState<RemotePeer[]>([]);
     const [isConnected, setIsConnected] = useState(false);
@@ -78,10 +86,16 @@ export const useWebRTC = (
     const localStreamRef = useRef<MediaStream | null>(null);
     const usernameRef = useRef(username);
     usernameRef.current = username;
+    /** Kept in a ref so presence tracking on subscribe sees the current team */
+    const teamRef = useRef<TeamId>('A');
 
     const [latestReceivedCard, setLatestReceivedCard] = useState<any | null>(null);
     const [latestReceivedPhase, setLatestReceivedPhase] = useState<string | null>(null);
-    const [latestReceivePassTurn, setLatestReceivePassTurn] = useState<number | null>(null);
+
+    /** Player whose turn it is, kept in sync across the mesh */
+    const [activePlayerId, setActivePlayerId] = useState<string | null>(null);
+    /** null = follow the balanced default, otherwise the team the player picked */
+    const [teamChoice, setTeamChoice] = useState<TeamId | null>(null);
 
     // DEBUG STATE
     const [dataChannelState, setDataChannelState] = useState<string>('closed');
@@ -106,6 +120,7 @@ export const useWebRTC = (
                     username: patch.username ?? 'Duelist',
                     stream: patch.stream ?? null,
                     lifePoints: patch.lifePoints ?? null,
+                    team: patch.team ?? null,
                 }];
             }
             const next = [...prev];
@@ -169,8 +184,8 @@ export const useWebRTC = (
                     case 'phase-update':
                         setLatestReceivedPhase(parsed.data);
                         break;
-                    case 'pass-turn':
-                        setLatestReceivePassTurn(parsed.data);
+                    case 'turn-change':
+                        setActivePlayerId(parsed.data);
                         break;
                 }
             } catch { }
@@ -294,7 +309,7 @@ export const useWebRTC = (
 
         signaling
             .on('presence', { event: 'sync' }, () => {
-                const state = signaling.presenceState<{ username: string }>();
+                const state = signaling.presenceState<PresencePayload>();
                 const presentIds = Object.keys(state).filter(id => id !== myId);
                 addLog(`Presence sync — peers: ${presentIds.join(', ') || 'none'}`);
 
@@ -302,16 +317,18 @@ export const useWebRTC = (
                 presentIds.forEach(peerId => {
                     const entry = state[peerId]?.[0];
                     const peerUsername = entry?.username ?? 'Duelist';
+                    const peerTeam = entry?.team ?? null;
                     if (peerConnections.current.has(peerId)) {
                         peerMeta.current.set(peerId, {
                             username: peerUsername,
                             isOfferer: peerMeta.current.get(peerId)?.isOfferer ?? false,
                         });
-                        upsertPeer(peerId, { username: peerUsername });
+                        upsertPeer(peerId, { username: peerUsername, team: peerTeam });
                         return;
                     }
                     const iAmOfferer = myId < peerId;
                     const pc = ensurePeerConnection(peerId, peerUsername, iAmOfferer);
+                    upsertPeer(peerId, { team: peerTeam });
                     if (iAmOfferer) {
                         createOffer(peerId, pc);
                     } else {
@@ -400,15 +417,15 @@ export const useWebRTC = (
                 if (payload.from === myId) return;
                 setLatestReceivedPhase(payload.data);
             })
-            .on('broadcast', { event: 'pass-turn' }, ({ payload }) => {
+            .on('broadcast', { event: 'turn-change' }, ({ payload }) => {
                 if (payload.from === myId) return;
-                setLatestReceivePassTurn(payload.data);
+                setActivePlayerId(payload.data);
             })
             .subscribe(async (status) => {
                 addLog(`Supabase: ${status}`);
                 if (status === 'SUBSCRIBED') {
                     isSubscribed.current = true;
-                    await signaling.track({ username: usernameRef.current });
+                    await signaling.track({ username: usernameRef.current, team: teamRef.current });
                 }
             });
 
@@ -486,9 +503,72 @@ export const useWebRTC = (
     const sendCard = useCallback((cardData: any) => broadcast('card-declared', cardData), [broadcast]);
     const sendLP = useCallback((lp: number) => broadcast('lp-update', lp), [broadcast]);
     const sendPhase = useCallback((phase: string) => broadcast('phase-update', phase), [broadcast]);
-    const sendPassTurn = useCallback(() => broadcast('pass-turn', Date.now()), [broadcast]);
 
     const sendPing = useCallback(() => broadcast('ping', Date.now()), [broadcast]);
+
+    // ─────────────────────────────────────────────────────────────────
+    // Seating, teams and turn rotation
+    // ─────────────────────────────────────────────────────────────────
+    const myId = clientId.current;
+
+    // Sorted ids are the backbone of both team defaults and seating: every
+    // client derives the same values from the same presence list.
+    const sortedIds = useMemo(
+        () => [myId, ...peers.map(p => p.id)].sort((a, b) => a.localeCompare(b)),
+        [myId, peers]
+    );
+
+    const myTeam: TeamId = teamChoice ?? autoTeamFor(sortedIds, myId);
+    teamRef.current = myTeam;
+
+    // Publish the team so the others can seat us on the right side
+    useEffect(() => {
+        if (!isSubscribed.current || !channel.current) return;
+        channel.current.track({ username: usernameRef.current, team: myTeam });
+    }, [myTeam, username]);
+
+    const resolvedPeers = useMemo<RemotePeer[]>(
+        () => peers.map(p => ({ ...p, team: p.team ?? autoTeamFor(sortedIds, p.id) })),
+        [peers, sortedIds]
+    );
+
+    const turnOrder = useMemo(() => {
+        const roster = [
+            { id: myId, team: myTeam },
+            ...resolvedPeers.map(p => ({ id: p.id, team: p.team as TeamId })),
+        ];
+        return buildTurnOrder(roster, matchMode);
+    }, [myId, myTeam, resolvedPeers, matchMode]);
+
+    const turnOrderRef = useRef<string[]>(turnOrder);
+    turnOrderRef.current = turnOrder;
+    const activePlayerRef = useRef<string | null>(activePlayerId);
+    activePlayerRef.current = activePlayerId;
+
+    // First seat starts, and if the active player disconnects the turn falls
+    // back to the top of the order instead of stalling the match.
+    useEffect(() => {
+        if (turnOrder.length === 0) return;
+        if (!activePlayerId || !turnOrder.includes(activePlayerId)) {
+            setActivePlayerId(turnOrder[0]);
+        }
+    }, [turnOrder, activePlayerId]);
+
+    const passTurn = useCallback(() => {
+        const order = turnOrderRef.current;
+        if (order.length === 0) return;
+        const currentIndex = order.indexOf(activePlayerRef.current ?? '');
+        const next = order[(currentIndex + 1) % order.length];
+        setActivePlayerId(next);
+        broadcast('turn-change', next);
+    }, [broadcast]);
+
+    const setMyTeam = useCallback((team: TeamId) => setTeamChoice(team), []);
+
+    const isMyTurn = activePlayerId === myId;
+    const activePlayerName = activePlayerId === myId
+        ? username
+        : resolvedPeers.find(p => p.id === activePlayerId)?.username ?? null;
 
     const reconnect = useCallback(() => {
         addLog('Manual reconnect: restarting ICE on all peers...');
@@ -496,10 +576,10 @@ export const useWebRTC = (
     }, [addLog]);
 
     // Backwards-compatible single-opponent view (first remote peer)
-    const primaryPeer = peers[0] ?? null;
+    const primaryPeer = resolvedPeers[0] ?? null;
 
     return {
-        peers,
+        peers: resolvedPeers,
         isConnected,
         remoteStream: primaryPeer?.stream ?? null,
         remoteUsername: primaryPeer?.username ?? null,
@@ -510,8 +590,14 @@ export const useWebRTC = (
         sendLP,
         sendPhase,
         latestReceivedPhase,
-        sendPassTurn,
-        latestReceivePassTurn,
+        myId,
+        myTeam,
+        setMyTeam,
+        turnOrder,
+        activePlayerId,
+        activePlayerName,
+        isMyTurn,
+        passTurn,
         iceConnectionState,
         connectionLogs,
         sendPing,

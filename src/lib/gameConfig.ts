@@ -4,6 +4,10 @@
 
 export type MatchMode = 'ffa' | 'teams';
 
+export type TeamId = 'A' | 'B';
+
+export const TEAM_IDS: TeamId[] = ['A', 'B'];
+
 /**
  * Base life / HP values per game type and format.
  * Used when creating or joining a lobby.
@@ -120,4 +124,37 @@ export function getMatchModeLabel(mode: MatchMode, playerCount: number): string 
 
 export function getPlayerCountLabel(count: number): string {
   return count === 2 ? '2 giocatori (1v1)' : `${count} giocatori`;
+}
+
+/**
+ * Balanced default team for a player, derived only from the sorted list of
+ * player ids so that every client computes the same assignment.
+ */
+export function autoTeamFor(sortedIds: string[], id: string): TeamId {
+  const index = sortedIds.indexOf(id);
+  return index % 2 === 0 ? 'A' : 'B';
+}
+
+/**
+ * Seating order used to rotate turns. Sorting by id makes the result identical
+ * on every client without needing a server. In teams mode the two rosters are
+ * interleaved (A1, B1, A2, B2) so opposing teams always alternate.
+ */
+export function buildTurnOrder(
+  players: { id: string; team: TeamId }[],
+  matchMode: MatchMode
+): string[] {
+  const sorted = [...players].sort((a, b) => a.id.localeCompare(b.id));
+  if (matchMode !== 'teams') return sorted.map(p => p.id);
+
+  const rosters = TEAM_IDS.map(team => sorted.filter(p => p.team === team));
+  const depth = Math.max(...rosters.map(r => r.length));
+  const order: string[] = [];
+
+  for (let seat = 0; seat < depth; seat++) {
+    rosters.forEach(roster => {
+      if (roster[seat]) order.push(roster[seat].id);
+    });
+  }
+  return order;
 }

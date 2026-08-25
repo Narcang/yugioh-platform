@@ -22,6 +22,8 @@ interface LayoutContextType {
     setCurrentTurn: (turn: TurnState) => void;
     isTurnChanging: boolean;
     switchTurn: () => void;
+    /** Applies a turn decided by the mesh, optionally spotlighting the active seat */
+    applyTurn: (turn: TurnState, spotlightId?: string) => void;
     selfTimeLeft: number;
     opponentTimeLeft: number;
     timeLimit: number;
@@ -118,27 +120,22 @@ export const LayoutProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         setOpponentTimeLeft(halfTimeSeconds);
     }, [timeLimit]);
 
+    // The mesh decides who plays, so the turn is applied rather than toggled.
+    const applyTurn = (turn: TurnState, spotlightId?: string) => {
+        setCurrentTurn(turn);
+        setCurrentPhase(getFirstPhase(gameType));
+        setIsTurnChanging(true);
+
+        if (autoSwitchSpotlight) {
+            setSpotlightTarget(turn === 'self' ? 'self' : spotlightId ?? 'opponent');
+        }
+
+        setTimeout(() => setIsTurnChanging(false), 2000); // matches the notification animation
+    };
+
     const switchTurn = () => {
         if (isTurnChanging) return;
-        setIsTurnChanging(true);
-        setTimeout(() => {
-            setCurrentTurn(prev => prev === 'self' ? 'opponent' : 'self');
-            // Auto switch spotlight to active player? Maybe. Use preference.
-            if (autoSwitchSpotlight) {
-                setSpotlightTarget(currentTurn === 'self' ? 'opponent' : 'self');
-            }
-        }, 1000); // Wait for animation half-way? Or just change it immediately and let animation play?
-
-        // Let's change state immediately for logic, but animation handles visual
-        // Actually for "PASS TURN", usually we want a delay. 
-        // Let's do: Start Animation -> Change State -> End Animation
-
-        // Reset Phase on Turn Switch
-        setCurrentPhase(getFirstPhase(gameType));
-
-        setTimeout(() => {
-            setIsTurnChanging(false);
-        }, 2000); // 2s total animation duration
+        applyTurn(currentTurn === 'self' ? 'opponent' : 'self');
     };
 
     return (
@@ -164,6 +161,7 @@ export const LayoutProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             currentTurn,
             isTurnChanging,
             switchTurn,
+            applyTurn,
             setCurrentTurn, // Exposed for initialization
             selfTimeLeft,
             opponentTimeLeft,
