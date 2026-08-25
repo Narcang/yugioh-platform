@@ -11,9 +11,12 @@ interface PlayerOverlayProps {
     teamLabel?: string;
     /** When set, the badge becomes a button that swaps the player's team */
     onTeamToggle?: () => void;
+    /** When set, shows a control that turns this player's camera a quarter turn */
+    onRotate?: () => void;
+    rotation?: number;
 }
 
-const PlayerOverlay: React.FC<PlayerOverlayProps> = ({ name, isSelf, onLpChange, currentLP, initialLP = 8000, teamLabel, onTeamToggle }) => {
+const PlayerOverlay: React.FC<PlayerOverlayProps> = ({ name, isSelf, onLpChange, currentLP, initialLP = 8000, teamLabel, onTeamToggle, onRotate, rotation = 0 }) => {
     const [lifePoints, setLifePoints] = useState(initialLP);
     const [stepInput, setStepInput] = useState<string>(() => String(getDefaultLpStep(initialLP)));
 
@@ -157,9 +160,20 @@ const PlayerOverlay: React.FC<PlayerOverlayProps> = ({ name, isSelf, onLpChange,
                         )}
                     </div>
 
-                    <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" /></svg>
-                    </button>
+                    <div className="center" style={{ gap: '4px' }}>
+                        {onRotate && (
+                            <button
+                                className="rotate-btn"
+                                onClick={(e) => { e.stopPropagation(); onRotate(); }}
+                                title={`Ruota l'inquadratura (${rotation}°). Anche gli avversari la vedranno raddrizzata.`}
+                            >
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 2v6h-6" /><path d="M3 12a9 9 0 0 1 15-6.7L21 8" /><path d="M3 22v-6h6" /><path d="M21 12a9 9 0 0 1-15 6.7L3 16" /></svg>
+                            </button>
+                        )}
+                        <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" /></svg>
+                        </button>
+                    </div>
                 </div>
 
             </div>
@@ -184,6 +198,20 @@ const PlayerOverlay: React.FC<PlayerOverlayProps> = ({ name, isSelf, onLpChange,
                 .team-badge.switchable:hover {
                     background: rgba(240, 199, 94, 0.35);
                     border-color: #F0C75E;
+                }
+                .rotate-btn {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: none;
+                    border: none;
+                    padding: 2px;
+                    color: var(--text-muted);
+                    cursor: pointer;
+                    transition: color 0.2s;
+                }
+                .rotate-btn:hover {
+                    color: #F0C75E;
                 }
                 .controls-row {
                     display: flex;

@@ -14,7 +14,7 @@ import { useWebRTC } from '@/hooks/useWebRTC';
 
 const GameRoom: React.FC = () => {
     const { currentRoomId, matchMode } = useLayout();
-    const { localStream } = useMedia();
+    const { localStream, videoRotation } = useMedia();
     const { profile, user } = useAuth(); // Get user profile
     const username = profile?.username || user?.email?.split('@')[0] || 'Duelist';
 
@@ -39,7 +39,7 @@ const GameRoom: React.FC = () => {
         connectionLogs,
         sendPing,
         reconnect
-    } = useWebRTC(currentRoomId, localStream, username, matchMode);
+    } = useWebRTC(currentRoomId, localStream, username, matchMode, videoRotation);
 
     const { setCurrentPhase, applyTurn, setCurrentTurn, currentTurn, isTurnChanging } = useLayout();
 

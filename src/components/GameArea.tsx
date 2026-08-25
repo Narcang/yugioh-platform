@@ -40,17 +40,18 @@ const RemoteSlot: React.FC<{
 
     return (
         <>
-            <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: fitMode,
-                    display: peer.stream ? 'block' : 'none',
-                }}
-            />
+            <div className="video-frame">
+                <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    className={`rot-${peer.rotation}`}
+                    style={{
+                        objectFit: fitMode,
+                        display: peer.stream ? 'block' : 'none',
+                    }}
+                />
+            </div>
             {!peer.stream && (
                 <div className="video-placeholder">
                     <p style={{ color: 'var(--text-muted)' }}>In attesa di {peer.username}...</p>
@@ -77,7 +78,16 @@ const GameArea: React.FC<GameAreaProps> = ({
     onTeamChange,
     activePlayerId,
 }) => {
-    const { localStream, isVideoEnabled, error } = useMedia();
+    const {
+        localStream,
+        isVideoEnabled,
+        error,
+        videoRotation,
+        rotateVideo,
+        zoom,
+        zoomCapabilities,
+        setZoomLevel,
+    } = useMedia();
     const {
         layoutMode,
         spotlightTarget,
@@ -135,6 +145,33 @@ const GameArea: React.FC<GameAreaProps> = ({
 
     const showTeams = matchMode === 'teams' && maxPlayers === 4;
 
+    // Pinch on your own feed drives the camera's optical/digital zoom. The page
+    // itself cannot be pinched (see the viewport meta), so the gesture is free.
+    const pinch = useRef<{ distance: number; zoom: number } | null>(null);
+
+    const touchSpread = (touches: React.TouchList) => {
+        const [a, b] = [touches[0], touches[1]];
+        return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+    };
+
+    const handlePinchStart = (e: React.TouchEvent) => {
+        if (e.touches.length !== 2 || !zoomCapabilities) return;
+        pinch.current = { distance: touchSpread(e.touches), zoom };
+    };
+
+    const handlePinchMove = (e: React.TouchEvent) => {
+        const start = pinch.current;
+        if (!start || e.touches.length !== 2 || !zoomCapabilities) return;
+
+        const { min, max, step } = zoomCapabilities;
+        const target = start.zoom * (touchSpread(e.touches) / start.distance);
+        const next = Math.min(max, Math.max(min, target));
+
+        // Skip sub-step changes: every update is an async applyConstraints call
+        if (Math.abs(next - zoom) < (step || 0.1)) return;
+        setZoomLevel(next);
+    };
+
     return (
         <div className={`game-area ${layoutMode} players-${totalSlots}`}>
             {slots.map((peer, index) => {
@@ -168,6 +205,9 @@ const GameArea: React.FC<GameAreaProps> = ({
             <div
                 className={`player-slot self ${getSlotClass('self')} ${activePlayerId === myId ? 'active-turn' : ''}`}
                 onClick={() => handlePlayerClick('self')}
+                onTouchStart={handlePinchStart}
+                onTouchMove={handlePinchMove}
+                onTouchEnd={() => { pinch.current = null; }}
                 style={{ cursor: 'pointer' }}
             >
                 {error && (
@@ -177,13 +217,16 @@ const GameArea: React.FC<GameAreaProps> = ({
                 )}
 
                 {localStream && isVideoEnabled ? (
-                    <video
-                        ref={videoRef}
-                        autoPlay
-                        muted
-                        playsInline
-                        style={{ width: '100%', height: '100%', objectFit: videoFitMode }}
-                    />
+                    <div className="video-frame">
+                        <video
+                            ref={videoRef}
+                            autoPlay
+                            muted
+                            playsInline
+                            className={`rot-${videoRotation}`}
+                            style={{ objectFit: videoFitMode }}
+                        />
+                    </div>
                 ) : (
                     <div className="video-placeholder">
                         {localStream ? (
@@ -205,6 +248,8 @@ const GameArea: React.FC<GameAreaProps> = ({
                     onLpChange={sendLP}
                     teamLabel={showTeams ? myTeam : undefined}
                     onTeamToggle={showTeams ? () => onTeamChange(myTeam === 'A' ? 'B' : 'A') : undefined}
+                    onRotate={rotateVideo}
+                    rotation={videoRotation}
                 />
             </div>
 

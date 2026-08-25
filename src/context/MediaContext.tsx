@@ -4,6 +4,9 @@ import { findUltraWideRearCamera, isHandheldDevice } from '@/lib/device';
 
 export type FacingMode = 'user' | 'environment';
 
+/** Quarter turns applied to the outgoing video, so peers see cards upright */
+export type VideoRotation = 0 | 90 | 180 | 270;
+
 interface MediaContextType {
     localStream: MediaStream | null;
     isMicMuted: boolean;
@@ -25,6 +28,8 @@ interface MediaContextType {
     facingMode: FacingMode;
     hasMultipleCameras: boolean;
     flipCamera: () => Promise<void>;
+    videoRotation: VideoRotation;
+    rotateVideo: () => void;
 }
 
 const MediaContext = createContext<MediaContextType | undefined>(undefined);
@@ -47,6 +52,13 @@ export const MediaProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const [zoom, setZoom] = useState(1);
     const [zoomCapabilities, setZoomCapabilities] = useState<{ min: number, max: number, step: number } | null>(null);
     const [facingMode, setFacingMode] = useState<FacingMode>('user');
+    const [videoRotation, setVideoRotation] = useState<VideoRotation>(0);
+
+    // Rotating pixels would mean re-encoding the track, so the angle travels to
+    // the peers instead and each side rotates on display.
+    const rotateVideo = () => {
+        setVideoRotation(prev => ((prev + 90) % 360) as VideoRotation);
+    };
 
     /** Browsers may hand us a different camera than requested, so trust the track. */
     const readFacingMode = (stream: MediaStream, fallback: FacingMode): FacingMode => {
@@ -247,7 +259,13 @@ export const MediaProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 checkCapabilities(newStream);
             }
 
-            if (kind === 'videoinput') setSelectedVideoDeviceId(deviceId);
+            if (kind === 'videoinput') {
+                setSelectedVideoDeviceId(deviceId);
+                setFacingMode(readFacingMode(newStream, facingMode));
+                setZoom(1);
+                // Hand-picking a lens should still open it as wide as it goes
+                await widenFraming(newStream);
+            }
             if (kind === 'audioinput') setSelectedAudioInputDeviceId(deviceId);
 
         } catch (err) {
@@ -332,7 +350,9 @@ export const MediaProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             zoomCapabilities,
             facingMode,
             hasMultipleCameras: videoDevices.length > 1,
-            flipCamera
+            flipCamera,
+            videoRotation,
+            rotateVideo
         }}>
             {children}
         </MediaContext.Provider>

@@ -43,6 +43,8 @@ export interface RemotePeer {
     stream: MediaStream | null;
     lifePoints: number | null;
     team: TeamId | null;
+    /** Quarter turns this peer applied to their own camera */
+    rotation: number;
 }
 
 interface PeerMeta {
@@ -54,6 +56,7 @@ interface PeerMeta {
 interface PresencePayload {
     username: string;
     team?: TeamId;
+    rotation?: number;
 }
 
 /**
@@ -69,7 +72,8 @@ export const useWebRTC = (
     roomId: string | null,
     localStream: MediaStream | null,
     username: string = 'User',
-    matchMode: MatchMode = 'ffa'
+    matchMode: MatchMode = 'ffa',
+    videoRotation: number = 0
 ) => {
     const [peers, setPeers] = useState<RemotePeer[]>([]);
     const [isConnected, setIsConnected] = useState(false);
@@ -86,8 +90,10 @@ export const useWebRTC = (
     const localStreamRef = useRef<MediaStream | null>(null);
     const usernameRef = useRef(username);
     usernameRef.current = username;
-    /** Kept in a ref so presence tracking on subscribe sees the current team */
+    /** Kept in refs so presence tracking on subscribe sees the current values */
     const teamRef = useRef<TeamId>('A');
+    const rotationRef = useRef(videoRotation);
+    rotationRef.current = videoRotation;
 
     const [latestReceivedCard, setLatestReceivedCard] = useState<any | null>(null);
     const [latestReceivedPhase, setLatestReceivedPhase] = useState<string | null>(null);
@@ -121,6 +127,7 @@ export const useWebRTC = (
                     stream: patch.stream ?? null,
                     lifePoints: patch.lifePoints ?? null,
                     team: patch.team ?? null,
+                    rotation: patch.rotation ?? 0,
                 }];
             }
             const next = [...prev];
@@ -318,17 +325,18 @@ export const useWebRTC = (
                     const entry = state[peerId]?.[0];
                     const peerUsername = entry?.username ?? 'Duelist';
                     const peerTeam = entry?.team ?? null;
+                    const peerRotation = entry?.rotation ?? 0;
                     if (peerConnections.current.has(peerId)) {
                         peerMeta.current.set(peerId, {
                             username: peerUsername,
                             isOfferer: peerMeta.current.get(peerId)?.isOfferer ?? false,
                         });
-                        upsertPeer(peerId, { username: peerUsername, team: peerTeam });
+                        upsertPeer(peerId, { username: peerUsername, team: peerTeam, rotation: peerRotation });
                         return;
                     }
                     const iAmOfferer = myId < peerId;
                     const pc = ensurePeerConnection(peerId, peerUsername, iAmOfferer);
-                    upsertPeer(peerId, { team: peerTeam });
+                    upsertPeer(peerId, { team: peerTeam, rotation: peerRotation });
                     if (iAmOfferer) {
                         createOffer(peerId, pc);
                     } else {
@@ -425,7 +433,11 @@ export const useWebRTC = (
                 addLog(`Supabase: ${status}`);
                 if (status === 'SUBSCRIBED') {
                     isSubscribed.current = true;
-                    await signaling.track({ username: usernameRef.current, team: teamRef.current });
+                    await signaling.track({
+                        username: usernameRef.current,
+                        team: teamRef.current,
+                        rotation: rotationRef.current,
+                    });
                 }
             });
 
@@ -521,11 +533,12 @@ export const useWebRTC = (
     const myTeam: TeamId = teamChoice ?? autoTeamFor(sortedIds, myId);
     teamRef.current = myTeam;
 
-    // Publish the team so the others can seat us on the right side
+    // Publish seat and framing metadata. Presence rather than a data channel
+    // message, so a player joining later still sees the current values.
     useEffect(() => {
         if (!isSubscribed.current || !channel.current) return;
-        channel.current.track({ username: usernameRef.current, team: myTeam });
-    }, [myTeam, username]);
+        channel.current.track({ username: usernameRef.current, team: myTeam, rotation: videoRotation });
+    }, [myTeam, username, videoRotation]);
 
     const resolvedPeers = useMemo<RemotePeer[]>(
         () => peers.map(p => ({ ...p, team: p.team ?? autoTeamFor(sortedIds, p.id) })),
