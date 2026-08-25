@@ -205,8 +205,8 @@ const SettingsModal: React.FC = () => {
                         {zoomCapabilities && (
                             <div className="form-group">
                                 <label style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    Zoom Digitale
-                                    <span>{zoom}x</span>
+                                    Inquadratura
+                                    <span>{zoom.toFixed(1)}x</span>
                                 </label>
                                 <input
                                     type="range"
@@ -217,6 +217,9 @@ const SettingsModal: React.FC = () => {
                                     onChange={(e) => setZoomLevel(parseFloat(e.target.value))}
                                     style={{ width: '100%', marginTop: '10px' }}
                                 />
+                                <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '5px' }}>
+                                    Sotto 1x la camera si allarga: utile per inquadrare tutto il campo dal telefono.
+                                </p>
                             </div>
                         )}
 

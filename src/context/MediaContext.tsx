@@ -1,6 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { isHandheldDevice } from '@/lib/device';
+import { findUltraWideRearCamera, isHandheldDevice } from '@/lib/device';
 
 export type FacingMode = 'user' | 'environment';
 
@@ -58,12 +58,78 @@ export const MediaProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         const track = stream.getVideoTracks()[0];
         if (!track) return;
 
-        // Use 'any' to bypass TS check for 'capabilities' if needed, or typed if possible
-        const capabilities: any = track.getCapabilities();
-        if (capabilities && capabilities.zoom) {
-            setZoomCapabilities(capabilities.zoom);
-        } else {
+        // Not every browser implements getCapabilities, and zoom is optional
+        try {
+            const capabilities: any = track.getCapabilities?.();
+            setZoomCapabilities(capabilities?.zoom ?? null);
+        } catch {
             setZoomCapabilities(null);
+        }
+    };
+
+    /**
+     * Pulls the framing back as far as the hardware allows, so a phone over the
+     * table catches a whole row of cards instead of two of them.
+     *
+     * Platforms expose "0.6x" in two unrelated ways: recent Android reports one
+     * logical rear camera whose zoom range simply starts below 1, while iOS
+     * publishes the ultra-wide lens as a separate device. Both are handled —
+     * the lens swap happens in loadDevices, the sub-1x zoom here.
+     */
+    const widenFraming = async (stream: MediaStream) => {
+        const track = stream.getVideoTracks()[0];
+        if (!track) return;
+
+        try {
+            const zoomRange = (track.getCapabilities?.() as any)?.zoom;
+            // A range starting at 1 means the lens cannot go wider than default
+            if (typeof zoomRange?.min !== 'number' || zoomRange.min >= 1) return;
+
+            await track.applyConstraints({ advanced: [{ zoom: zoomRange.min }] } as any);
+            setZoom(zoomRange.min);
+        } catch (err) {
+            console.warn('Could not pull the camera back to its widest zoom:', err);
+        }
+    };
+
+    const loadDevices = async (): Promise<MediaDeviceInfo[]> => {
+        try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            setVideoDevices(devices.filter(d => d.kind === 'videoinput'));
+            setAudioInputDevices(devices.filter(d => d.kind === 'audioinput'));
+            setAudioOutputDevices(devices.filter(d => d.kind === 'audiooutput'));
+            return devices;
+        } catch (err) {
+            console.error("Error enumerating devices:", err);
+            return [];
+        }
+    };
+
+    /** Swaps in the dedicated ultra-wide lens when the platform exposes one. */
+    const preferUltraWideLens = async (
+        devices: MediaDeviceInfo[],
+        stream: MediaStream
+    ): Promise<MediaStream> => {
+        const ultraWide = findUltraWideRearCamera(devices);
+        if (!ultraWide) return stream;
+
+        const currentDeviceId = stream.getVideoTracks()[0]?.getSettings().deviceId;
+        if (ultraWide.deviceId === currentDeviceId) return stream;
+
+        try {
+            const wideStream = await navigator.mediaDevices.getUserMedia({
+                video: { deviceId: { exact: ultraWide.deviceId } },
+                audio: false,
+            });
+            const wideTrack = wideStream.getVideoTracks()[0];
+            if (!wideTrack) return stream;
+
+            stream.getVideoTracks().forEach(track => track.stop());
+            setSelectedVideoDeviceId(ultraWide.deviceId);
+            return new MediaStream([...stream.getAudioTracks(), wideTrack]);
+        } catch (err) {
+            console.warn('Ultra-wide lens unavailable, keeping the default camera:', err);
+            return stream;
         }
     };
 
@@ -74,15 +140,25 @@ export const MediaProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
             try {
                 // First try requesting both video and audio
-                const stream = await navigator.mediaDevices.getUserMedia({
+                let stream = await navigator.mediaDevices.getUserMedia({
                     video: preferRear ? { facingMode: { ideal: 'environment' } } : true,
                     audio: true
                 });
+
+                // Device labels stay blank until permission is granted, so the
+                // lens can only be chosen after the first successful request
+                const devices = await loadDevices();
+                if (preferRear) {
+                    stream = await preferUltraWideLens(devices, stream);
+                }
+
                 setLocalStream(stream);
                 setFacingMode(readFacingMode(stream, preferRear ? 'environment' : 'user'));
                 checkCapabilities(stream);
                 setIsLoading(false);
                 setError(null);
+
+                if (preferRear) await widenFraming(stream);
             } catch (err: any) {
                 console.warn("Camera/Mic access failed, retrying with audio only...", err);
 
@@ -96,6 +172,7 @@ export const MediaProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                     setIsVideoEnabled(false); // Force video off
                     setIsLoading(false);
                     setError(null); // Clear error if audio works
+                    await loadDevices();
                 } catch (audioErr: any) {
                     console.error("Audio access also failed:", audioErr);
                     setError("Nessun dispositivo rilevato (o permessi negati).");
@@ -104,20 +181,7 @@ export const MediaProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             }
         };
 
-        const getDevices = async () => {
-            try {
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                setVideoDevices(devices.filter(d => d.kind === 'videoinput'));
-                setAudioInputDevices(devices.filter(d => d.kind === 'audioinput'));
-                setAudioOutputDevices(devices.filter(d => d.kind === 'audiooutput'));
-            } catch (err) {
-                console.error("Error enumerating devices:", err);
-            }
-        };
-
-        initStream().then(() => {
-            getDevices();
-        });
+        initStream();
 
         return () => {
             // Cleanup stream on unmount
@@ -210,14 +274,22 @@ export const MediaProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             const audioTracks = localStream?.getAudioTracks() ?? [];
             localStream?.getVideoTracks().forEach(track => track.stop());
 
-            const merged = new MediaStream([...audioTracks, newVideoTrack]);
+            let merged = new MediaStream([...audioTracks, newVideoTrack]);
+            setZoom(1);
+            setSelectedVideoDeviceId(newVideoTrack.getSettings().deviceId);
+
+            // Going back to the table deserves the widest framing again
+            if (next === 'environment') {
+                merged = await preferUltraWideLens(videoDevices, merged);
+            }
+
             setLocalStream(merged);
             setIsVideoEnabled(true);
             setFacingMode(readFacingMode(merged, next));
             checkCapabilities(merged);
-            setZoom(1);
-            setSelectedVideoDeviceId(newVideoTrack.getSettings().deviceId);
             setError(null);
+
+            if (next === 'environment') await widenFraming(merged);
         } catch (err) {
             console.error('Failed to flip camera:', err);
             setError('Impossibile cambiare fotocamera.');
