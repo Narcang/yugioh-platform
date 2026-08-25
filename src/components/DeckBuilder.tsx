@@ -15,6 +15,7 @@ import {
     countCopies,
     emptyDeck,
     getBanLabel,
+    groupEntries,
     getFormatRules,
     getSectionLabel,
     isDeckableFrame,
@@ -258,6 +259,61 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
         return () => window.removeEventListener('beforeunload', warn);
     }, [isDirty]);
 
+    const renderEntry = (
+        section: DeckSection,
+        entry: { card: DeckCard; quantity: number }
+    ) => {
+        const ban = getBanLabel(
+            rules.banlist === 'ocg' ? entry.card.banOcg : entry.card.banTcg
+        );
+
+        return (
+            <li
+                key={entry.card.cardId}
+                className="deck-entry"
+                onMouseEnter={() => setHovered(entry.card)}
+                onFocus={() => setHovered(entry.card)}
+            >
+                <button
+                    className="thumb"
+                    onClick={() => setZoomed(entry.card)}
+                    aria-label={`Ingrandisci ${entry.card.name}`}
+                >
+                    <img
+                        src={cardFullImageUrl(entry.card.cardId)}
+                        alt={entry.card.name}
+                        loading="lazy"
+                    />
+                    <span className="qty">×{entry.quantity}</span>
+                </button>
+
+                <div className="entry-info">
+                    <span className="entry-name">{entry.card.name}</span>
+                    {ban && rules.banlist && <span className="entry-ban">{ban}</span>}
+                </div>
+
+                {canEdit && (
+                    <div className="entry-actions">
+                        <button
+                            onClick={() => changeQuantity(section, entry.card.cardId, -1)}
+                            aria-label="Rimuovi una copia"
+                        >−</button>
+                        <button
+                            onClick={() => changeQuantity(section, entry.card.cardId, 1)}
+                            aria-label="Aggiungi una copia"
+                        >+</button>
+                        <button
+                            className="move"
+                            onClick={() => moveToSide(section, entry.card.cardId)}
+                        >
+                            {section === 'side' ? '↑ Deck' : '↓ Side'}
+                        </button>
+                    </div>
+                )}
+            </li>
+        );
+    };
+
     if (isLoading || isAuthLoading) {
         return <div className="decks-notice">Caricamento del mazzo…</div>;
     }
@@ -375,60 +431,19 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
                                         {canEdit ? 'Nessuna carta ancora.' : 'Vuoto.'}
                                     </p>
                                 ) : (
-                                    <ul className="deck-card-list">
-                                        {entries.map((entry) => {
-                                            const ban = getBanLabel(
-                                                rules.banlist === 'ocg' ? entry.card.banOcg : entry.card.banTcg
-                                            );
-                                            return (
-                                                <li
-                                                    key={entry.card.cardId}
-                                                    className="deck-entry"
-                                                    onMouseEnter={() => setHovered(entry.card)}
-                                                    onFocus={() => setHovered(entry.card)}
-                                                >
-                                                    <button
-                                                        className="thumb"
-                                                        onClick={() => setZoomed(entry.card)}
-                                                        aria-label={`Ingrandisci ${entry.card.name}`}
-                                                    >
-                                                        <img
-                                                            src={cardFullImageUrl(entry.card.cardId)}
-                                                            alt={entry.card.name}
-                                                            loading="lazy"
-                                                        />
-                                                        <span className="qty">×{entry.quantity}</span>
-                                                    </button>
-
-                                                    <div className="entry-info">
-                                                        <span className="entry-name">{entry.card.name}</span>
-                                                        {ban && rules.banlist && (
-                                                            <span className="entry-ban">{ban}</span>
-                                                        )}
-                                                    </div>
-
-                                                    {canEdit && (
-                                                        <div className="entry-actions">
-                                                            <button
-                                                                onClick={() => changeQuantity(section, entry.card.cardId, -1)}
-                                                                aria-label="Rimuovi una copia"
-                                                            >−</button>
-                                                            <button
-                                                                onClick={() => changeQuantity(section, entry.card.cardId, 1)}
-                                                                aria-label="Aggiungi una copia"
-                                                            >+</button>
-                                                            <button
-                                                                className="move"
-                                                                onClick={() => moveToSide(section, entry.card.cardId)}
-                                                            >
-                                                                {section === 'side' ? '↑ Deck' : '↓ Side'}
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </li>
-                                            );
-                                        })}
-                                    </ul>
+                                    <div className="deck-groups">
+                                        {groupEntries(entries).map((group) => (
+                                            <div key={group.group} className="deck-group">
+                                                <div className="deck-group-head">
+                                                    <h3>{group.label}</h3>
+                                                    <span>{group.count}</span>
+                                                </div>
+                                                <ul className="deck-card-list">
+                                                    {group.entries.map((entry) => renderEntry(section, entry))}
+                                                </ul>
+                                            </div>
+                                        ))}
+                                    </div>
                                 )}
                             </section>
                         );
@@ -583,13 +598,44 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
                     font-size: 0.88rem;
                     margin: 0;
                 }
+                /* Groups flow into columns and the rows inside them stack, so a
+                   40 card deck reads as a few short lists instead of one long
+                   one. */
+                .deck-groups {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                    gap: 10px 20px;
+                    align-items: start;
+                }
+                .deck-group-head {
+                    display: flex;
+                    align-items: baseline;
+                    justify-content: space-between;
+                    gap: 8px;
+                    padding: 0 2px 6px;
+                    margin-bottom: 6px;
+                    border-bottom: 1px solid #1f1f1f;
+                }
+                .deck-group-head h3 {
+                    margin: 0;
+                    font-size: 0.8rem;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 0.06em;
+                    color: #a3a3a3;
+                }
+                .deck-group-head span {
+                    font-size: 0.78rem;
+                    color: #737373;
+                    font-variant-numeric: tabular-nums;
+                }
                 .deck-card-list {
                     list-style: none;
                     margin: 0;
                     padding: 0;
-                    display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-                    gap: 8px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 6px;
                 }
                 .deck-entry {
                     display: flex;

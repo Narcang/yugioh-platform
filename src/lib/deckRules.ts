@@ -128,6 +128,98 @@ export function sectionFor(card: Pick<DeckCard, 'isExtraDeck'>): DeckSection {
   return card.isExtraDeck ? 'extra' : 'main';
 }
 
+// ----------------------------------------------------------------
+// Grouping inside a section
+// ----------------------------------------------------------------
+
+/**
+ * Yu-Gi-Oh has no equivalent of Magic's land row: a Main Deck only ever holds
+ * Monsters, Spells and Traps. Monsters stay in one group rather than being
+ * split into Normal, Effect, Ritual and Pendulum, which would shatter a 40 card
+ * deck into a handful of two-card lists.
+ */
+export type CardGroup =
+  | 'monster'
+  | 'spell'
+  | 'trap'
+  | 'fusion'
+  | 'synchro'
+  | 'xyz'
+  | 'link';
+
+/** Display order, shared by every section; empty groups are not rendered. */
+export const CARD_GROUP_ORDER: CardGroup[] = [
+  'monster',
+  'spell',
+  'trap',
+  'fusion',
+  'synchro',
+  'xyz',
+  'link',
+];
+
+export function groupFor(card: Pick<DeckCard, 'frameType'>): CardGroup {
+  const frame = card.frameType ?? '';
+  if (frame === 'spell') return 'spell';
+  if (frame === 'trap') return 'trap';
+  // Prefix matching keeps the Pendulum variants with their summon type.
+  if (frame.startsWith('fusion')) return 'fusion';
+  if (frame.startsWith('synchro')) return 'synchro';
+  if (frame.startsWith('xyz')) return 'xyz';
+  if (frame.startsWith('link')) return 'link';
+  return 'monster';
+}
+
+export function getGroupLabel(group: CardGroup): string {
+  switch (group) {
+    case 'monster':
+      return 'Mostri';
+    case 'spell':
+      return 'Magie';
+    case 'trap':
+      return 'Trappole';
+    case 'fusion':
+      return 'Fusione';
+    case 'synchro':
+      return 'Synchro';
+    case 'xyz':
+      return 'Xyz';
+    case 'link':
+      return 'Link';
+  }
+}
+
+export interface DeckGroup<T> {
+  group: CardGroup;
+  label: string;
+  count: number;
+  entries: T[];
+}
+
+/** Splits a section into its non-empty groups, in display order. */
+export function groupEntries<T extends { card: DeckCard; quantity: number }>(
+  entries: T[]
+): DeckGroup<T>[] {
+  const buckets = new Map<CardGroup, T[]>();
+  for (const entry of entries) {
+    const group = groupFor(entry.card);
+    const bucket = buckets.get(group);
+    if (bucket) bucket.push(entry);
+    else buckets.set(group, [entry]);
+  }
+
+  return CARD_GROUP_ORDER.flatMap((group) => {
+    const found = buckets.get(group);
+    if (!found?.length) return [];
+    return [{
+      group,
+      label: getGroupLabel(group),
+      count: found.reduce((sum, e) => sum + e.quantity, 0),
+      entries: found,
+    }];
+  });
+}
+
 export function countSection(deck: DeckContents, section: DeckSection): number {
   return deck[section].reduce((sum, entry) => sum + entry.quantity, 0);
 }

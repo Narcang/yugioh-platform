@@ -2,8 +2,13 @@
    Kept in a plain stylesheet so the server-rendered pages need no client
    component just to carry their styles. */
 
+/* body is locked to 100vh with overflow hidden so the match can run full
+   screen, which would clip these pages instead of scrolling them. The shell
+   carries its own scrolling, the same way .lobby-container does. */
 .decks-shell {
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
   background: #0a0a0a;
   color: #f5f5f5;
   display: flex;
