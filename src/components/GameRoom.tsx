@@ -19,13 +19,12 @@ const GameRoom: React.FC = () => {
     const username = profile?.username || user?.email?.split('@')[0] || 'Duelist';
 
     const {
+        peers,
         remoteStream,
-        remoteUsername,
         sendCard,
         latestReceivedCard,
         dataChannelState,
         sendLP,
-        latestReceivedLP,
         sendPhase,
         latestReceivedPhase,
         sendPassTurn,
@@ -66,11 +65,9 @@ const GameRoom: React.FC = () => {
         <div className="game-room-container" style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden' }}>
             <Sidebar sendPhase={sendPhase} sendPassTurn={sendPassTurn} />
             <GameArea
-                remoteStream={remoteStream}
-                opponentName={remoteUsername || 'Opponent'}
+                peers={peers}
                 selfName={username}
                 sendLP={sendLP}
-                latestReceivedLP={latestReceivedLP}
             />
             <RightPanel
                 remoteStream={remoteStream}

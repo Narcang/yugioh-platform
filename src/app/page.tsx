@@ -9,10 +9,10 @@ import { useSearchParams } from 'next/navigation';
 
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
-import { getFirstPhase } from '@/lib/gameConfig';
+import { getFirstPhase, MatchMode } from '@/lib/gameConfig';
 
 function RoomUrlHandler() {
-  const { setAppView, setCurrentRoomId, setGameType, setGameFormat, setCurrentPhase, setCurrentTurn } = useLayout();
+  const { setAppView, setCurrentRoomId, setGameType, setGameFormat, setCurrentPhase, setCurrentTurn, setMaxPlayers, setMatchMode } = useLayout();
   const searchParams = useSearchParams();
   const { user } = useAuth();
 
@@ -24,7 +24,7 @@ function RoomUrlHandler() {
         try {
           const { data: room, error } = await supabase
             .from('rooms')
-            .select('settings, host_id, format')
+            .select('settings, host_id, format, max_players')
             .eq('id', roomId)
             .single();
 
@@ -32,6 +32,8 @@ function RoomUrlHandler() {
             const gameType = room.settings?.gameType || 'Yugioh';
             setGameType(gameType);
             setGameFormat(room.format || 'Advanced (TCG)');
+            setMaxPlayers(room.max_players || 2);
+            setMatchMode((room.settings?.matchMode as MatchMode) || 'ffa');
             setCurrentPhase(getFirstPhase(gameType));
 
             // 3. Set Initial Turn
@@ -52,7 +54,7 @@ function RoomUrlHandler() {
 
       fetchRoomDetails();
     }
-  }, [searchParams, setCurrentRoomId, setAppView, setGameType, setGameFormat, setCurrentPhase, setCurrentTurn, user]);
+  }, [searchParams, setCurrentRoomId, setAppView, setGameType, setGameFormat, setCurrentPhase, setCurrentTurn, setMaxPlayers, setMatchMode, user]);
 
   return null;
 }

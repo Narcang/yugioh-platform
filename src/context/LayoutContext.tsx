@@ -1,9 +1,10 @@
 "use client";
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { getBaseLifePoints, getFirstPhase } from '@/lib/gameConfig';
+import { getBaseLifePoints, getFirstPhase, MatchMode } from '@/lib/gameConfig';
 
 type LayoutMode = 'grid' | 'fullscreen' | 'boxed'; // grid=50/50, fullscreen=100/0, boxed=PIP
-type SpotlightTarget = 'self' | 'opponent';
+// 'self' for the local player, otherwise a remote peer id
+type SpotlightTarget = string;
 type TurnState = 'self' | 'opponent';
 
 interface LayoutContextType {
@@ -40,6 +41,10 @@ interface LayoutContextType {
     gameFormat: string;
     setGameFormat: (format: string) => void;
     baseLifePoints: number;
+    maxPlayers: number;
+    setMaxPlayers: (count: number) => void;
+    matchMode: MatchMode;
+    setMatchMode: (mode: MatchMode) => void;
 }
 
 const LayoutContext = createContext<LayoutContextType | undefined>(undefined);
@@ -79,6 +84,10 @@ export const LayoutProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     };
 
     const baseLifePoints = getBaseLifePoints(gameType, gameFormat);
+
+    // Multiplayer config (2-4 players)
+    const [maxPlayers, setMaxPlayers] = useState<number>(2);
+    const [matchMode, setMatchMode] = useState<MatchMode>('ffa');
 
 
     // Timer Countdown
@@ -167,6 +176,10 @@ export const LayoutProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             gameFormat,
             setGameFormat,
             baseLifePoints,
+            maxPlayers,
+            setMaxPlayers,
+            matchMode,
+            setMatchMode,
         }}>
             {children}
         </LayoutContext.Provider>

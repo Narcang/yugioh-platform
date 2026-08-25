@@ -8,9 +8,10 @@ interface PlayerOverlayProps {
     onLpChange?: (lp: number) => void;
     currentLP?: number;
     initialLP?: number;
+    teamLabel?: string;
 }
 
-const PlayerOverlay: React.FC<PlayerOverlayProps> = ({ name, isSelf, onLpChange, currentLP, initialLP = 8000 }) => {
+const PlayerOverlay: React.FC<PlayerOverlayProps> = ({ name, isSelf, onLpChange, currentLP, initialLP = 8000, teamLabel }) => {
     const [lifePoints, setLifePoints] = useState(initialLP);
     const [stepInput, setStepInput] = useState<string>(() => String(getDefaultLpStep(initialLP)));
 
@@ -139,6 +140,9 @@ const PlayerOverlay: React.FC<PlayerOverlayProps> = ({ name, isSelf, onLpChange,
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
                         </span>
                         <span className="player-name">{name}</span>
+                        {teamLabel && (
+                            <span className="team-badge">Team {teamLabel}</span>
+                        )}
                     </div>
 
                     <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
@@ -149,6 +153,17 @@ const PlayerOverlay: React.FC<PlayerOverlayProps> = ({ name, isSelf, onLpChange,
             </div>
 
             <style jsx>{`
+                .team-badge {
+                    font-size: 10px;
+                    font-weight: 700;
+                    letter-spacing: 0.5px;
+                    text-transform: uppercase;
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                    background: rgba(240, 199, 94, 0.15);
+                    border: 1px solid rgba(240, 199, 94, 0.4);
+                    color: #F0C75E;
+                }
                 .controls-row {
                     display: flex;
                     align-items: center;

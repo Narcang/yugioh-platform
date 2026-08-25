@@ -1,22 +1,82 @@
 "use client";
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useMedia } from '@/context/MediaContext';
 import { useLayout } from '@/context/LayoutContext';
 import PlayerOverlay from './PlayerOverlay';
+import type { RemotePeer } from '@/hooks/useWebRTC';
 
 interface GameAreaProps {
-    remoteStream: MediaStream | null;
-    opponentName?: string;
+    peers: RemotePeer[];
     selfName?: string;
     sendLP?: (lp: number) => void;
-    latestReceivedLP?: number | null;
 }
 
-const GameArea: React.FC<GameAreaProps> = ({ remoteStream, opponentName = 'Opponent', selfName = 'Duelist', sendLP, latestReceivedLP }) => {
-    const { localStream, isVideoEnabled, error } = useMedia();
-    const { layoutMode, spotlightTarget, setLayoutMode, setSpotlightTarget, videoFitMode, baseLifePoints, currentRoomId } = useLayout();
+/** Renders one remote peer's video feed */
+const RemoteSlot: React.FC<{
+    peer: RemotePeer;
+    baseLifePoints: number;
+    fitMode: 'cover' | 'contain';
+    teamLabel?: string;
+}> = ({ peer, baseLifePoints, fitMode, teamLabel }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
-    const remoteVideoRef = useRef<HTMLVideoElement>(null);
+
+    useEffect(() => {
+        const el = videoRef.current;
+        if (!el) return;
+        if (peer.stream) {
+            if (el.srcObject !== peer.stream) {
+                el.srcObject = peer.stream;
+            }
+            el.play().catch(e => console.warn('remoteVideo.play() failed:', e));
+        } else {
+            el.srcObject = null;
+        }
+    }, [peer.stream]);
+
+    return (
+        <>
+            <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: fitMode,
+                    display: peer.stream ? 'block' : 'none',
+                }}
+            />
+            {!peer.stream && (
+                <div className="video-placeholder">
+                    <p style={{ color: 'var(--text-muted)' }}>In attesa di {peer.username}...</p>
+                    <div style={{ width: '30px', height: '30px', border: '2px solid var(--text-muted)', borderTopColor: 'transparent', borderRadius: '50%', margin: '10px auto', animation: 'spin 1s linear infinite' }}></div>
+                </div>
+            )}
+
+            <PlayerOverlay
+                name={peer.username}
+                initialLP={baseLifePoints}
+                currentLP={peer.lifePoints ?? baseLifePoints}
+                teamLabel={teamLabel}
+            />
+        </>
+    );
+};
+
+const GameArea: React.FC<GameAreaProps> = ({ peers, selfName = 'Duelist', sendLP }) => {
+    const { localStream, isVideoEnabled, error } = useMedia();
+    const {
+        layoutMode,
+        spotlightTarget,
+        setLayoutMode,
+        setSpotlightTarget,
+        videoFitMode,
+        baseLifePoints,
+        currentRoomId,
+        maxPlayers,
+        matchMode,
+    } = useLayout();
+    const videoRef = useRef<HTMLVideoElement>(null);
 
     useEffect(() => {
         if (videoRef.current && localStream) {
@@ -24,85 +84,78 @@ const GameArea: React.FC<GameAreaProps> = ({ remoteStream, opponentName = 'Oppon
         }
     }, [localStream, isVideoEnabled]);
 
-    useEffect(() => {
-        const el = remoteVideoRef.current;
-        if (!el) return;
-        if (remoteStream) {
-            // Always update srcObject, even if stream object is the same reference
-            if (el.srcObject !== remoteStream) {
-                el.srcObject = remoteStream;
-            }
-            // Explicitly call play() — autoPlay can silently fail in some browsers
-            el.play().catch(e => console.warn('remoteVideo.play() failed:', e));
-        } else {
-            el.srcObject = null;
-        }
-    }, [remoteStream]);
+    // Reserve slots for the expected player count so the grid is stable while
+    // people are still joining.
+    const expectedRemotes = Math.max(maxPlayers - 1, peers.length);
+    const slots: (RemotePeer | null)[] = Array.from({ length: expectedRemotes }, (_, i) => peers[i] ?? null);
+    const totalSlots = slots.length + 1;
 
-    const handlePlayerClick = (clickedPlayer: 'self' | 'opponent') => {
-        // If click on a player, set spotlight to them
-        setSpotlightTarget(clickedPlayer);
-        // Auto-switch to fullscreen or boxed if in grid? 
-        // Defaulting to 'fullscreen' as "layout in primo piano" usually implies full focus.
+    const handlePlayerClick = (target: string) => {
+        setSpotlightTarget(target);
         if (layoutMode === 'grid') setLayoutMode('fullscreen');
     };
 
-    const getSlotClass = (player: 'self' | 'opponent') => {
+    // The stored target may be a peer that already left, or the legacy
+    // 'opponent' sentinel — fall back to the first connected peer.
+    const connectedIds = slots.filter((p): p is RemotePeer => p !== null).map(p => p.id);
+    const resolvedSpotlight =
+        spotlightTarget === 'self' || connectedIds.includes(spotlightTarget)
+            ? spotlightTarget
+            : connectedIds[0] ?? 'self';
+
+    const getSlotClass = (target: string) => {
         if (layoutMode === 'grid') return '';
 
-        const isTarget = spotlightTarget === player;
+        const isTarget = resolvedSpotlight === target;
 
         if (layoutMode === 'fullscreen') {
             return isTarget ? 'maximized' : 'hidden';
         }
-
         if (layoutMode === 'boxed') {
             return isTarget ? 'maximized' : 'minimized';
         }
         return '';
     };
 
+    // In 2v2 the local player is paired with the first remote peer
+    const teamOf = (slotIndex: number | 'self'): string | undefined => {
+        if (matchMode !== 'teams' || totalSlots !== 4) return undefined;
+        if (slotIndex === 'self') return 'A';
+        return slotIndex === 0 ? 'A' : 'B';
+    };
+
     return (
-        <div className={`game-area ${layoutMode}`}>
-
-            {/* Top Half - Opponent */}
-            <div
-                className={`player-slot top ${getSlotClass('opponent')}`}
-                onClick={() => handlePlayerClick('opponent')}
-                style={{ cursor: 'pointer' }}
-            >
-                {/* Video Feed — always render video element so srcObject is assigned instantly */}
-                <video
-                    ref={remoteVideoRef}
-                    autoPlay
-                    playsInline
-                    style={{
-                        width: '100%', height: '100%', objectFit: videoFitMode,
-                        display: remoteStream ? 'block' : 'none'
-                    }}
-                />
-                {!remoteStream && (
-                    <div className="video-placeholder">
-                        <p style={{ color: 'var(--text-muted)' }}>Waiting for {opponentName}...</p>
-                        <div style={{ width: '30px', height: '30px', border: '2px solid var(--text-muted)', borderTopColor: 'transparent', borderRadius: '50%', margin: '10px auto', animation: 'spin 1s linear infinite' }}></div>
+        <div className={`game-area ${layoutMode} players-${totalSlots}`}>
+            {slots.map((peer, index) => {
+                const target = peer ? peer.id : `empty-${index}`;
+                return (
+                    <div
+                        key={target}
+                        className={`player-slot remote ${getSlotClass(target)}`}
+                        onClick={() => peer && handlePlayerClick(target)}
+                        style={{ cursor: peer ? 'pointer' : 'default' }}
+                    >
+                        {peer ? (
+                            <RemoteSlot
+                                peer={peer}
+                                baseLifePoints={baseLifePoints}
+                                fitMode={videoFitMode}
+                                teamLabel={teamOf(index)}
+                            />
+                        ) : (
+                            <div className="video-placeholder">
+                                <p style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>
+                                    Slot libero — in attesa di un giocatore
+                                </p>
+                            </div>
+                        )}
                     </div>
-                )}
+                );
+            })}
 
-                <PlayerOverlay
-                    key={`opponent-${currentRoomId}-${baseLifePoints}`}
-                    name={opponentName}
-                    initialLP={baseLifePoints}
-                    currentLP={latestReceivedLP ?? baseLifePoints}
-                />
-
-                <div className="mute-icon-container">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
-                </div>
-            </div>
-
-            {/* Bottom Half - Self */}
+            {/* Local player */}
             <div
-                className={`player-slot bottom ${getSlotClass('self')}`}
+                className={`player-slot self ${getSlotClass('self')}`}
                 onClick={() => handlePlayerClick('self')}
                 style={{ cursor: 'pointer' }}
             >
@@ -139,11 +192,11 @@ const GameArea: React.FC<GameAreaProps> = ({ remoteStream, opponentName = 'Oppon
                     isSelf
                     initialLP={baseLifePoints}
                     onLpChange={sendLP}
+                    teamLabel={teamOf('self')}
                 />
-
             </div>
 
-            {/* Floating Controls (Mute/Hide) */}
+            {/* Floating Controls */}
             <div className="floating-controls">
                 <button
                     className="icon-btn"

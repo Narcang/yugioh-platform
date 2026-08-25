@@ -10,10 +10,10 @@ import Footer from './Footer';
 
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
-import { getFirstPhase } from '@/lib/gameConfig';
+import { getFirstPhase, getMatchModeLabel, MatchMode } from '@/lib/gameConfig';
 
 const Lobby: React.FC = () => {
-    const { setAppView, setCurrentRoomId, setIsSettingsOpen, setGameType, setGameFormat, setCurrentPhase, setCurrentTurn } = useLayout();
+    const { setAppView, setCurrentRoomId, setIsSettingsOpen, setGameType, setGameFormat, setCurrentPhase, setCurrentTurn, setMaxPlayers, setMatchMode } = useLayout();
     const { user, profile, isAdmin, signOut, session } = useAuth();
     const [joinCode, setJoinCode] = useState('');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -72,7 +72,8 @@ const Lobby: React.FC = () => {
                     isPublic: r.is_public,
                     password: r.password,
                     hostId: r.host_id,
-                    gameType: r.settings?.gameType || 'Yugioh' // Fallback for old rooms
+                    gameType: r.settings?.gameType || 'Yugioh', // Fallback for old rooms
+                    matchMode: (r.settings?.matchMode as MatchMode) || 'ffa'
                 }));
                 setRooms(mappedRooms);
             }
@@ -110,6 +111,7 @@ const Lobby: React.FC = () => {
                     hostId: data.host_id,
                     format: data.format,
                     gameType: data.settings?.gameType || 'Yugioh',
+                    matchMode: (data.settings?.matchMode as MatchMode) || 'ffa',
                     currentPlayers: data.current_players,
                     maxPlayers: data.max_players,
                 };
@@ -135,11 +137,13 @@ const Lobby: React.FC = () => {
             }
         }
 
-        // Set Game Type & Format
+        // Set Game Type, Format & multiplayer config
         const gameType = room?.gameType || room?.settings?.gameType || 'Yugioh';
         const format = room?.format || 'Advanced (TCG)';
         setGameType(gameType);
         setGameFormat(format);
+        setMaxPlayers(room?.maxPlayers || 2);
+        setMatchMode(room?.matchMode || 'ffa');
         setCurrentPhase(getFirstPhase(gameType));
 
         // If I am joining and NOT the host, I go second (opponent turn)
@@ -172,10 +176,11 @@ const Lobby: React.FC = () => {
                 language: data.language,
                 is_public: data.isPublic,
                 current_players: 1,
-                max_players: 2,
+                max_players: data.maxPlayers,
                 password: data.isPublic ? null : '123', // TODO: Add password field to modal
                 settings: {
-                    gameType: data.gameType
+                    gameType: data.gameType,
+                    matchMode: data.matchMode
                 }
             };
 
@@ -192,6 +197,8 @@ const Lobby: React.FC = () => {
             const newGameType = newRoom.settings.gameType;
             setGameType(newGameType);
             setGameFormat(data.format);
+            setMaxPlayers(data.maxPlayers);
+            setMatchMode(data.matchMode);
             setCurrentPhase(getFirstPhase(newGameType));
 
             // Creator goes first
@@ -497,6 +504,11 @@ const Lobby: React.FC = () => {
                                         <div style={{ flex: 1.5, display: 'flex', flexDirection: 'column' }}>
                                             <span style={{ fontWeight: 'bold', fontSize: '13px' }}>{room.gameType}</span>
                                             <span style={{ color: '#9CA3AF', fontSize: '12px' }}>{room.format}</span>
+                                            {room.maxPlayers > 2 && (
+                                                <span style={{ color: '#F0C75E', fontSize: '11px' }}>
+                                                    {getMatchModeLabel(room.matchMode, room.maxPlayers)}
+                                                </span>
+                                            )}
                                         </div>
                                         <span style={{ flex: 1, color: '#9CA3AF' }}>{room.language || 'ITA'}</span>
                                         <span style={{ flex: 1, textAlign: 'center', color: isFull ? '#EF4444' : '#10B981' }}>
