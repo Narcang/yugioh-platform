@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLayout } from '@/context/LayoutContext';
+import CardSearchInput, { CardSearchResult } from './CardSearchInput';
 
 interface RightPanelProps {
     remoteStream?: MediaStream | null;
@@ -21,14 +22,6 @@ interface CardData {
     timestamp: number;
     // Optional extras for other games
     gameType?: string;
-}
-
-interface SearchResult {
-    id: string; // YGO ID
-    name: string;
-    image_url: string;
-    oracle_text?: string; // For Magic
-    text?: string; // For One Piece
 }
 
 const RightPanel: React.FC<RightPanelProps> = ({ remoteStream, onDeclareCard, lastReceivedCard, dataChannelState, iceConnectionState, connectionLogs, sendPing, reconnect }) => {
@@ -59,44 +52,8 @@ const RightPanel: React.FC<RightPanelProps> = ({ remoteStream, onDeclareCard, la
         }
     }, [lastReceivedCard]);
 
-    // Search State
-    const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-    const [isSearching, setIsSearching] = useState(false);
-
-    // Debounce Search
-    useEffect(() => {
-        const delayDebounceFn = setTimeout(async () => {
-            if (searchQuery.length > 2) {
-                setIsSearching(true);
-                try {
-                    // Include gameType in search
-                    const currentType = gameType || 'Yugioh';
-                    console.log(`[RightPanel] Searching for "${searchQuery}" in game: ${currentType}`);
-
-                    const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}&gameType=${encodeURIComponent(currentType)}`);
-                    const data = await res.json();
-
-                    console.log(`[RightPanel] Search results:`, data);
-
-                    if (data.results) {
-                        setSearchResults(data.results);
-                    }
-                } catch (e) {
-                    console.error("Search error", e);
-                } finally {
-                    setIsSearching(false);
-                }
-            } else {
-                setSearchResults([]);
-            }
-        }, 300);
-
-        return () => clearTimeout(delayDebounceFn);
-    }, [searchQuery, gameType]); // Added gameType to dependencies!
-
     // Handle "Declare" (Clicking a result)
-    const handleDeclareCard = async (result: SearchResult) => {
+    const handleDeclareCard = async (result: CardSearchResult) => {
         const tempId = Math.random().toString(36).substr(2, 9);
         const timestamp = Date.now();
 
@@ -112,8 +69,6 @@ const RightPanel: React.FC<RightPanelProps> = ({ remoteStream, onDeclareCard, la
 
         // 1. Show immediately locally
         setScannedCards(prev => [newCard, ...prev]);
-        setSearchQuery('');
-        setSearchResults([]);
 
         // 2. Fetch Details
         // Logic branches based on Game Type
@@ -160,6 +115,17 @@ const RightPanel: React.FC<RightPanelProps> = ({ remoteStream, onDeclareCard, la
             if (onDeclareCard) {
                 console.log("Broadcasting One Piece card:", newCard.name);
                 onDeclareCard({ ...newCard, desc: opDesc });
+            }
+
+        } else if (result.desc) {
+            // Card text now ships with the search result, so there is nothing
+            // left to fetch. Older rows seeded before the metadata migration
+            // have no description and still fall through to YGOPRODeck below.
+            setScannedCards(prev => prev.map(c =>
+                c.id === tempId ? { ...c, desc: result.desc! } : c
+            ));
+            if (onDeclareCard) {
+                onDeclareCard({ ...newCard, desc: result.desc });
             }
 
         } else {
@@ -248,33 +214,11 @@ const RightPanel: React.FC<RightPanelProps> = ({ remoteStream, onDeclareCard, la
 
             {/* SEARCH / DECLARE SECTION */}
             <div className="search-section">
-                <div className="search-wrapper">
-                    <input
-                        type="text"
-                        placeholder="Cerca carta (es. Mago Nero)..."
-                        className="search-input"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        autoFocus
-                    />
-                    {isSearching && <div className="search-spinner"></div>}
-                </div>
-
-                {/* Search Results Dropdown */}
-                {searchResults.length > 0 && (
-                    <div className="search-results-list">
-                        {searchResults.map(res => (
-                            <div
-                                key={res.id}
-                                className="search-result-item"
-                                onClick={() => handleDeclareCard(res)}
-                            >
-                                <img src={res.image_url} alt="" />
-                                <span>{res.name}</span>
-                            </div>
-                        ))}
-                    </div>
-                )}
+                <CardSearchInput
+                    gameType={gameType || 'Yugioh'}
+                    onSelect={handleDeclareCard}
+                    autoFocus
+                />
             </div>
 
             {/* Content Area */}
@@ -395,66 +339,6 @@ const RightPanel: React.FC<RightPanelProps> = ({ remoteStream, onDeclareCard, la
                     gap: 10px;
                     position: relative;
                 }
-                .search-wrapper {
-                    position: relative;
-                }
-                .search-input {
-                    width: 100%;
-                    padding: 10px;
-                    background: #222;
-                    border: 1px solid #444;
-                    color: white;
-                    border-radius: 6px;
-                    font-size: 14px;
-                }
-                .search-input:focus {
-                    outline: none;
-                    border-color: #FCD34D;
-                }
-                .search-spinner {
-                    position: absolute;
-                    right: 10px;
-                    top: 10px;
-                    width: 16px;
-                    height: 16px;
-                    border: 2px solid rgba(255,255,255,0.3);
-                    border-top-color: white;
-                    border-radius: 50%;
-                    animation: spin 1s linear infinite;
-                }
-                .search-results-list {
-                    max-height: 250px;
-                    overflow-y: auto;
-                    background: #222;
-                    border-radius: 6px;
-                    border: 1px solid #444;
-                    position: absolute;
-                    top: 50px;
-                    left: 10px;
-                    right: 10px;
-                    z-index: 100;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-                }
-                .search-result-item {
-                    padding: 8px;
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                    cursor: pointer;
-                    border-bottom: 1px solid #333;
-                }
-                .search-result-item:hover {
-                    background-color: #333;
-                }
-                .search-result-item img {
-                    width: 30px;
-                    height: 44px;
-                    object-fit: cover;
-                }
-                .search-result-item span {
-                    font-size: 14px;
-                }
-
                 .section-title {
                     font-size: 11px;
                     color: var(--text-muted);

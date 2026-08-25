@@ -1,5 +1,6 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import { findUltraWideRearCamera, isHandheldDevice } from '@/lib/device';
 
 export type FacingMode = 'user' | 'environment';
@@ -53,6 +54,13 @@ export const MediaProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const [zoomCapabilities, setZoomCapabilities] = useState<{ min: number, max: number, step: number } | null>(null);
     const [facingMode, setFacingMode] = useState<FacingMode>('user');
     const [videoRotation, setVideoRotation] = useState<VideoRotation>(0);
+
+    // The deck pages have no video at all, and this provider lives in the root
+    // layout: without this, opening a deck would pop a camera permission prompt
+    // for nothing.
+    const isMediaRoute = usePathname() === '/';
+    const hasRequestedMedia = useRef(false);
+    const streamRef = useRef<MediaStream | null>(null);
 
     // Rotating pixels would mean re-encoding the track, so the angle travels to
     // the peers instead and each side rotates on display.
@@ -147,6 +155,7 @@ export const MediaProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     useEffect(() => {
         const initStream = async () => {
+            setIsLoading(true);
             // On phones the useful shot is the table, not the player's face
             const preferRear = isHandheldDevice();
 
@@ -193,14 +202,19 @@ export const MediaProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             }
         };
 
-        initStream();
+        if (!isMediaRoute) return;
+        if (hasRequestedMedia.current) return;
+        hasRequestedMedia.current = true;
 
-        return () => {
-            // Cleanup stream on unmount
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-            }
-        };
+        initStream();
+    }, [isMediaRoute]);
+
+    useEffect(() => {
+        streamRef.current = localStream;
+    }, [localStream]);
+
+    useEffect(() => () => {
+        streamRef.current?.getTracks().forEach(track => track.stop());
     }, []);
 
     const toggleMic = () => {
@@ -334,7 +348,8 @@ export const MediaProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             localStream,
             isMicMuted,
             isVideoEnabled,
-            isLoading,
+            // Off the game route nothing is loading, because nothing was asked for.
+            isLoading: isMediaRoute && isLoading,
             error,
             videoDevices,
             audioInputDevices,

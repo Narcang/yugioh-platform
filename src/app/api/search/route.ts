@@ -51,21 +51,77 @@ export async function GET(req: NextRequest) {
 // ----------------------------------------------------------------
 // Yu-Gi-Oh!
 // ----------------------------------------------------------------
+// Deck building needs more than a name and a picture: the frame type decides
+// whether a card goes to the Main or the Extra deck, and the banlist status
+// decides how many copies are allowed.
+const YUGIOH_FULL_COLUMNS =
+  'id, name_en, name_it, image_url, type, frame_type, is_extra_deck, ban_tcg, ban_ocg, desc_en, desc_it, atk, def, level, attribute, race, archetype';
+const YUGIOH_BASE_COLUMNS = 'id, name_en, name_it, image_url';
+
+interface YugiohRow {
+  id: string;
+  name_en: string;
+  name_it: string | null;
+  image_url: string | null;
+  type?: string | null;
+  frame_type?: string | null;
+  is_extra_deck?: boolean | null;
+  ban_tcg?: string | null;
+  ban_ocg?: string | null;
+  desc_en?: string | null;
+  desc_it?: string | null;
+  atk?: number | null;
+  def?: number | null;
+  level?: number | null;
+  attribute?: string | null;
+  race?: string | null;
+  archetype?: string | null;
+}
+
 async function searchYugioh(q: string) {
-  const { data, error } = await supabase
+  const filter = `name_en.ilike.%${q}%,name_it.ilike.%${q}%`;
+
+  let { data, error } = await supabase
     .from('yugioh_cards')
-    .select('id, name_en, name_it, image_url')
-    .or(`name_en.ilike.%${q}%,name_it.ilike.%${q}%`)
-    .limit(20);
+    .select(YUGIOH_FULL_COLUMNS)
+    .or(filter)
+    .limit(20)
+    .overrideTypes<YugiohRow[]>();
+
+  // The metadata columns arrived in migration 003. Until it has been applied,
+  // fall back to the original projection so search keeps working — the deck
+  // builder is the only caller that needs the extra fields.
+  if (error) {
+    console.warn('[search/yugioh] metadata columns unavailable:', error.message);
+    ({ data, error } = await supabase
+      .from('yugioh_cards')
+      .select(YUGIOH_BASE_COLUMNS)
+      .or(filter)
+      .limit(20)
+      .overrideTypes<YugiohRow[]>());
+  }
 
   if (error) throw error;
 
   const results = (data ?? []).map((c) => ({
     id: c.id,
     name: c.name_it ?? c.name_en,
+    name_en: c.name_en,
     image_url:
       c.image_url ??
       `https://images.ygoprodeck.com/images/cards_cropped/${c.id}.jpg`,
+    type: c.type ?? null,
+    frame_type: c.frame_type ?? null,
+    is_extra_deck: c.is_extra_deck ?? null,
+    ban_tcg: c.ban_tcg ?? null,
+    ban_ocg: c.ban_ocg ?? null,
+    desc: c.desc_it ?? c.desc_en ?? null,
+    atk: c.atk ?? null,
+    def: c.def ?? null,
+    level: c.level ?? null,
+    attribute: c.attribute ?? null,
+    race: c.race ?? null,
+    archetype: c.archetype ?? null,
   }));
 
   return NextResponse.json({ results });

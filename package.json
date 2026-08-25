@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed": "node scripts/seed-cards.mjs",
+    "seed:banlist": "node scripts/seed-cards.mjs banlist"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.91.0",

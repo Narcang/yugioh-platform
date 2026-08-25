@@ -8,6 +8,25 @@ export type TeamId = 'A' | 'B';
 
 export const TEAM_IDS: TeamId[] = ['A', 'B'];
 
+/** Formats selectable when creating a room or a deck. */
+export const GAME_FORMATS: Record<string, string[]> = {
+  'Yugioh': [
+    'Advanced (TCG)',
+    'Traditional',
+    'GOAT Format',
+    'Edison Format',
+    'Speed Duel',
+    'Rush Duel',
+  ],
+  'Magic': ['Standard', 'Modern', 'Commander', 'Legacy', 'Vintage', 'Pauper'],
+  'Pokemon': ['Standard', 'Expanded', 'Unlimited'],
+  'One Piece': ['Standard'],
+  'Dragon Ball': ['Standard'],
+  'Riftbound': ['Standard'],
+};
+
+export const GAME_TYPES = Object.keys(GAME_FORMATS);
+
 /**
  * Base life / HP values per game type and format.
  * Used when creating or joining a lobby.

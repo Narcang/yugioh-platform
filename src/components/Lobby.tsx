@@ -7,6 +7,7 @@ import AuthModal from './AuthModal';
 import UserAccountSettings from './UserAccountSettings';
 import AdminPanel from './AdminPanel';
 import Footer from './Footer';
+import SiteNav from './SiteNav';
 
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
@@ -277,6 +278,7 @@ const Lobby: React.FC = () => {
 
     return (
         <div className="lobby-container">
+            <SiteNav />
             <div className="lobby-content">
                 <header className="lobby-header" style={{
                     display: 'grid',

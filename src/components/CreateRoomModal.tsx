@@ -9,6 +9,7 @@ import {
     getMatchModeLabel,
     getPlayerCountLabel,
     getBaseLifePoints,
+    GAME_FORMATS,
 } from '@/lib/gameConfig';
 
 interface CreateRoomModalProps {
@@ -27,22 +28,6 @@ export interface RoomData {
     maxPlayers: number;
     matchMode: MatchMode;
 }
-
-const GAME_FORMATS: Record<string, string[]> = {
-    "Yugioh": [
-        "Advanced (TCG)",
-        "Traditional",
-        "GOAT Format",
-        "Edison Format",
-        "Speed Duel",
-        "Rush Duel"
-    ],
-    "Magic": ["Standard", "Modern", "Commander", "Legacy", "Vintage", "Pauper"],
-    "Pokemon": ["Standard", "Expanded", "Unlimited"],
-    "One Piece": ["Standard"],
-    "Dragon Ball": ["Standard"],
-    "Riftbound": ["Standard"]
-};
 
 const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClose, onCreate }) => {
     const [name, setName] = useState('');
