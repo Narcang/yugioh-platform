@@ -278,7 +278,7 @@ const Lobby: React.FC = () => {
 
     return (
         <div className="lobby-container">
-            <SiteNav />
+            <SiteNav showAccount={false} />
             <div className="lobby-content">
                 <header className="lobby-header" style={{
                     display: 'grid',

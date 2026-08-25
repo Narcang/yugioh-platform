@@ -1,141 +1,89 @@
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import AuthModal from './AuthModal';
 
 /**
- * Top navigation for the pages outside the game.
+ * Slim site header.
  *
  * Deliberately not mounted in the root layout: that also wraps the match,
  * which runs full screen and cannot afford a bar stealing vertical space.
+ *
+ * Styles live in globals.css rather than in a <style jsx> block, because
+ * styled-jsx does not add its scope class to a custom component such as Link,
+ * so any rule reaching inside one silently never matches.
  */
 
-interface NavLink {
-    href: string;
-    label: string;
-    requiresAuth?: boolean;
+interface SiteNavProps {
+    /**
+     * Landing page and lobby already show the big centred logo, so the header
+     * only brands itself on the deck pages, which have no other logo.
+     */
+    showLogo?: boolean;
+    /**
+     * The lobby header already carries the profile menu, with admin panel and
+     * settings inside it, so the header does not repeat the control there.
+     */
+    showAccount?: boolean;
 }
 
-const LINKS: NavLink[] = [
-    { href: '/', label: 'Gioca' },
+const LINKS = [
     { href: '/decks', label: 'Esplora' },
-    { href: '/decks/mine', label: 'I tuoi mazzi', requiresAuth: true },
+    { href: '/decks/mine', label: 'I tuoi deck', requiresAuth: true },
 ];
 
-const SiteNav: React.FC = () => {
+const SiteNav: React.FC<SiteNavProps> = ({ showLogo = false, showAccount = true }) => {
     const pathname = usePathname();
-    const { user } = useAuth();
+    const { user, profile } = useAuth();
+    const [isAuthOpen, setIsAuthOpen] = useState(false);
 
     const isActive = (href: string) =>
-        href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
+        pathname === href || pathname.startsWith(`${href}/`);
+
+    const initials =
+        profile?.username?.substring(0, 2).toUpperCase() ??
+        user?.email?.substring(0, 2).toUpperCase() ??
+        '··';
 
     return (
         <nav className="site-nav">
-            <Link href="/" className="brand">
-                <img src="/logo.png" alt="PlayTCG.Online" />
-            </Link>
+            {showLogo && (
+                <Link href="/" className="site-nav-brand" aria-label="Torna al portale">
+                    <img src="/logo.png" alt="PlayTCG.Online" />
+                </Link>
+            )}
 
-            <div className="nav-links">
+            <div className="site-nav-links">
                 {LINKS.filter((link) => !link.requiresAuth || user).map((link) => (
                     <Link
                         key={link.href}
                         href={link.href}
-                        className={isActive(link.href) ? 'nav-link active' : 'nav-link'}
+                        className={isActive(link.href) ? 'site-nav-link active' : 'site-nav-link'}
                     >
                         {link.label}
                     </Link>
                 ))}
             </div>
 
-            <Link href="/decks/new" className="nav-cta">
-                Crea un mazzo
-            </Link>
+            <div className="site-nav-actions">
+                <Link href="/decks/new" className="site-nav-cta">Crea un mazzo</Link>
 
-            <style jsx>{`
-                .site-nav {
-                    display: flex;
-                    align-items: center;
-                    gap: 24px;
-                    padding: 12px 24px;
-                    background: #0d0d0d;
-                    border-bottom: 1px solid #262626;
-                    position: sticky;
-                    top: 0;
-                    z-index: 50;
-                }
-                .brand {
-                    display: flex;
-                    align-items: center;
-                    flex-shrink: 0;
-                }
-                .brand img {
-                    height: 34px;
-                    width: auto;
-                }
-                .nav-links {
-                    display: flex;
-                    align-items: center;
-                    gap: 4px;
-                    flex: 1;
-                    min-width: 0;
-                    overflow-x: auto;
-                    scrollbar-width: none;
-                }
-                .nav-links::-webkit-scrollbar {
-                    display: none;
-                }
-                .nav-link {
-                    padding: 8px 14px;
-                    border-radius: 6px;
-                    color: #a3a3a3;
-                    text-decoration: none;
-                    font-size: 14px;
-                    font-weight: 500;
-                    white-space: nowrap;
-                    transition: background 0.15s, color 0.15s;
-                }
-                .nav-link:hover {
-                    background: #1f1f1f;
-                    color: #fff;
-                }
-                .nav-link.active {
-                    background: #1f1f1f;
-                    color: #f4c430;
-                }
-                .nav-cta {
-                    flex-shrink: 0;
-                    padding: 9px 16px;
-                    border-radius: 6px;
-                    background: #f4c430;
-                    color: #000;
-                    font-size: 14px;
-                    font-weight: 700;
-                    text-decoration: none;
-                    white-space: nowrap;
-                }
-                .nav-cta:hover {
-                    background: #ffd85c;
-                }
+                {showAccount && (user ? (
+                    <Link href="/" className="site-nav-account" title={profile?.username ?? user.email ?? 'Profilo'}>
+                        {profile?.avatar_url
+                            ? <img src={profile.avatar_url} alt="" />
+                            : <span>{initials}</span>}
+                    </Link>
+                ) : (
+                    <button className="site-nav-login" onClick={() => setIsAuthOpen(true)}>
+                        Accedi
+                    </button>
+                ))}
+            </div>
 
-                @media (max-width: 640px) {
-                    .site-nav {
-                        gap: 12px;
-                        padding: 10px 12px;
-                    }
-                    .brand img {
-                        height: 26px;
-                    }
-                    .nav-link {
-                        padding: 6px 10px;
-                        font-size: 13px;
-                    }
-                    .nav-cta {
-                        padding: 8px 12px;
-                        font-size: 13px;
-                    }
-                }
-            `}</style>
+            <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
         </nav>
     );
 };

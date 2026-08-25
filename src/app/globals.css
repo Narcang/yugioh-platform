@@ -1008,6 +1008,158 @@ input:checked+.slider:before {
   text-align: center;
 }
 
+/* Site header: shown on the landing page, the lobby and the deck pages,
+   never inside a match. */
+.site-nav {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 10px 24px;
+  background: #0d0d0d;
+  border-bottom: 1px solid #262626;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.site-nav-brand {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.site-nav-brand img {
+  height: 34px;
+  width: auto;
+}
+
+.site-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.site-nav-links::-webkit-scrollbar {
+  display: none;
+}
+
+.site-nav-link {
+  padding: 8px 14px;
+  border-radius: 6px;
+  color: #a3a3a3;
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+
+.site-nav-link:hover {
+  background: #1f1f1f;
+  color: #fff;
+}
+
+.site-nav-link.active {
+  background: #1f1f1f;
+  color: #f4c430;
+}
+
+.site-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.site-nav-cta {
+  padding: 9px 16px;
+  border-radius: 6px;
+  background: #f4c430;
+  color: #000;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.site-nav-cta:hover {
+  background: #ffd85c;
+}
+
+.site-nav-login {
+  padding: 9px 16px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid #404040;
+  color: #f5f5f5;
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.site-nav-login:hover {
+  border-color: #f4c430;
+  color: #f4c430;
+}
+
+.site-nav-account {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #ef4444;
+  border: 2px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.site-nav-account img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (max-width: 640px) {
+  .site-nav {
+    gap: 10px;
+    padding: 8px 12px;
+  }
+
+  .site-nav-brand img {
+    height: 26px;
+  }
+
+  .site-nav-link {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+
+  .site-nav-cta,
+  .site-nav-login {
+    padding: 7px 11px;
+    font-size: 0.78rem;
+  }
+
+  .site-nav-account {
+    width: 32px;
+    height: 32px;
+  }
+}
+
 /* Lobby Styles */
 .lobby-container {
   width: 100vw;

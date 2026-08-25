@@ -26,9 +26,7 @@ const LandingPage: React.FC = () => {
             color: '#FFFFFF',
             textAlign: 'center'
         }}>
-            <div style={{ width: '100%', textAlign: 'left' }}>
-                <SiteNav />
-            </div>
+            <SiteNav />
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
             <div style={{ marginBottom: '2rem' }}>
                 {/* User must place logo.png in public folder */}

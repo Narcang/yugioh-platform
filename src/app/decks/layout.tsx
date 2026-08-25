@@ -13,7 +13,7 @@ export default function DecksLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <div className="decks-shell">
-      <SiteNav />
+      <SiteNav showLogo />
       <main className="decks-main">{children}</main>
     </div>
   );

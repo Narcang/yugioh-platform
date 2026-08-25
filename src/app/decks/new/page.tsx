@@ -66,8 +66,8 @@ export default function NewDeckPage() {
         return (
             <div className="decks-empty">
                 <h2>Serve un account</h2>
-                <p>Accedi per creare e salvare i tuoi mazzi.</p>
-                <Link href="/" className="deck-btn primary">Vai al login</Link>
+                <p>Usa il tasto Accedi qui in alto per creare e salvare i tuoi mazzi.</p>
+                <Link href="/decks" className="deck-btn">Intanto guarda i mazzi pubblici</Link>
             </div>
         );
     }
