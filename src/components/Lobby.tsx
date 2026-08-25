@@ -14,7 +14,7 @@ import { getFirstPhase } from '@/lib/gameConfig';
 
 const Lobby: React.FC = () => {
     const { setAppView, setCurrentRoomId, setIsSettingsOpen, setGameType, setGameFormat, setCurrentPhase, setCurrentTurn } = useLayout();
-    const { user, profile, isAdmin, signOut } = useAuth();
+    const { user, profile, isAdmin, signOut, session } = useAuth();
     const [joinCode, setJoinCode] = useState('');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -208,19 +208,37 @@ const Lobby: React.FC = () => {
 
     const handleDeleteRoom = async (e: React.MouseEvent, roomId: string) => {
         e.stopPropagation();
-        if (!confirm("Are you sure you want to delete this room?")) return;
+        if (!confirm('Sei sicuro di voler chiudere questa stanza?')) return;
 
         try {
-            const { error } = await supabase
-                .from('rooms')
-                .delete()
-                .eq('id', roomId);
+            if (isAdmin) {
+                const token = session?.access_token;
+                if (!token) throw new Error('Sessione non valida');
 
-            if (error) throw error;
-            // Room list will auto-update via subscription
+                const res = await fetch('/api/admin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ action: 'close_room', targetId: roomId }),
+                });
+                const json = await res.json();
+                if (!json.ok) throw new Error(json.error ?? 'Errore chiusura stanza');
+            } else {
+                const { error } = await supabase
+                    .from('rooms')
+                    .delete()
+                    .eq('id', roomId);
+
+                if (error) throw error;
+            }
+
+            // Aggiornamento immediato UI (il realtime Supabase non è sempre attivo)
+            setRooms((prev) => prev.filter((r) => r.id !== roomId));
         } catch (err) {
-            console.error("Error deleting room:", err);
-            alert("Error deleting room");
+            console.error('Error deleting room:', err);
+            alert('Errore durante la chiusura della stanza');
         }
     };
 

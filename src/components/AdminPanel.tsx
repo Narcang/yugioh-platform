@@ -86,7 +86,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
     setActionLoading(null);
     if (json.ok) {
       setMessage({ type: 'ok', text: `${label} — completato` });
-      if (tab === 'rooms') loadRooms(); else loadUsers();
+      if (tab === 'rooms') {
+        if (act === 'close_room') {
+          setRooms((prev) => prev.filter((r) => r.id !== targetId));
+        } else {
+          loadRooms();
+        }
+      } else {
+        loadUsers();
+      }
     } else {
       setMessage({ type: 'err', text: json.error ?? 'Errore' });
     }
