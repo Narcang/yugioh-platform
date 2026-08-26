@@ -121,6 +121,19 @@ async function upsertBatch(table, rows, batchSize = 500) {
   }
 }
 
+async function deleteStale(table, markerColumn) {
+  if (DRY_RUN) {
+    console.log(`  🅳  dry run: would delete ${table} rows with ${markerColumn} IS NULL`);
+    return;
+  }
+  const { count, error } = await supabase
+    .from(table)
+    .delete({ count: 'exact' })
+    .is(markerColumn, null);
+  if (error) throw new Error(`Could not drop stale ${table} rows: ${error.message}`);
+  if (count) console.log(`  ↳ dropped ${count} leftover rows from the old cache`);
+}
+
 // ----------------------------------------------------------------
 // 1. Yu-Gi-Oh! — fetch from YGOPRODeck API (paginated)
 // ----------------------------------------------------------------
@@ -317,6 +330,7 @@ async function seedPokemon() {
 
   console.log(`  Found ${rows.length} cards`);
   await upsertBatch('pokemon_cards', rows, 300);
+  await deleteStale('pokemon_cards', 'set_id');
   console.log(`  ✅ Pokemon done`);
 }
 
@@ -407,6 +421,9 @@ async function seedMagic() {
 
   console.log(`  Found ${rows.length} cards`);
   await upsertBatch('magic_cards', rows, 250);
+  // The old Python cache stored printing IDs that are not in oracle_cards, so
+  // they survive an upsert. They have no oracle_id; the new rows always do.
+  await deleteStale('magic_cards', 'oracle_id');
   console.log(`  ✅ Magic done`);
 }
 
@@ -465,6 +482,7 @@ async function seedOnePiece() {
 
   console.log(`  Found ${rows.length} cards`);
   await upsertBatch('onepiece_cards', rows, 300);
+  await deleteStale('onepiece_cards', 'card_type');
   console.log(`  ✅ One Piece done`);
 }
 

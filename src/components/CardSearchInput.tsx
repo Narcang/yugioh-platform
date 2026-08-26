@@ -12,6 +12,7 @@ export interface CardSearchResult {
     id: string;
     name: string;
     image_url: string;
+    image_large?: string | null;
     /** Yu-Gi-Oh only: decides Main vs Extra deck and copy limits. */
     type?: string | null;
     frame_type?: string | null;
@@ -20,8 +21,24 @@ export interface CardSearchResult {
     ban_ocg?: string | null;
     desc?: string | null;
     /** Other games carry their rules text under their own key. */
-    oracle_text?: string;
-    text?: string;
+    oracle_text?: string | null;
+    text?: string | null;
+    /** Shared across Magic, Pokemon and One Piece. */
+    legalities?: Record<string, string> | null;
+    /** Pokemon */
+    subtypes?: string[];
+    supertype?: string | null;
+    regulation_mark?: string | null;
+    rules?: string[];
+    /** Magic */
+    oracle_id?: string | null;
+    mana_cost?: string | null;
+    color_identity?: string[];
+    colors?: string[];
+    layout?: string | null;
+    /** One Piece */
+    card_type?: string | null;
+    ban_status?: string | null;
 }
 
 interface CardSearchInputProps {

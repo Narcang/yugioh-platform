@@ -9,15 +9,6 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-// Write client: uses the service role key to cache new cards from external APIs.
-// Falls back gracefully to the anon client if the key is not configured.
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabaseWriter = serviceKey
-  ? createClient(SUPABASE_URL, serviceKey)
-  : supabase;
-
-const POKEMON_API_KEY = process.env.POKEMON_TCG_API_KEY ?? '';
-
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const q = searchParams.get('q')?.trim() ?? '';
@@ -85,6 +76,7 @@ async function searchYugioh(q: string) {
     .from('yugioh_cards')
     .select(YUGIOH_FULL_COLUMNS)
     .or(filter)
+    .order('name_en')
     .limit(20)
     .overrideTypes<YugiohRow[]>();
 
@@ -97,6 +89,7 @@ async function searchYugioh(q: string) {
       .from('yugioh_cards')
       .select(YUGIOH_BASE_COLUMNS)
       .or(filter)
+      .order('name_en')
       .limit(20)
       .overrideTypes<YugiohRow[]>());
   }
@@ -127,167 +120,189 @@ async function searchYugioh(q: string) {
   return NextResponse.json({ results });
 }
 
-// ----------------------------------------------------------------
-// Pokemon
-// ----------------------------------------------------------------
+// The catalogues are complete, so a miss is a miss: calling the official
+// APIs on every sparse query used to fill the old 200-card cache, and now
+// would only add latency (and, for Pokemon, 502s).
+
+const POKEMON_FULL_COLUMNS =
+  'id, name, image_url, image_large, set_name, set_id, number, types, subtypes, supertype, hp, rarity, legalities, regulation_mark, rules';
+const POKEMON_BASE_COLUMNS = 'id, name, image_url, set_name, number';
+
+interface PokemonRow {
+  id: string;
+  name: string;
+  image_url: string | null;
+  image_large?: string | null;
+  set_name: string | null;
+  set_id?: string | null;
+  number: string | null;
+  types?: string[] | null;
+  subtypes?: string[] | null;
+  supertype?: string | null;
+  hp?: string | null;
+  rarity?: string | null;
+  legalities?: Record<string, string> | null;
+  regulation_mark?: string | null;
+  rules?: string[] | null;
+}
+
 async function searchPokemon(q: string) {
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from('pokemon_cards')
-    .select('id, name, image_url, set_name, number')
+    .select(POKEMON_FULL_COLUMNS)
     .ilike('name', `%${q}%`)
-    .limit(20);
+    .order('name')
+    .limit(20)
+    .overrideTypes<PokemonRow[]>();
+
+  if (error) {
+    console.warn('[search/pokemon] metadata columns unavailable:', error.message);
+    ({ data, error } = await supabase
+      .from('pokemon_cards')
+      .select(POKEMON_BASE_COLUMNS)
+      .ilike('name', `%${q}%`)
+      .order('name')
+      .limit(20)
+      .overrideTypes<PokemonRow[]>());
+  }
 
   if (error) throw error;
 
-  let results = (data ?? []).map((c) => ({
+  const results = (data ?? []).map((c) => ({
     id: c.id,
     name: c.name,
     image_url: c.image_url,
+    image_large: c.image_large ?? null,
     set: c.set_name,
+    set_id: c.set_id ?? null,
     number: c.number,
+    types: c.types ?? [],
+    subtypes: c.subtypes ?? [],
+    supertype: c.supertype ?? null,
+    hp: c.hp ?? null,
+    rarity: c.rarity ?? null,
+    legalities: c.legalities ?? null,
+    regulation_mark: c.regulation_mark ?? null,
+    rules: c.rules ?? [],
   }));
-
-  // External fallback: PokemonTCG API
-  if (results.length < 5 && POKEMON_API_KEY) {
-    try {
-      const resp = await fetch(
-        `https://api.pokemontcg.io/v2/cards?q=name:"*${encodeURIComponent(q)}*"&pageSize=10`,
-        { headers: { 'X-Api-Key': POKEMON_API_KEY } }
-      );
-      if (resp.ok) {
-        const apiData = await resp.json();
-        const existing = new Set(results.map((r) => r.id));
-        const newCards = (apiData.data ?? []).filter(
-          (c: Record<string, unknown>) => !existing.has(c.id as string)
-        );
-        if (newCards.length > 0) {
-          type PokemonRow = { id: string; name: string; image_url: string; set_name: string; number: string; types: string[]; supertype: string };
-          const rows: PokemonRow[] = newCards.map((c: Record<string, unknown>) => {
-            const images = c.images as Record<string, string> | undefined;
-            const set = c.set as Record<string, string> | undefined;
-            return {
-              id: c.id as string,
-              name: c.name as string,
-              image_url: images?.large ?? images?.small ?? '',
-              set_name: set?.name ?? '',
-              number: (c.number as string) ?? '',
-              types: (c.types as string[]) ?? [],
-              supertype: (c.supertype as string) ?? '',
-            };
-          });
-          await supabaseWriter
-            .from('pokemon_cards')
-            .upsert(rows, { onConflict: 'id' });
-          results = [
-            ...results,
-            ...rows.map((r: PokemonRow) => ({
-              id: r.id,
-              name: r.name,
-              image_url: r.image_url,
-              set: r.set_name,
-              number: r.number,
-            })),
-          ].slice(0, 20);
-        }
-      }
-    } catch (e) {
-      console.error('[search/pokemon] external fallback failed:', e);
-    }
-  }
 
   return NextResponse.json({ results });
 }
 
-// ----------------------------------------------------------------
-// Magic: The Gathering  (Scryfall)
-// ----------------------------------------------------------------
+const MAGIC_FULL_COLUMNS =
+  'id, oracle_id, name, image_url, image_large, set_name, set_code, rarity, cmc, mana_cost, type, oracle_text, colors, color_identity, legalities, layout, keywords';
+const MAGIC_BASE_COLUMNS = 'id, name, image_url, set_name, rarity, type, oracle_text';
+
+interface MagicRow {
+  id: string;
+  oracle_id?: string | null;
+  name: string;
+  image_url: string | null;
+  image_large?: string | null;
+  set_name: string | null;
+  set_code?: string | null;
+  rarity: string | null;
+  cmc?: number | null;
+  mana_cost?: string | null;
+  type: string | null;
+  oracle_text: string | null;
+  colors?: string[] | null;
+  color_identity?: string[] | null;
+  legalities?: Record<string, string> | null;
+  layout?: string | null;
+  keywords?: string[] | null;
+}
+
 async function searchMagic(q: string) {
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from('magic_cards')
-    .select('id, name, image_url, set_name, rarity, type, oracle_text')
+    .select(MAGIC_FULL_COLUMNS)
     .ilike('name', `%${q}%`)
-    .limit(20);
+    .order('name')
+    .limit(20)
+    .overrideTypes<MagicRow[]>();
+
+  if (error) {
+    console.warn('[search/magic] metadata columns unavailable:', error.message);
+    ({ data, error } = await supabase
+      .from('magic_cards')
+      .select(MAGIC_BASE_COLUMNS)
+      .ilike('name', `%${q}%`)
+      .order('name')
+      .limit(20)
+      .overrideTypes<MagicRow[]>());
+  }
 
   if (error) throw error;
 
-  let results = (data ?? []).map((c) => ({
+  const results = (data ?? []).map((c) => ({
     id: c.id,
+    oracle_id: c.oracle_id ?? null,
     name: c.name,
     image_url: c.image_url,
+    image_large: c.image_large ?? null,
     set: c.set_name,
+    set_code: c.set_code ?? null,
     rarity: c.rarity,
+    cmc: c.cmc ?? null,
+    mana_cost: c.mana_cost ?? null,
     type: c.type,
     oracle_text: c.oracle_text,
+    colors: c.colors ?? [],
+    color_identity: c.color_identity ?? [],
+    legalities: c.legalities ?? null,
+    layout: c.layout ?? null,
+    keywords: c.keywords ?? [],
   }));
-
-  // External fallback: Scryfall
-  if (results.length < 5) {
-    try {
-      const resp = await fetch(
-        `https://api.scryfall.com/cards/search?q=${encodeURIComponent(q)}`
-      );
-      if (resp.ok) {
-        const apiData = await resp.json();
-        const existing = new Set(results.map((r) => r.id));
-        const newCards = (apiData.data ?? []).filter(
-          (c: Record<string, unknown>) => !existing.has(c.id as string)
-        );
-        if (newCards.length > 0) {
-          type MagicRow = { id: string; name: string; image_url: string; set_name: string; rarity: string; cmc: number; type: string; oracle_text: string };
-          const rows: MagicRow[] = newCards.map((c: Record<string, unknown>) => {
-            const imageUris = c.image_uris as Record<string, string> | undefined;
-            const cardFaces = c.card_faces as Array<{ image_uris?: Record<string, string> }> | undefined;
-            const image_url =
-              imageUris?.normal ??
-              cardFaces?.[0]?.image_uris?.normal ??
-              '';
-            return {
-              id: c.id as string,
-              name: c.name as string,
-              image_url,
-              set_name: (c.set_name as string) ?? '',
-              rarity: (c.rarity as string) ?? '',
-              cmc: (c.cmc as number) ?? 0,
-              type: (c.type_line as string) ?? '',
-              oracle_text: (c.oracle_text as string) ?? '',
-            };
-          });
-          await supabaseWriter
-            .from('magic_cards')
-            .upsert(rows, { onConflict: 'id' });
-          results = [
-            ...results,
-            ...rows.map((r: MagicRow) => ({
-              id: r.id,
-              name: r.name,
-              image_url: r.image_url,
-              set: r.set_name,
-              rarity: r.rarity,
-              type: r.type,
-              oracle_text: r.oracle_text,
-            })),
-          ].slice(0, 20);
-        }
-      }
-    } catch (e) {
-      console.error('[search/magic] external fallback failed:', e);
-    }
-  }
 
   return NextResponse.json({ results });
 }
 
-// ----------------------------------------------------------------
-// One Piece
-// ----------------------------------------------------------------
+const ONEPIECE_FULL_COLUMNS =
+  'id, name, image_url, set_name, set_code, rarity, type, card_type, text, color, colors, cost, power, counter, attribute, life, trigger, ban_status';
+const ONEPIECE_BASE_COLUMNS =
+  'id, name, image_url, set_name, rarity, type, text, color, cost, power, counter';
+
+interface OnePieceRow {
+  id: string;
+  name: string;
+  image_url: string | null;
+  set_name: string | null;
+  set_code?: string | null;
+  rarity: string | null;
+  type: string | null;
+  card_type?: string | null;
+  text: string | null;
+  color: string | null;
+  colors?: string[] | null;
+  cost: string | null;
+  power: string | null;
+  counter: string | null;
+  attribute?: string | null;
+  life?: string | null;
+  trigger?: string | null;
+  ban_status?: string | null;
+}
+
 async function searchOnePiece(q: string) {
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from('onepiece_cards')
-    .select(
-      'id, name, image_url, set_name, rarity, type, text, color, cost, power, counter'
-    )
+    .select(ONEPIECE_FULL_COLUMNS)
     .ilike('name', `%${q}%`)
-    .limit(20);
+    .order('name')
+    .limit(20)
+    .overrideTypes<OnePieceRow[]>();
+
+  if (error) {
+    console.warn('[search/onepiece] metadata columns unavailable:', error.message);
+    ({ data, error } = await supabase
+      .from('onepiece_cards')
+      .select(ONEPIECE_BASE_COLUMNS)
+      .ilike('name', `%${q}%`)
+      .order('name')
+      .limit(20)
+      .overrideTypes<OnePieceRow[]>());
+  }
 
   if (error) throw error;
 
@@ -296,13 +311,20 @@ async function searchOnePiece(q: string) {
     name: c.name,
     image_url: c.image_url,
     set: c.set_name,
+    set_code: c.set_code ?? null,
     rarity: c.rarity,
     type: c.type,
+    card_type: c.card_type ?? null,
     text: c.text,
     color: c.color,
+    colors: c.colors ?? [],
     cost: c.cost,
     power: c.power,
     counter: c.counter,
+    attribute: c.attribute ?? null,
+    life: c.life ?? null,
+    trigger: c.trigger ?? null,
+    ban_status: c.ban_status ?? null,
   }));
 
   return NextResponse.json({ results });
