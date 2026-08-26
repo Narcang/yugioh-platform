@@ -7,7 +7,7 @@ import { PublicDeckSummary } from '@/lib/decks';
 export const metadata: Metadata = {
   title: 'Esplora i mazzi | PlayTCG.Online',
   description:
-    'Sfoglia i mazzi Yu-Gi-Oh! condivisi dalla community: lista carte, formato e controllo di legalità.',
+    'Sfoglia i mazzi condivisi dalla community: lista carte, formato e controllo di legalità.',
 };
 
 // Rendered on the server and refreshed periodically so search engines see the
@@ -34,8 +34,7 @@ export default async function ExploreDecksPage() {
           <h1>Esplora i mazzi</h1>
           <p>
             I mazzi che la community ha reso pubblici. Aprine uno per vedere la
-            lista completa, i conteggi di Main, Extra e Side e se rispetta il
-            formato.
+            lista completa e se rispetta il formato.
           </p>
         </div>
         <Link href="/decks/new" className="deck-btn primary">Crea il tuo</Link>

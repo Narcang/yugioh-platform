@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
 import { GAME_FORMATS, GAME_TYPES } from '@/lib/gameConfig';
-import { getFormatRules, isDeckBuilderSupported } from '@/lib/deckRules';
+import { getFormatRules, isDeckBuilderSupported, formatRulesHint } from '@/lib/deckRules';
 import { DECKS_TABLE } from '@/lib/decks';
 
 export default function NewDeckPage() {
@@ -100,7 +100,7 @@ export default function NewDeckPage() {
                     </select>
                     {!supported && (
                         <span className="hint">
-                            Per ora il database carte è completo solo per Yu-Gi-Oh!.
+                            Il database carte per questo gioco non è ancora nel builder.
                         </span>
                     )}
                 </div>
@@ -116,12 +116,7 @@ export default function NewDeckPage() {
                             <option key={f} value={f}>{f}</option>
                         ))}
                     </select>
-                    <span className="hint">
-                        Main {rules.main.min}-{rules.main.max} carte
-                        {rules.hasExtraDeck ? `, Extra max ${rules.extra.max}` : ', nessun Extra Deck'}
-                        , Side max {rules.side.max}, {rules.maxCopies} copie per carta
-                        {rules.banlist ? `, lista ban ${rules.banlist.toUpperCase()}` : ', nessuna lista ban'}.
-                    </span>
+                    <span className="hint">{formatRulesHint(rules)}</span>
                 </div>
 
                 <div className="deck-field">

@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { cardImageUrl } from '@/lib/decks';
+import { coverImageUrl } from '@/lib/decks';
 
 /**
  * One deck in a grid. No hooks and no client state, so the same component
@@ -33,7 +33,7 @@ const DeckCardLink: React.FC<DeckCardLinkProps> = ({
   <Link href={`/decks/${id}`} className="deck-card">
     <div className="deck-card-cover">
       {coverCardId ? (
-        <img src={cardImageUrl(coverCardId)} alt="" loading="lazy" />
+        <img src={coverImageUrl(gameType, coverCardId)} alt="" loading="lazy" />
       ) : (
         <span className="placeholder">🂠</span>
       )}

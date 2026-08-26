@@ -6,30 +6,32 @@ import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
 import CardSearchInput, { CardSearchResult } from './CardSearchInput';
 import {
-    BanStatus,
     DECK_SECTIONS,
     DeckCard,
     DeckContents,
     DeckSection,
-    allowedCopies,
-    countCopies,
+    countSection,
     emptyDeck,
-    getBanLabel,
     groupEntries,
     getFormatRules,
     getSectionLabel,
-    isDeckableFrame,
-    isExtraDeckFrame,
+    hasExtraSection,
+    hasSideSection,
+    isCommanderCandidate,
+    isDeckable,
+    remainingCopies,
+    restrictionLabel,
     sectionFor,
     validateDeck,
 } from '@/lib/deckRules';
 import {
     DeckMeta,
     LoadedDeck,
-    cardFullImageUrl,
-    cardImageUrl,
     deckToRows,
+    entryImageUrl,
     loadDeck,
+    previewImageUrl,
+    searchResultToDeckCard,
 } from '@/lib/decks';
 
 interface DeckBuilderProps {
@@ -38,16 +40,17 @@ interface DeckBuilderProps {
     initialData: LoadedDeck | null;
 }
 
-function toDeckCard(result: CardSearchResult): DeckCard {
-    return {
-        cardId: result.id,
-        name: result.name,
-        imageUrl: result.image_url ?? cardImageUrl(result.id),
-        frameType: result.frame_type ?? null,
-        isExtraDeck: result.is_extra_deck ?? isExtraDeckFrame(result.frame_type),
-        banTcg: (result.ban_tcg as BanStatus) ?? null,
-        banOcg: (result.ban_ocg as BanStatus) ?? null,
-    };
+function searchHint(rules: ReturnType<typeof getFormatRules>): string {
+    if (rules.extraRole === 'leader') {
+        return 'Il Leader va da solo nel riquadro Leader. Il mazzo deve essere dei suoi colori.';
+    }
+    if (rules.extraRole === 'commander') {
+        return 'La prima creatura leggendaria diventa il Commander. Puoi spostarla dal mazzo.';
+    }
+    if (hasExtraSection(rules)) {
+        return 'Le carte finiscono automaticamente nel Main o nell\'Extra Deck. Il testo resta in ricerca, così aggiungi più copie di seguito.';
+    }
+    return 'Il testo resta in ricerca, così aggiungi più copie di seguito.';
 }
 
 const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
@@ -103,8 +106,12 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
     );
 
     const visibleSections = useMemo(
-        () => DECK_SECTIONS.filter((s) => s !== 'extra' || rules.hasExtraDeck !== false),
-        [rules.hasExtraDeck]
+        () => DECK_SECTIONS.filter((s) => {
+            if (s === 'extra') return hasExtraSection(rules);
+            if (s === 'side') return hasSideSection(rules);
+            return true;
+        }),
+        [rules]
     );
 
     // Before anything is hovered the panel shows the first card rather than a
@@ -112,14 +119,20 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
     const preview = hovered ?? deck.main[0]?.card ?? deck.extra[0]?.card ?? null;
 
     const addCard = useCallback((result: CardSearchResult) => {
-        const card = toDeckCard(result);
-        const section = sectionFor(card);
+        if (!meta) return;
+        const card = searchResultToDeckCard(result, meta.game_type);
 
         setDeck((prev) => {
-            // Over the copy limit the click would do nothing visible, so it is
-            // refused here rather than reported as a problem afterwards.
-            const limit = allowedCopies(card, rules);
-            if (countCopies(prev, card.cardId) >= limit) return prev;
+            if (remainingCopies(prev, card, rules) <= 0) return prev;
+
+            let section = sectionFor(card, rules);
+            if (
+                rules.extraRole === 'commander' &&
+                isCommanderCandidate(card) &&
+                countSection(prev, 'extra') === 0
+            ) {
+                section = 'extra';
+            }
 
             const next = { ...prev, [section]: [...prev[section]] };
             const index = next[section].findIndex((e) => e.card.cardId === card.cardId);
@@ -135,7 +148,7 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
             return next;
         });
         setIsDirty(true);
-    }, [rules]);
+    }, [meta, rules]);
 
     const changeQuantity = useCallback((section: DeckSection, cardId: string, delta: number) => {
         setDeck((prev) => {
@@ -145,7 +158,7 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
 
             const entry = list[index];
             const quantity = entry.quantity + delta;
-            if (delta > 0 && countCopies(prev, cardId) >= allowedCopies(entry.card, rules)) {
+            if (delta > 0 && remainingCopies(prev, entry.card, rules) <= 0) {
                 return prev;
             }
 
@@ -170,7 +183,7 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
 
             // Moving back out of the Side deck must respect where the card
             // actually belongs, or an Xyz monster would land in the Main deck.
-            const target: DeckSection = to === 'main' ? sectionFor(entry.card) : 'side';
+            const target: DeckSection = to === 'main' ? sectionFor(entry.card, rules) : 'side';
 
             const next = {
                 ...prev,
@@ -192,6 +205,49 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
             return next;
         });
         setIsDirty(true);
+    }, [rules]);
+
+    const moveToExtra = useCallback((from: DeckSection, cardId: string) => {
+        setDeck((prev) => {
+            const source = prev[from];
+            const index = source.findIndex((e) => e.card.cardId === cardId);
+            if (index < 0) return prev;
+            const entry = source[index];
+            const target: DeckSection = from === 'extra' ? 'main' : 'extra';
+
+            const next = {
+                ...prev,
+                [from]: [...source],
+                [target]: [...prev[target]],
+            };
+            next[from].splice(index, 1);
+
+            if (target === 'extra') {
+                // A commander/leader slot holds one card. If one is already
+                // there, swap it back into the main deck.
+                if (next.extra.length > 0) {
+                    const displaced = next.extra[0];
+                    next.extra = [{ ...entry, quantity: 1 }];
+                    const rest = entry.quantity > 1 ? [{ ...entry, quantity: entry.quantity - 1 }] : [];
+                    next.main = [...next.main.filter((e) => e.card.cardId !== cardId), displaced, ...rest];
+                    next.main.sort((a, b) => a.card.name.localeCompare(b.card.name));
+                    return next;
+                }
+            }
+
+            const existing = next[target].findIndex((e) => e.card.cardId === cardId);
+            if (existing >= 0) {
+                next[target][existing] = {
+                    ...next[target][existing],
+                    quantity: next[target][existing].quantity + entry.quantity,
+                };
+            } else {
+                next[target].push(entry);
+                next[target].sort((a, b) => a.card.name.localeCompare(b.card.name));
+            }
+            return next;
+        });
+        setIsDirty(true);
     }, []);
 
     const handleSave = async () => {
@@ -199,7 +255,11 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
         setIsSaving(true);
         setSaveError(null);
         try {
-            const cover = deck.main[0]?.card.cardId ?? deck.extra[0]?.card.cardId ?? null;
+            const cover =
+                (rules.extraRole && deck.extra[0]?.card.cardId) ||
+                deck.main[0]?.card.cardId ||
+                deck.extra[0]?.card.cardId ||
+                null;
 
             const { error } = await supabase.rpc('save_deck', {
                 p_deck_id: deckId,
@@ -263,9 +323,8 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
         section: DeckSection,
         entry: { card: DeckCard; quantity: number }
     ) => {
-        const ban = getBanLabel(
-            rules.banlist === 'ocg' ? entry.card.banOcg : entry.card.banTcg
-        );
+        const ban = restrictionLabel(entry.card, rules);
+        const gameType = meta?.game_type ?? 'Yugioh';
 
         return (
             <li
@@ -280,7 +339,7 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
                     aria-label={`Ingrandisci ${entry.card.name}`}
                 >
                     <img
-                        src={cardFullImageUrl(entry.card.cardId)}
+                        src={entryImageUrl(entry.card, gameType)}
                         alt={entry.card.name}
                         loading="lazy"
                     />
@@ -289,7 +348,7 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
 
                 <div className="entry-info">
                     <span className="entry-name">{entry.card.name}</span>
-                    {ban && rules.banlist && <span className="entry-ban">{ban}</span>}
+                    {ban && <span className="entry-ban">{ban}</span>}
                 </div>
 
                 {canEdit && (
@@ -302,12 +361,26 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
                             onClick={() => changeQuantity(section, entry.card.cardId, 1)}
                             aria-label="Aggiungi una copia"
                         >+</button>
-                        <button
-                            className="move"
-                            onClick={() => moveToSide(section, entry.card.cardId)}
-                        >
-                            {section === 'side' ? '↑ Deck' : '↓ Side'}
-                        </button>
+                        {hasSideSection(rules) && (
+                            <button
+                                className="move"
+                                onClick={() => moveToSide(section, entry.card.cardId)}
+                            >
+                                {section === 'side' ? '↑ Deck' : '↓ Side'}
+                            </button>
+                        )}
+                        {(rules.extraRole === 'commander' || rules.extraRole === 'leader') && section !== 'side' && (
+                            <button
+                                className="move"
+                                onClick={() => moveToExtra(section, entry.card.cardId)}
+                            >
+                                {section === 'extra'
+                                    ? '↓ Deck'
+                                    : rules.extraRole === 'leader'
+                                        ? '↑ Leader'
+                                        : '↑ Commander'}
+                            </button>
+                        )}
                     </div>
                 )}
             </li>
@@ -380,7 +453,7 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
                             <>
                                 <img
                                     key={preview.cardId}
-                                    src={cardFullImageUrl(preview.cardId)}
+                                    src={previewImageUrl(preview, meta.game_type)}
                                     alt={preview.name}
                                 />
                                 <span className="preview-name">{preview.name}</span>
@@ -401,11 +474,10 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
                                 onSelect={addCard}
                                 placeholder="Cerca una carta da aggiungere…"
                                 keepQueryOnSelect
-                                filter={(c) => isDeckableFrame(c.frame_type)}
+                                filter={(c) => isDeckable(c, meta.game_type)}
                             />
                             <span className="search-hint">
-                                Le carte finiscono automaticamente nel Main o nell&apos;Extra Deck.
-                                Il testo resta in ricerca, così aggiungi più copie di seguito.
+                                {searchHint(rules)}
                             </span>
                         </div>
                     )}
@@ -413,16 +485,16 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
                     {visibleSections.map((section) => {
                         const entries = deck[section];
                         const count = validation.counts[section];
-                        const max = section === 'main' ? rules.main.max : rules[section].max;
-                        const min = section === 'main' ? rules.main.min : 0;
+                        const max = section === 'main' ? rules.main.max : section === 'extra' ? rules.extra.max : rules.side.max;
+                        const min = section === 'main' ? rules.main.min : section === 'extra' ? rules.extra.min : 0;
                         const outOfRange = count > max || count < min;
 
                         return (
                             <section key={section} className="deck-section">
                                 <div className="deck-section-head">
-                                    <h2>{getSectionLabel(section)}</h2>
+                                    <h2>{getSectionLabel(section, rules)}</h2>
                                     <span className={outOfRange ? 'section-count out' : 'section-count'}>
-                                        {count}{section === 'main' ? ` / ${min}-${max}` : ` / ${max}`}
+                                        {min === max ? `${count} / ${max}` : `${count} / ${min}–${max}`}
                                     </span>
                                 </div>
 
@@ -432,7 +504,7 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
                                     </p>
                                 ) : (
                                     <div className="deck-groups">
-                                        {groupEntries(entries).map((group) => (
+                                        {groupEntries(entries, meta.game_type).map((group) => (
                                             <div key={group.group} className="deck-group">
                                                 <div className="deck-group-head">
                                                     <h3>{group.label}</h3>
@@ -467,15 +539,23 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
                     )}
 
                     <dl className="rules-list">
-                        <div><dt>Main</dt><dd>{rules.main.min}-{rules.main.max}</dd></div>
-                        {rules.hasExtraDeck !== false && (
-                            <div><dt>Extra</dt><dd>max {rules.extra.max}</dd></div>
+                        <div><dt>Main</dt><dd>{rules.main.min === rules.main.max ? rules.main.min : `${rules.main.min}–${rules.main.max}`}</dd></div>
+                        {hasExtraSection(rules) && (
+                            <div><dt>{rules.extraLabel ?? 'Extra'}</dt><dd>{rules.extra.min === rules.extra.max ? rules.extra.max : `max ${rules.extra.max}`}</dd></div>
                         )}
-                        <div><dt>Side</dt><dd>max {rules.side.max}</dd></div>
+                        {hasSideSection(rules) && (
+                            <div><dt>Side</dt><dd>max {rules.side.max}</dd></div>
+                        )}
                         <div><dt>Copie</dt><dd>{rules.maxCopies}</dd></div>
                         <div>
-                            <dt>Lista ban</dt>
-                            <dd>{rules.banlist ? rules.banlist.toUpperCase() : 'nessuna'}</dd>
+                            <dt>Legalità</dt>
+                            <dd>
+                                {rules.banlist
+                                    ? `lista ban ${rules.banlist.toUpperCase()}`
+                                    : rules.legalitySource === 'onepiece'
+                                        ? 'lista limitata da inserire'
+                                        : rules.legalityFormat ?? 'nessuna'}
+                            </dd>
                         </div>
                     </dl>
 
@@ -488,10 +568,10 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
             {zoomed && (
                 <div className="card-zoom" onClick={() => setZoomed(null)}>
                     <div className="card-zoom-inner" onClick={(e) => e.stopPropagation()}>
-                        <img src={cardFullImageUrl(zoomed.cardId)} alt={zoomed.name} />
+                        <img src={previewImageUrl(zoomed, meta.game_type)} alt={zoomed.name} />
                         <div>
                             <h3>{zoomed.name}</h3>
-                            <p>{zoomed.frameType}</p>
+                            <p>{zoomed.typeLine || zoomed.cardType || zoomed.frameType || zoomed.supertype}</p>
                             <button className="deck-btn" onClick={() => setZoomed(null)}>Chiudi</button>
                         </div>
                     </div>

@@ -48,17 +48,50 @@ export interface DeckCardRow {
 export const DECKS_TABLE = 'decks';
 export const DECK_CARDS_TABLE = 'deck_cards';
 
-/** Just the artwork, cropped square. Used for deck covers. */
+/** Just the artwork, cropped square. Used for Yu-Gi-Oh deck covers. */
 export function cardImageUrl(cardId: string): string {
   return `https://images.ygoprodeck.com/images/cards_cropped/${cardId}.jpg`;
 }
 
 /**
- * The whole card, frame and text included. The cropped art alone is not enough
- * to tell two cards apart in a list, let alone read one.
+ * The whole Yu-Gi-Oh card, frame and text included. The cropped art alone is
+ * not enough to tell two cards apart in a list, let alone read one.
  */
 export function cardFullImageUrl(cardId: string): string {
   return `https://images.ygoprodeck.com/images/cards/${cardId}.jpg`;
+}
+
+/** Cover art for a deck tile, using each game's public CDN. */
+export function coverImageUrl(gameType: string, cardId: string): string {
+  switch (gameType) {
+    case 'Pokemon': {
+      const dash = cardId.indexOf('-');
+      if (dash > 0) {
+        const set = cardId.slice(0, dash);
+        const number = cardId.slice(dash + 1);
+        return `https://images.pokemontcg.io/${set}/${number}.png`;
+      }
+      return cardImageUrl(cardId);
+    }
+    case 'Magic':
+      return `https://cards.scryfall.io/normal/front/${cardId[0]}/${cardId[1]}/${cardId}.jpg`;
+    case 'One Piece':
+      return `https://static.dotgg.gg/onepiece/card/${cardId}.webp`;
+    default:
+      return cardImageUrl(cardId);
+  }
+}
+
+/** Thumbnail in the deck list. Yu-Gi-Oh keeps the full frame at 44px. */
+export function entryImageUrl(card: DeckCard, gameType: string): string {
+  if (gameType === 'Yugioh') return cardFullImageUrl(card.cardId);
+  return card.imageUrl || card.imageLarge || coverImageUrl(gameType, card.cardId);
+}
+
+/** Hover preview and zoom. */
+export function previewImageUrl(card: DeckCard, gameType: string): string {
+  if (gameType === 'Yugioh') return cardFullImageUrl(card.cardId);
+  return card.imageLarge || card.imageUrl || coverImageUrl(gameType, card.cardId);
 }
 
 interface YugiohCardRow {
@@ -82,6 +115,73 @@ export function toDeckCard(row: YugiohCardRow): DeckCard {
     banTcg: (row.ban_tcg as BanStatus) ?? null,
     banOcg: (row.ban_ocg as BanStatus) ?? null,
   };
+}
+
+function blankCard(id: string, name: string, imageUrl: string | null): DeckCard {
+  return {
+    cardId: id,
+    name,
+    imageUrl,
+    frameType: null,
+    isExtraDeck: false,
+    banTcg: null,
+    banOcg: null,
+  };
+}
+
+export function searchResultToDeckCard(
+  result: {
+    id: string;
+    name: string;
+    image_url?: string | null;
+    image_large?: string | null;
+    frame_type?: string | null;
+    is_extra_deck?: boolean | null;
+    ban_tcg?: string | null;
+    ban_ocg?: string | null;
+    legalities?: Record<string, string> | null;
+    colors?: string[];
+    color_identity?: string[];
+    type?: string | null;
+    mana_cost?: string | null;
+    layout?: string | null;
+    oracle_id?: string | null;
+    supertype?: string | null;
+    subtypes?: string[];
+    rules?: string[];
+    card_type?: string | null;
+    ban_status?: string | null;
+  },
+  gameType: string
+): DeckCard {
+  if (gameType === 'Yugioh') {
+    return {
+      cardId: result.id,
+      name: result.name,
+      imageUrl: result.image_url ?? cardImageUrl(result.id),
+      frameType: result.frame_type ?? null,
+      isExtraDeck: result.is_extra_deck ?? isExtraDeckFrame(result.frame_type),
+      banTcg: (result.ban_tcg as BanStatus) ?? null,
+      banOcg: (result.ban_ocg as BanStatus) ?? null,
+    };
+  }
+
+  const card = blankCard(result.id, result.name, result.image_url ?? null);
+  card.imageLarge = result.image_large ?? null;
+  card.legalities = result.legalities ?? null;
+  card.colors = result.colors ?? [];
+  card.colorIdentity = result.color_identity ?? [];
+  card.typeLine = result.type ?? null;
+  card.manaCost = result.mana_cost ?? null;
+  card.layout = result.layout ?? null;
+  card.oracleId = result.oracle_id ?? null;
+  card.supertype = result.supertype ?? null;
+  card.subtypes = result.subtypes ?? [];
+  card.rules = result.rules ?? [];
+  card.cardType = result.card_type ?? null;
+  card.banStatus = result.ban_status ?? null;
+  card.isExtraDeck = result.card_type === 'LEADER';
+  return card;
 }
 
 /**
@@ -122,12 +222,115 @@ export function deckToRows(deck: DeckContents): DeckCardRow[] {
 export const YUGIOH_DECK_COLUMNS =
   'id, name_en, name_it, image_url, frame_type, is_extra_deck, ban_tcg, ban_ocg';
 
+const POKEMON_DECK_COLUMNS =
+  'id, name, image_url, image_large, types, subtypes, supertype, rules, legalities, regulation_mark';
+
+const MAGIC_DECK_COLUMNS =
+  'id, oracle_id, name, image_url, image_large, type, mana_cost, colors, color_identity, legalities, layout';
+
+const ONEPIECE_DECK_COLUMNS =
+  'id, name, image_url, type, card_type, colors, color, ban_status';
+
 const DECK_META_COLUMNS =
   'id, owner_id, game_type, format, name, description, is_public, is_legal, cover_card_id, created_at, updated_at';
 
 export interface LoadedDeck {
   meta: DeckMeta;
   deck: DeckContents;
+}
+
+async function loadCardsForGame(
+  client: SupabaseClient,
+  gameType: string,
+  ids: string[]
+): Promise<Map<string, DeckCard>> {
+  const byId = new Map<string, DeckCard>();
+  if (ids.length === 0) return byId;
+
+  if (gameType === 'Yugioh') {
+    const { data } = await client.from('yugioh_cards').select(YUGIOH_DECK_COLUMNS).in('id', ids);
+    for (const row of (data ?? []) as unknown as YugiohCardRow[]) {
+      byId.set(row.id, toDeckCard(row));
+    }
+    return byId;
+  }
+
+  if (gameType === 'Pokemon') {
+    const { data } = await client.from('pokemon_cards').select(POKEMON_DECK_COLUMNS).in('id', ids);
+    for (const row of data ?? []) {
+      const r = row as {
+        id: string;
+        name: string;
+        image_url: string | null;
+        image_large: string | null;
+        subtypes: string[] | null;
+        supertype: string | null;
+        rules: string[] | null;
+        legalities: Record<string, string> | null;
+      };
+      const card = blankCard(r.id, r.name, r.image_url);
+      card.imageLarge = r.image_large;
+      card.subtypes = r.subtypes ?? [];
+      card.supertype = r.supertype;
+      card.rules = r.rules ?? [];
+      card.legalities = r.legalities;
+      byId.set(r.id, card);
+    }
+    return byId;
+  }
+
+  if (gameType === 'Magic') {
+    const { data } = await client.from('magic_cards').select(MAGIC_DECK_COLUMNS).in('id', ids);
+    for (const row of data ?? []) {
+      const r = row as {
+        id: string;
+        oracle_id: string | null;
+        name: string;
+        image_url: string | null;
+        image_large: string | null;
+        type: string | null;
+        mana_cost: string | null;
+        colors: string[] | null;
+        color_identity: string[] | null;
+        legalities: Record<string, string> | null;
+        layout: string | null;
+      };
+      const card = blankCard(r.id, r.name, r.image_url);
+      card.imageLarge = r.image_large;
+      card.oracleId = r.oracle_id;
+      card.typeLine = r.type;
+      card.manaCost = r.mana_cost;
+      card.colors = r.colors ?? [];
+      card.colorIdentity = r.color_identity ?? [];
+      card.legalities = r.legalities;
+      card.layout = r.layout;
+      byId.set(r.id, card);
+    }
+    return byId;
+  }
+
+  if (gameType === 'One Piece') {
+    const { data } = await client.from('onepiece_cards').select(ONEPIECE_DECK_COLUMNS).in('id', ids);
+    for (const row of data ?? []) {
+      const r = row as {
+        id: string;
+        name: string;
+        image_url: string | null;
+        card_type: string | null;
+        colors: string[] | null;
+        color: string | null;
+        ban_status: string | null;
+      };
+      const card = blankCard(r.id, r.name, r.image_url);
+      card.cardType = r.card_type;
+      card.colors = r.colors ?? [];
+      card.banStatus = r.ban_status;
+      card.isExtraDeck = r.card_type === 'LEADER';
+      byId.set(r.id, card);
+    }
+  }
+
+  return byId;
 }
 
 /**
@@ -159,21 +362,11 @@ export async function loadDeck(
     return { meta: meta as DeckMeta, deck: emptyDeck() };
   }
 
-  // Only Yu-Gi-Oh has the metadata needed to resolve a card today; other games
-  // will get their own table here as their data is imported.
-  if ((meta as DeckMeta).game_type !== 'Yugioh') {
-    return { meta: meta as DeckMeta, deck: emptyDeck() };
-  }
-
-  const { data: cards } = await client
-    .from('yugioh_cards')
-    .select(YUGIOH_DECK_COLUMNS)
-    .in('id', [...new Set(cardRows.map((r) => r.card_id))]);
-
-  const byId = new Map<string, DeckCard>();
-  for (const row of (cards ?? []) as unknown as YugiohCardRow[]) {
-    byId.set(row.id, toDeckCard(row));
-  }
+  const byId = await loadCardsForGame(
+    client,
+    (meta as DeckMeta).game_type,
+    [...new Set(cardRows.map((r) => r.card_id))]
+  );
 
   return { meta: meta as DeckMeta, deck: buildDeckContents(cardRows, byId) };
 }
