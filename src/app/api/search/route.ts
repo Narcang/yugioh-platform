@@ -32,6 +32,9 @@ export async function GET(req: NextRequest) {
         return await searchOnePiece(q);
       case 'Riftbound':
         return await searchRiftbound(q);
+      case 'Dragon Ball':
+      case 'DragonBall':
+        return await searchDragonBall(q);
       default:
         return NextResponse.json({ results: [] });
     }
@@ -371,6 +374,55 @@ async function searchRiftbound(q: string) {
     type: c.card_type,
     card_type: c.card_type,
     colors: c.domains ?? [],
+    ban_status: c.ban_status ?? null,
+  }));
+
+  return NextResponse.json({ results });
+}
+
+const DRAGONBALL_COLUMNS =
+  'id, name, image_url, image_large, set_code, rarity, card_type, color, colors, cost, power, combo_power, ban_status';
+
+interface DragonBallRow {
+  id: string;
+  name: string;
+  image_url: string | null;
+  image_large?: string | null;
+  set_code: string | null;
+  rarity: string | null;
+  card_type: string | null;
+  color?: string | null;
+  colors?: string[] | null;
+  cost?: number | null;
+  power?: string | null;
+  combo_power?: string | null;
+  ban_status?: string | null;
+}
+
+async function searchDragonBall(q: string) {
+  const { data, error } = await supabase
+    .from('dragonball_cards')
+    .select(DRAGONBALL_COLUMNS)
+    .ilike('name', `%${q}%`)
+    .order('name')
+    .limit(20)
+    .overrideTypes<DragonBallRow[]>();
+
+  if (error) throw error;
+
+  const results = (data ?? []).map((c) => ({
+    id: c.id,
+    name: c.name,
+    image_url: c.image_url,
+    image_large: c.image_large ?? null,
+    set: c.set_code,
+    rarity: c.rarity,
+    type: c.card_type,
+    card_type: c.card_type,
+    color: c.color ?? null,
+    colors: c.colors ?? [],
+    cost: c.cost ?? null,
+    power: c.power ?? null,
     ban_status: c.ban_status ?? null,
   }));
 

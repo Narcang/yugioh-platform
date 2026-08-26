@@ -41,9 +41,11 @@ export interface FormatRules {
    * format names; Pokemon stores Standard/Expanded/Unlimited.
    */
   legalityFormat?: string;
-  legalitySource?: 'yugioh' | 'scryfall' | 'pokemon' | 'onepiece' | 'riftbound';
+  legalitySource?: 'yugioh' | 'scryfall' | 'pokemon' | 'onepiece' | 'riftbound' | 'dragonball';
   /** Commander and One Piece: every card's colours must fit the extra card. */
   colorFromExtra?: boolean;
+  /** Fusion World counts copies by card number, not by name. */
+  copiesById?: boolean;
 }
 
 const YUGIOH_ADVANCED: FormatRules = {
@@ -152,6 +154,20 @@ const ONEPIECE_STANDARD: FormatRules = {
   colorFromExtra: true,
 };
 
+const DRAGONBALL_STANDARD: FormatRules = {
+  main: { min: 50, max: 60 },
+  extra: { min: 1, max: 1 },
+  side: { max: 0 },
+  maxCopies: 4,
+  banlist: null,
+  extraRole: 'leader',
+  extraLabel: 'Leader',
+  hasSideDeck: false,
+  legalitySource: 'dragonball',
+  colorFromExtra: true,
+  copiesById: true,
+};
+
 const RIFTBOUND_STANDARD: FormatRules = {
   main: { min: 40, max: 80 },
   extra: { min: 1, max: 1 },
@@ -179,7 +195,7 @@ const DEFAULT_RULES: FormatRules = {
 };
 
 /** Games whose card data is complete enough to build a deck today. */
-export const DECK_BUILDER_GAMES = ['Yugioh', 'Magic', 'Pokemon', 'One Piece', 'Riftbound'];
+export const DECK_BUILDER_GAMES = ['Yugioh', 'Magic', 'Pokemon', 'One Piece', 'Dragon Ball', 'Riftbound'];
 
 export function isDeckBuilderSupported(gameType: string): boolean {
   return DECK_BUILDER_GAMES.includes(gameType);
@@ -192,6 +208,7 @@ export function getFormatRules(gameType: string, format: string): FormatRules {
   }
   if (gameType === 'Pokemon') return POKEMON_FORMAT_RULES[format] ?? pokemonRules(format.toLowerCase());
   if (gameType === 'One Piece') return ONEPIECE_STANDARD;
+  if (gameType === 'Dragon Ball') return DRAGONBALL_STANDARD;
   if (gameType === 'Riftbound') return RIFTBOUND_STANDARD;
   return DEFAULT_RULES;
 }
@@ -222,13 +239,19 @@ export function formatRulesHint(rules: FormatRules): string {
     else if (min) parts.push(`${label} ${min}–${rules.side.max}`);
     else parts.push(`${label} max ${rules.side.max}`);
   }
-  parts.push(rules.maxCopies === 1 ? '1 copia per carta' : `${rules.maxCopies} copie per carta`);
+  parts.push(
+    rules.maxCopies === 1
+      ? '1 copia per carta'
+      : rules.copiesById
+        ? `${rules.maxCopies} copie per numero`
+        : `${rules.maxCopies} copie per carta`
+  );
   if (rules.banlist) parts.push(`lista ban ${rules.banlist.toUpperCase()}`);
   else if (rules.legalitySource === 'scryfall' || rules.legalitySource === 'pokemon') {
     parts.push('legalità dal catalogo');
   } else if (rules.legalitySource === 'onepiece') {
     parts.push('lista limitata ancora da inserire');
-  } else if (rules.legalitySource === 'riftbound') {
+  } else if (rules.legalitySource === 'riftbound' || rules.legalitySource === 'dragonball') {
     parts.push('lista ban Standard');
   }
   if (rules.colorFromExtra && rules.extraRole === 'leader') parts.push('colori del Leader');
@@ -297,6 +320,7 @@ export function isDeckable(
   if (gameType === 'Yugioh') return isDeckableFrame(card.frame_type);
   if (gameType === 'One Piece') return card.card_type !== 'DON';
   if (gameType === 'Riftbound') return card.card_type !== 'Rune';
+  if (gameType === 'Dragon Ball') return (card.card_type ?? '').toUpperCase() !== 'ENERGY MARKER';
   if (gameType === 'Magic') {
     const layout = card.layout ?? '';
     return !['token', 'double_faced_token', 'emblem', 'art_series'].includes(layout);
@@ -354,6 +378,7 @@ const MAGIC_GROUP_ORDER = ['creature', 'planeswalker', 'instant', 'sorcery', 'en
 const POKEMON_GROUP_ORDER = ['pokemon', 'supporter', 'item', 'stadium', 'tool', 'trainer', 'energy'];
 const ONEPIECE_GROUP_ORDER = ['leader', 'character', 'event', 'stage', 'don', 'other'];
 const RIFTBOUND_GROUP_ORDER = ['legend', 'unit', 'spell', 'gear', 'battlefield', 'rune', 'other'];
+const DRAGONBALL_GROUP_ORDER = ['leader', 'battle', 'extra-card', 'energy-marker', 'other'];
 
 export const CARD_GROUP_ORDER: CardGroup[] = YUGIOH_GROUP_ORDER;
 
@@ -387,6 +412,14 @@ export function groupFor(card: DeckCard, gameType = 'Yugioh'): CardGroup {
     if (RIFTBOUND_GROUP_ORDER.includes(kind)) return kind;
     return 'other';
   }
+  if (gameType === 'Dragon Ball') {
+    const kind = (card.cardType ?? '').toLowerCase();
+    if (kind === 'leader') return 'leader';
+    if (kind === 'battle') return 'battle';
+    if (kind === 'extra') return 'extra-card';
+    if (kind === 'energy marker') return 'energy-marker';
+    return 'other';
+  }
 
   const frame = card.frameType ?? '';
   if (frame === 'spell') return 'spell';
@@ -407,6 +440,15 @@ export function getGroupLabel(group: CardGroup, gameType = 'Yugioh'): string {
       case 'gear': return 'Gear';
       case 'battlefield': return 'Battlefield';
       case 'rune': return 'Rune';
+      default: return 'Altro';
+    }
+  }
+  if (gameType === 'Dragon Ball') {
+    switch (group) {
+      case 'leader': return 'Leader';
+      case 'battle': return 'Battle';
+      case 'extra-card': return 'Extra';
+      case 'energy-marker': return 'Energy Marker';
       default: return 'Altro';
     }
   }
@@ -450,6 +492,7 @@ function groupOrderFor(gameType: string): CardGroup[] {
   if (gameType === 'Pokemon') return POKEMON_GROUP_ORDER;
   if (gameType === 'One Piece') return ONEPIECE_GROUP_ORDER;
   if (gameType === 'Riftbound') return RIFTBOUND_GROUP_ORDER;
+  if (gameType === 'Dragon Ball') return DRAGONBALL_GROUP_ORDER;
   return YUGIOH_GROUP_ORDER;
 }
 
@@ -571,7 +614,7 @@ export function allowedCopies(card: DeckCard, rules: FormatRules): number {
     return rules.maxCopies;
   }
 
-  if (rules.legalitySource === 'onepiece') {
+  if (rules.legalitySource === 'onepiece' || rules.legalitySource === 'dragonball') {
     const status = (card.banStatus ?? '').toLowerCase();
     if (status === 'forbidden' || status === 'banned') return 0;
     if (status === 'limited') return 1;
@@ -632,7 +675,7 @@ export function remainingCopies(deck: DeckContents, card: DeckCard, rules: Forma
     return 0;
   }
 
-  const used = countCopiesByName(deck, card.name);
+  const used = rules.copiesById ? countCopies(deck, card.cardId) : countCopiesByName(deck, card.name);
   return Math.max(0, limit - used);
 }
 
@@ -754,7 +797,10 @@ export function validateDeck(
   const seen = new Map<string, DeckCard>();
   for (const section of DECK_SECTIONS) {
     for (const entry of deck[section]) {
-      seen.set(entry.card.name.trim().toLowerCase(), entry.card);
+      seen.set(
+        rules.copiesById ? entry.card.cardId : entry.card.name.trim().toLowerCase(),
+        entry.card
+      );
 
       const expected = sectionFor(entry.card, rules);
       const skipSectionCheck =
@@ -830,7 +876,9 @@ export function validateDeck(
   }
 
   for (const card of seen.values()) {
-    const total = countCopiesByName(deck, card.name);
+    const total = rules.copiesById
+      ? countCopies(deck, card.cardId)
+      : countCopiesByName(deck, card.name);
     const limit = allowedCopies(card, rules);
 
     if (limit === 0) {
@@ -903,7 +951,7 @@ export function restrictionLabel(card: DeckCard, rules: FormatRules): string | n
     if (isRadiant(card)) return 'Radiant';
     return null;
   }
-  if (rules.legalitySource === 'onepiece') {
+  if (rules.legalitySource === 'onepiece' || rules.legalitySource === 'dragonball') {
     const status = (card.banStatus ?? '').toLowerCase();
     if (status === 'forbidden' || status === 'banned') return 'Vietata';
     if (status === 'limited') return 'Limitata';

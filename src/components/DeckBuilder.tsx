@@ -41,6 +41,9 @@ interface DeckBuilderProps {
 }
 
 function searchHint(rules: ReturnType<typeof getFormatRules>): string {
+    if (rules.legalitySource === 'dragonball') {
+        return 'Il Leader va da solo nel riquadro Leader. Battle ed Extra nel mazzo (50–60), Energy Marker fuori.';
+    }
     if (rules.extraRole === 'leader') {
         return 'Il Leader va da solo nel riquadro Leader. Il mazzo deve essere dei suoi colori.';
     }
@@ -571,7 +574,7 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
                                     ? `lista ban ${rules.banlist.toUpperCase()}`
                                     : rules.legalitySource === 'onepiece'
                                         ? 'lista limitata da inserire'
-                                        : rules.legalitySource === 'riftbound'
+                                        : rules.legalitySource === 'riftbound' || rules.legalitySource === 'dragonball'
                                             ? 'lista ban Standard'
                                             : rules.legalityFormat ?? 'nessuna'}
                             </dd>

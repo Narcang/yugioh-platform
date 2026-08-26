@@ -7,11 +7,13 @@
  *  - Scryfall bulk data     → magic_cards     (~35,000 unique cards)
  *  - dotgg One Piece API    → onepiece_cards  (~3,000 cards)
  *  - RiftScribe API         → riftbound_cards (~1,000 unique cards)
+ *  - Deckplanet API         → dragonball_cards (~2,000 Fusion World cards)
  *
  * Usage:
  *   node scripts/seed-cards.mjs                 # every game
  *   node scripts/seed-cards.mjs yugioh          # one game
  *   node scripts/seed-cards.mjs riftbound       # Riftbound catalogue + Standard bans
+ *   node scripts/seed-cards.mjs dragonball      # Fusion World catalogue + Standard bans
  *   node scripts/seed-cards.mjs banlist         # refresh only the Yu-Gi-Oh
  *                                               # forbidden/limited list
  *
@@ -577,6 +579,70 @@ async function seedRiftbound() {
 }
 
 // ----------------------------------------------------------------
+// 6. Dragon Ball Super Card Game Fusion World — Deckplanet
+// ----------------------------------------------------------------
+// Bandai's site has no JSON. ApiTCG needs a key. Deckplanet publishes the
+// same catalogue without one, including the March 2026 banned/restricted
+// flags. Official images are derived from the card number. Energy markers
+// are stored so the catalogue is complete, then hidden in the builder.
+const DECKPLANET_FW_URL =
+  'https://api.deckplanet.net/cardsearch/fusion_world_cards?limit=100000';
+
+function fusionWorldImage(id) {
+  return `https://www.dbs-cardgame.com/fw/images/cards/card/en/${id}_f.webp`;
+}
+
+function mapDragonBallCard(card) {
+  const id = blankToNull(card.card_number);
+  const name = blankToNull(card.card_name);
+  const type = blankToNull(card.card_type);
+  if (!id || !name || !type) return null;
+  // Drop the odd "FB11" row that is a set, not a card.
+  if (!/^[A-Za-z]{1,3}\d{0,2}-/.test(id)) return null;
+
+  const energy = Number(card.card_energy_cost);
+  return {
+    id,
+    name,
+    image_url: fusionWorldImage(id),
+    image_large: fusionWorldImage(id),
+    set_code: card.card_series ?? null,
+    rarity: card.card_rarity ?? null,
+    card_type: type,
+    color: blankToNull(card.card_color),
+    colors: splitList(card.card_color),
+    cost: Number.isFinite(energy) ? energy : null,
+    power: blankToNull(card.card_power),
+    combo_power: blankToNull(card.card_combo_power),
+    traits: Array.isArray(card.card_traits) ? card.card_traits : splitList(card.card_traits),
+    ban_status: card.is_banned ? 'Banned' : card.is_limited ? 'Limited' : null,
+  };
+}
+
+async function seedDragonBall() {
+  console.log('\n🐉  Seeding Dragon Ball Fusion World cards from Deckplanet...');
+
+  const json = await getJson(DECKPLANET_FW_URL);
+  const list = Array.isArray(json?.data) ? json.data : Array.isArray(json) ? json : [];
+  const rows = [];
+  let dropped = 0;
+  for (const card of list) {
+    const row = mapDragonBallCard(card);
+    if (row) rows.push(row);
+    else dropped += 1;
+  }
+
+  const banned = rows.filter((r) => r.ban_status === 'Banned');
+  const limited = rows.filter((r) => r.ban_status === 'Limited');
+  console.log(
+    `  Found ${rows.length} cards, dropped ${dropped} (${banned.length} banned, ${limited.length} limited)`
+  );
+  await upsertBatch('dragonball_cards', rows, 300);
+  await deleteStale('dragonball_cards', 'card_type');
+  console.log(`  ✅ Dragon Ball done`);
+}
+
+// ----------------------------------------------------------------
 // Main
 // ----------------------------------------------------------------
 (async () => {
@@ -586,7 +652,7 @@ async function seedRiftbound() {
   const args = process.argv.slice(2).filter((a) => !a.startsWith('--'));
   const runAll = args.length === 0;
   const games = runAll
-    ? ['yugioh', 'pokemon', 'magic', 'onepiece', 'riftbound']
+    ? ['yugioh', 'pokemon', 'magic', 'onepiece', 'riftbound', 'dragonball']
     : args;
   if (DRY_RUN) console.log('    Mode: dry run, nothing will be written');
 
@@ -603,6 +669,7 @@ async function seedRiftbound() {
     if (games.includes('magic'))    await seedMagic();
     if (games.includes('onepiece'))  await seedOnePiece();
     if (games.includes('riftbound')) await seedRiftbound();
+    if (games.includes('dragonball') || games.includes('fusionworld')) await seedDragonBall();
 
     console.log('\n🎉  Seed completed successfully!');
   } catch (err) {

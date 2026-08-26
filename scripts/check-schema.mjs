@@ -20,6 +20,7 @@ const CHECKS = [
   ['005', 'magic_cards', 'oracle_id, legalities, color_identity'],
   ['005', 'onepiece_cards', 'card_type, colors, ban_status'],
   ['006', 'riftbound_cards', 'card_type, domains, ban_status'],
+  ['007', 'dragonball_cards', 'card_type, colors, ban_status'],
 ];
 
 for (const [migration, table, columns] of CHECKS) {

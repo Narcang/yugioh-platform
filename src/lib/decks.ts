@@ -77,6 +77,8 @@ export function coverImageUrl(gameType: string, cardId: string): string {
       return `https://cards.scryfall.io/normal/front/${cardId[0]}/${cardId[1]}/${cardId}.jpg`;
     case 'One Piece':
       return `https://static.dotgg.gg/onepiece/card/${cardId}.webp`;
+    case 'Dragon Ball':
+      return `https://www.dbs-cardgame.com/fw/images/cards/card/en/${cardId}_f.webp`;
     default:
       if (/^https?:\/\//i.test(cardId)) return cardId;
       return cardImageUrl(cardId);
@@ -353,6 +355,33 @@ async function loadCardsForGame(
       card.colors = r.domains ?? [];
       card.banStatus = r.ban_status;
       card.isExtraDeck = r.card_type === 'Legend';
+      byId.set(r.id, card);
+    }
+    return byId;
+  }
+
+  if (gameType === 'Dragon Ball') {
+    const { data } = await client
+      .from('dragonball_cards')
+      .select('id, name, image_url, image_large, card_type, colors, color, ban_status')
+      .in('id', ids);
+    for (const row of data ?? []) {
+      const r = row as {
+        id: string;
+        name: string;
+        image_url: string | null;
+        image_large: string | null;
+        card_type: string | null;
+        colors: string[] | null;
+        color: string | null;
+        ban_status: string | null;
+      };
+      const card = blankCard(r.id, r.name, r.image_url);
+      card.imageLarge = r.image_large;
+      card.cardType = r.card_type;
+      card.colors = r.colors ?? [];
+      card.banStatus = r.ban_status;
+      card.isExtraDeck = r.card_type === 'LEADER';
       byId.set(r.id, card);
     }
   }
