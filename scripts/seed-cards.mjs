@@ -6,10 +6,12 @@
  *  - PokemonTCG data repo   → pokemon_cards   (~20,300 cards)
  *  - Scryfall bulk data     → magic_cards     (~35,000 unique cards)
  *  - dotgg One Piece API    → onepiece_cards  (~3,000 cards)
+ *  - RiftScribe API         → riftbound_cards (~1,000 unique cards)
  *
  * Usage:
  *   node scripts/seed-cards.mjs                 # every game
  *   node scripts/seed-cards.mjs yugioh          # one game
+ *   node scripts/seed-cards.mjs riftbound       # Riftbound catalogue + Standard bans
  *   node scripts/seed-cards.mjs banlist         # refresh only the Yu-Gi-Oh
  *                                               # forbidden/limited list
  *
@@ -487,6 +489,94 @@ async function seedOnePiece() {
 }
 
 // ----------------------------------------------------------------
+// 5. Riftbound — RiftScribe
+// ----------------------------------------------------------------
+// Riot's official API needs an approved app. RiftScribe publishes the same
+// catalogue without a key. Alternate arts repeat the card name with a variant
+// suffix; a deck holds names, not printings, so those rows are dropped.
+// is_banned on the API is currently always false, so the Standard list is
+// applied here from the Rules Hub (July 2026).
+const RIFTSCRIBE_PAGE = 100;
+const RIFTBOUND_BANNED_NAMES = new Set([
+  'called shot',
+  'draven, vanquisher',
+  'fight or flight',
+  'scrapheap',
+  'stealthy pursuer',
+  "the arena's greatest",
+  'the arenas greatest',
+  "aspirant's climb",
+  'aspirants climb',
+  'the dreaming tree',
+  'dreaming tree',
+  'obelisk of power',
+  "reaver's row",
+  'reavers row',
+]);
+
+function riftboundNameKey(name) {
+  return String(name)
+    .toLowerCase()
+    .replace(/['’]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function mapRiftboundCard(card) {
+  const type = blankToNull(card.type);
+  if (!type) return null;
+  // Alternate arts: "a" on the collector number. Runes also have extras; a
+  // deck only needs one printing of Fury Rune.
+  if (card.variant && String(card.variant).trim()) return null;
+
+  const thumbs = card.image_thumb ?? {};
+  return {
+    id: card.id,
+    name: card.name,
+    image_url: thumbs.medium ?? thumbs.small ?? card.image ?? '',
+    image_large: card.image ?? thumbs.large ?? null,
+    set_code: card.set_id ?? null,
+    collector_number: card.collector_number != null ? String(card.collector_number) : null,
+    rarity: card.rarity ?? null,
+    card_type: type,
+    faction: card.faction ?? null,
+    domains: Array.isArray(card.domains) ? card.domains : [],
+    energy: Number.isFinite(card.stats?.energy) ? card.stats.energy : null,
+    might: Number.isFinite(card.stats?.might) ? card.stats.might : null,
+    power: Number.isFinite(card.stats?.power) ? card.stats.power : null,
+    keywords: Array.isArray(card.keywords) ? card.keywords : [],
+    ban_status: RIFTBOUND_BANNED_NAMES.has(riftboundNameKey(card.name)) ? 'Banned' : null,
+  };
+}
+
+async function seedRiftbound() {
+  console.log('\n🌀  Seeding Riftbound cards from RiftScribe...');
+
+  const rows = [];
+  let dropped = 0;
+  for (let offset = 0; ; offset += RIFTSCRIBE_PAGE) {
+    const page = await getJson(
+      `https://riftscribe.gg/api/cards?limit=${RIFTSCRIBE_PAGE}&offset=${offset}`
+    );
+    if (!Array.isArray(page) || page.length === 0) break;
+    for (const card of page) {
+      const row = mapRiftboundCard(card);
+      if (row) rows.push(row);
+      else dropped += 1;
+    }
+    process.stdout.write(`\r  ↳ fetched ${offset + page.length} entries, kept ${rows.length}...`);
+    if (page.length < RIFTSCRIBE_PAGE) break;
+  }
+  console.log(`\r  ↳ kept ${rows.length} unique cards, dropped ${dropped} variants/untyped`);
+
+  const banned = rows.filter((r) => r.ban_status === 'Banned');
+  console.log(`  Found ${rows.length} cards (${banned.length} banned in Standard)`);
+  await upsertBatch('riftbound_cards', rows, 300);
+  await deleteStale('riftbound_cards', 'card_type');
+  console.log(`  ✅ Riftbound done`);
+}
+
+// ----------------------------------------------------------------
 // Main
 // ----------------------------------------------------------------
 (async () => {
@@ -496,7 +586,7 @@ async function seedOnePiece() {
   const args = process.argv.slice(2).filter((a) => !a.startsWith('--'));
   const runAll = args.length === 0;
   const games = runAll
-    ? ['yugioh', 'pokemon', 'magic', 'onepiece']
+    ? ['yugioh', 'pokemon', 'magic', 'onepiece', 'riftbound']
     : args;
   if (DRY_RUN) console.log('    Mode: dry run, nothing will be written');
 
@@ -511,7 +601,8 @@ async function seedOnePiece() {
     if (games.includes('yugioh'))   await seedYugioh();
     if (games.includes('pokemon'))  await seedPokemon();
     if (games.includes('magic'))    await seedMagic();
-    if (games.includes('onepiece')) await seedOnePiece();
+    if (games.includes('onepiece'))  await seedOnePiece();
+    if (games.includes('riftbound')) await seedRiftbound();
 
     console.log('\n🎉  Seed completed successfully!');
   } catch (err) {

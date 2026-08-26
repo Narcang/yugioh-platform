@@ -44,6 +44,9 @@ function searchHint(rules: ReturnType<typeof getFormatRules>): string {
     if (rules.extraRole === 'leader') {
         return 'Il Leader va da solo nel riquadro Leader. Il mazzo deve essere dei suoi colori.';
     }
+    if (rules.extraRole === 'legend') {
+        return 'Il Legend va da solo nel riquadro Legend. I Battlefield nei tre slot, le Rune restano fuori (12 carte dei suoi domini).';
+    }
     if (rules.extraRole === 'commander') {
         return 'La prima creatura leggendaria diventa il Commander. Puoi spostarla dal mazzo.';
     }
@@ -255,11 +258,15 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
         setIsSaving(true);
         setSaveError(null);
         try {
-            const cover =
-                (rules.extraRole && deck.extra[0]?.card.cardId) ||
-                deck.main[0]?.card.cardId ||
-                deck.extra[0]?.card.cardId ||
+            const coverCard =
+                (rules.extraRole && deck.extra[0]?.card) ||
+                deck.main[0]?.card ||
+                deck.extra[0]?.card ||
                 null;
+            const cover =
+                meta.game_type === 'Riftbound'
+                    ? coverCard?.imageUrl || coverCard?.imageLarge || coverCard?.cardId || null
+                    : coverCard?.cardId || null;
 
             const { error } = await supabase.rpc('save_deck', {
                 p_deck_id: deckId,
@@ -361,15 +368,16 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
                             onClick={() => changeQuantity(section, entry.card.cardId, 1)}
                             aria-label="Aggiungi una copia"
                         >+</button>
-                        {hasSideSection(rules) && (
+                        {hasSideSection(rules) &&
+                            !(rules.extraRole && rules.extraRole !== 'extra' && section === 'extra') && (
                             <button
                                 className="move"
                                 onClick={() => moveToSide(section, entry.card.cardId)}
                             >
-                                {section === 'side' ? '↑ Deck' : '↓ Side'}
+                                {section === 'side' ? '↑ Deck' : `↓ ${rules.sideLabel ?? 'Side'}`}
                             </button>
                         )}
-                        {(rules.extraRole === 'commander' || rules.extraRole === 'leader') && section !== 'side' && (
+                        {(rules.extraRole === 'commander' || rules.extraRole === 'leader' || rules.extraRole === 'legend') && section !== 'side' && (
                             <button
                                 className="move"
                                 onClick={() => moveToExtra(section, entry.card.cardId)}
@@ -378,7 +386,9 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
                                     ? '↓ Deck'
                                     : rules.extraRole === 'leader'
                                         ? '↑ Leader'
-                                        : '↑ Commander'}
+                                        : rules.extraRole === 'legend'
+                                            ? '↑ Legend'
+                                            : '↑ Commander'}
                             </button>
                         )}
                     </div>
@@ -486,7 +496,7 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
                         const entries = deck[section];
                         const count = validation.counts[section];
                         const max = section === 'main' ? rules.main.max : section === 'extra' ? rules.extra.max : rules.side.max;
-                        const min = section === 'main' ? rules.main.min : section === 'extra' ? rules.extra.min : 0;
+                        const min = section === 'main' ? rules.main.min : section === 'extra' ? rules.extra.min : (rules.side.min ?? 0);
                         const outOfRange = count > max || count < min;
 
                         return (
@@ -544,7 +554,14 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
                             <div><dt>{rules.extraLabel ?? 'Extra'}</dt><dd>{rules.extra.min === rules.extra.max ? rules.extra.max : `max ${rules.extra.max}`}</dd></div>
                         )}
                         {hasSideSection(rules) && (
-                            <div><dt>Side</dt><dd>max {rules.side.max}</dd></div>
+                            <div>
+                                <dt>{rules.sideLabel ?? 'Side'}</dt>
+                                <dd>
+                                    {rules.side.min && rules.side.min === rules.side.max
+                                        ? rules.side.max
+                                        : `max ${rules.side.max}`}
+                                </dd>
+                            </div>
                         )}
                         <div><dt>Copie</dt><dd>{rules.maxCopies}</dd></div>
                         <div>
@@ -554,7 +571,9 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
                                     ? `lista ban ${rules.banlist.toUpperCase()}`
                                     : rules.legalitySource === 'onepiece'
                                         ? 'lista limitata da inserire'
-                                        : rules.legalityFormat ?? 'nessuna'}
+                                        : rules.legalitySource === 'riftbound'
+                                            ? 'lista ban Standard'
+                                            : rules.legalityFormat ?? 'nessuna'}
                             </dd>
                         </div>
                     </dl>

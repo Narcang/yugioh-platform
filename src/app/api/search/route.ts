@@ -30,6 +30,8 @@ export async function GET(req: NextRequest) {
       case 'OnePiece':
       case 'One Piece':
         return await searchOnePiece(q);
+      case 'Riftbound':
+        return await searchRiftbound(q);
       default:
         return NextResponse.json({ results: [] });
     }
@@ -324,6 +326,51 @@ async function searchOnePiece(q: string) {
     attribute: c.attribute ?? null,
     life: c.life ?? null,
     trigger: c.trigger ?? null,
+    ban_status: c.ban_status ?? null,
+  }));
+
+  return NextResponse.json({ results });
+}
+
+const RIFTBOUND_COLUMNS =
+  'id, name, image_url, image_large, set_code, rarity, card_type, domains, energy, might, power, ban_status';
+
+interface RiftboundRow {
+  id: string;
+  name: string;
+  image_url: string | null;
+  image_large?: string | null;
+  set_code: string | null;
+  rarity: string | null;
+  card_type: string | null;
+  domains?: string[] | null;
+  energy?: number | null;
+  might?: number | null;
+  power?: number | null;
+  ban_status?: string | null;
+}
+
+async function searchRiftbound(q: string) {
+  const { data, error } = await supabase
+    .from('riftbound_cards')
+    .select(RIFTBOUND_COLUMNS)
+    .ilike('name', `%${q}%`)
+    .order('name')
+    .limit(20)
+    .overrideTypes<RiftboundRow[]>();
+
+  if (error) throw error;
+
+  const results = (data ?? []).map((c) => ({
+    id: c.id,
+    name: c.name,
+    image_url: c.image_url,
+    image_large: c.image_large ?? null,
+    set: c.set_code,
+    rarity: c.rarity,
+    type: c.card_type,
+    card_type: c.card_type,
+    colors: c.domains ?? [],
     ban_status: c.ban_status ?? null,
   }));
 

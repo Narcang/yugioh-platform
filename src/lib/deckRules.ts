@@ -20,25 +20,28 @@ export type BanStatus = 'Forbidden' | 'Banned' | 'Limited' | 'Semi-Limited' | nu
 
 /** What the extra section is for. Yu-Gi-Oh uses a real Extra Deck; the others
  *  borrow the slot for the one card that is not in the main deck. */
-export type ExtraRole = 'extra' | 'leader' | 'commander';
+export type ExtraRole = 'extra' | 'leader' | 'commander' | 'legend';
 
 export interface FormatRules {
   main: { min: number; max: number };
   extra: { min: number; max: number };
-  side: { max: number };
+  side: { min?: number; max: number };
   maxCopies: number;
   banlist: 'tcg' | 'ocg' | null;
   /** Traditional: forbidden cards are playable, but only one copy. */
   bannedAsLimited?: boolean;
   extraRole?: ExtraRole | null;
   extraLabel?: string;
+  sideLabel?: string;
   hasSideDeck?: boolean;
+  /** Battlefields in Riftbound: one of each name. */
+  uniqueSideNames?: boolean;
   /**
    * Key in the card's `legalities` JSON. Magic stores lowercase Scryfall
    * format names; Pokemon stores Standard/Expanded/Unlimited.
    */
   legalityFormat?: string;
-  legalitySource?: 'yugioh' | 'scryfall' | 'pokemon' | 'onepiece';
+  legalitySource?: 'yugioh' | 'scryfall' | 'pokemon' | 'onepiece' | 'riftbound';
   /** Commander and One Piece: every card's colours must fit the extra card. */
   colorFromExtra?: boolean;
 }
@@ -149,6 +152,21 @@ const ONEPIECE_STANDARD: FormatRules = {
   colorFromExtra: true,
 };
 
+const RIFTBOUND_STANDARD: FormatRules = {
+  main: { min: 40, max: 80 },
+  extra: { min: 1, max: 1 },
+  side: { min: 3, max: 3 },
+  maxCopies: 3,
+  banlist: null,
+  extraRole: 'legend',
+  extraLabel: 'Legend',
+  sideLabel: 'Battlefield',
+  hasSideDeck: true,
+  uniqueSideNames: true,
+  legalitySource: 'riftbound',
+  colorFromExtra: true,
+};
+
 const DEFAULT_RULES: FormatRules = {
   main: { min: 40, max: 60 },
   extra: { min: 0, max: 15 },
@@ -161,7 +179,7 @@ const DEFAULT_RULES: FormatRules = {
 };
 
 /** Games whose card data is complete enough to build a deck today. */
-export const DECK_BUILDER_GAMES = ['Yugioh', 'Magic', 'Pokemon', 'One Piece'];
+export const DECK_BUILDER_GAMES = ['Yugioh', 'Magic', 'Pokemon', 'One Piece', 'Riftbound'];
 
 export function isDeckBuilderSupported(gameType: string): boolean {
   return DECK_BUILDER_GAMES.includes(gameType);
@@ -174,6 +192,7 @@ export function getFormatRules(gameType: string, format: string): FormatRules {
   }
   if (gameType === 'Pokemon') return POKEMON_FORMAT_RULES[format] ?? pokemonRules(format.toLowerCase());
   if (gameType === 'One Piece') return ONEPIECE_STANDARD;
+  if (gameType === 'Riftbound') return RIFTBOUND_STANDARD;
   return DEFAULT_RULES;
 }
 
@@ -196,16 +215,25 @@ export function formatRulesHint(rules: FormatRules): string {
     else if (rules.extra.min > 0) parts.push(`${label} ${rules.extra.min}–${rules.extra.max}`);
     else parts.push(`${label} max ${rules.extra.max}`);
   }
-  if (hasSideSection(rules)) parts.push(`Side max ${rules.side.max}`);
+  if (hasSideSection(rules)) {
+    const label = rules.sideLabel ?? 'Side';
+    const min = rules.side.min ?? 0;
+    if (min && min === rules.side.max) parts.push(`${label} ${min}`);
+    else if (min) parts.push(`${label} ${min}–${rules.side.max}`);
+    else parts.push(`${label} max ${rules.side.max}`);
+  }
   parts.push(rules.maxCopies === 1 ? '1 copia per carta' : `${rules.maxCopies} copie per carta`);
   if (rules.banlist) parts.push(`lista ban ${rules.banlist.toUpperCase()}`);
   else if (rules.legalitySource === 'scryfall' || rules.legalitySource === 'pokemon') {
     parts.push('legalità dal catalogo');
   } else if (rules.legalitySource === 'onepiece') {
     parts.push('lista limitata ancora da inserire');
+  } else if (rules.legalitySource === 'riftbound') {
+    parts.push('lista ban Standard');
   }
   if (rules.colorFromExtra && rules.extraRole === 'leader') parts.push('colori del Leader');
   if (rules.colorFromExtra && rules.extraRole === 'commander') parts.push('color identity del Commander');
+  if (rules.colorFromExtra && rules.extraRole === 'legend') parts.push('domini del Legend');
   return `${parts.join(', ')}.`;
 }
 
@@ -268,6 +296,7 @@ export function isDeckable(
 ): boolean {
   if (gameType === 'Yugioh') return isDeckableFrame(card.frame_type);
   if (gameType === 'One Piece') return card.card_type !== 'DON';
+  if (gameType === 'Riftbound') return card.card_type !== 'Rune';
   if (gameType === 'Magic') {
     const layout = card.layout ?? '';
     return !['token', 'double_faced_token', 'emblem', 'art_series'].includes(layout);
@@ -285,6 +314,8 @@ export function sectionFor(
   rules?: FormatRules
 ): DeckSection {
   if (rules?.extraRole === 'leader' && card.cardType === 'LEADER') return 'extra';
+  if (rules?.extraRole === 'legend' && card.cardType === 'Legend') return 'extra';
+  if (rules?.extraRole === 'legend' && card.cardType === 'Battlefield') return 'side';
   if (card.isExtraDeck) return 'extra';
   return 'main';
 }
@@ -322,6 +353,7 @@ const YUGIOH_GROUP_ORDER = ['monster', 'spell', 'trap', 'fusion', 'synchro', 'xy
 const MAGIC_GROUP_ORDER = ['creature', 'planeswalker', 'instant', 'sorcery', 'enchantment', 'artifact', 'battle', 'land', 'other'];
 const POKEMON_GROUP_ORDER = ['pokemon', 'supporter', 'item', 'stadium', 'tool', 'trainer', 'energy'];
 const ONEPIECE_GROUP_ORDER = ['leader', 'character', 'event', 'stage', 'don', 'other'];
+const RIFTBOUND_GROUP_ORDER = ['legend', 'unit', 'spell', 'gear', 'battlefield', 'rune', 'other'];
 
 export const CARD_GROUP_ORDER: CardGroup[] = YUGIOH_GROUP_ORDER;
 
@@ -350,9 +382,9 @@ export function groupFor(card: DeckCard, gameType = 'Yugioh'): CardGroup {
     if (superType === 'trainer') return 'trainer';
     return 'other';
   }
-  if (gameType === 'One Piece') {
+  if (gameType === 'Riftbound') {
     const kind = (card.cardType ?? '').toLowerCase();
-    if (ONEPIECE_GROUP_ORDER.includes(kind)) return kind;
+    if (RIFTBOUND_GROUP_ORDER.includes(kind)) return kind;
     return 'other';
   }
 
@@ -366,7 +398,18 @@ export function groupFor(card: DeckCard, gameType = 'Yugioh'): CardGroup {
   return 'monster';
 }
 
-export function getGroupLabel(group: CardGroup): string {
+export function getGroupLabel(group: CardGroup, gameType = 'Yugioh'): string {
+  if (gameType === 'Riftbound') {
+    switch (group) {
+      case 'legend': return 'Legend';
+      case 'unit': return 'Unità';
+      case 'spell': return 'Spell';
+      case 'gear': return 'Gear';
+      case 'battlefield': return 'Battlefield';
+      case 'rune': return 'Rune';
+      default: return 'Altro';
+    }
+  }
   switch (group) {
     case 'monster': return 'Mostri';
     case 'spell': return 'Magie';
@@ -395,6 +438,9 @@ export function getGroupLabel(group: CardGroup): string {
     case 'event': return 'Eventi';
     case 'stage': return 'Stage';
     case 'don': return 'DON!!';
+    case 'unit': return 'Unità';
+    case 'gear': return 'Gear';
+    case 'battlefield': return 'Battlefield';
     default: return 'Altro';
   }
 }
@@ -403,6 +449,7 @@ function groupOrderFor(gameType: string): CardGroup[] {
   if (gameType === 'Magic') return MAGIC_GROUP_ORDER;
   if (gameType === 'Pokemon') return POKEMON_GROUP_ORDER;
   if (gameType === 'One Piece') return ONEPIECE_GROUP_ORDER;
+  if (gameType === 'Riftbound') return RIFTBOUND_GROUP_ORDER;
   return YUGIOH_GROUP_ORDER;
 }
 
@@ -432,7 +479,7 @@ export function groupEntries<T extends { card: DeckCard; quantity: number }>(
     if (!found?.length) return [];
     return [{
       group,
-      label: getGroupLabel(group),
+      label: getGroupLabel(group, gameType),
       count: found.reduce((sum, e) => sum + e.quantity, 0),
       entries: found,
     }];
@@ -489,6 +536,7 @@ export type DeckIssueCode =
   | 'extra-too-small'
   | 'extra-too-large'
   | 'side-too-large'
+  | 'side-too-small'
   | 'too-many-copies'
   | 'banned'
   | 'wrong-section'
@@ -531,6 +579,13 @@ export function allowedCopies(card: DeckCard, rules: FormatRules): number {
     return rules.maxCopies;
   }
 
+  if (rules.legalitySource === 'riftbound') {
+    const status = (card.banStatus ?? '').toLowerCase();
+    if (status === 'forbidden' || status === 'banned') return 0;
+    if (card.cardType === 'Legend' || card.cardType === 'Battlefield') return 1;
+    return rules.maxCopies;
+  }
+
   if (!rules.banlist) return rules.maxCopies;
 
   const status = rules.banlist === 'ocg' ? card.banOcg : card.banTcg;
@@ -563,6 +618,17 @@ export function remainingCopies(deck: DeckContents, card: DeckCard, rules: Forma
     return 0;
   }
   if (rules.extraRole === 'leader' && card.cardType === 'LEADER' && countSection(deck, 'extra') >= rules.extra.max) {
+    return 0;
+  }
+  if (rules.extraRole === 'legend' && card.cardType === 'Legend' && countSection(deck, 'extra') >= rules.extra.max) {
+    return 0;
+  }
+  if (
+    rules.uniqueSideNames &&
+    card.cardType === 'Battlefield' &&
+    countCopiesByName(deck, card.name) === 0 &&
+    countSection(deck, 'side') >= rules.side.max
+  ) {
     return 0;
   }
 
@@ -616,7 +682,9 @@ export function validateDeck(
           ? 'Serve un Leader.'
           : rules.extraRole === 'commander'
             ? 'Serve un Commander.'
-            : `${rules.extraLabel ?? 'Extra Deck'} ha ${counts.extra} carte, il minimo è ${rules.extra.min}.`,
+            : rules.extraRole === 'legend'
+              ? 'Serve un Legend.'
+              : `${rules.extraLabel ?? 'Extra Deck'} ha ${counts.extra} carte, il minimo è ${rules.extra.min}.`,
     });
   }
   if (counts.extra > rules.extra.max) {
@@ -627,13 +695,39 @@ export function validateDeck(
       message: `${rules.extraLabel ?? 'Extra Deck'} ha ${counts.extra} carte, il massimo è ${rules.extra.max}.`,
     });
   }
+  const sideMin = rules.side.min ?? 0;
+  if (counts.side < sideMin) {
+    issues.push({
+      code: 'side-too-small',
+      severity: 'error',
+      section: 'side',
+      message: `${rules.sideLabel ?? 'Side Deck'} ha ${counts.side} carte, il minimo è ${sideMin}.`,
+    });
+  }
   if (counts.side > rules.side.max) {
     issues.push({
       code: 'side-too-large',
       severity: 'error',
       section: 'side',
-      message: `Il Side Deck ha ${counts.side} carte, il massimo è ${rules.side.max}.`,
+      message: `${rules.sideLabel ?? 'Side Deck'} ha ${counts.side} carte, il massimo è ${rules.side.max}.`,
     });
+  }
+
+  if (rules.uniqueSideNames) {
+    const seenNames = new Set<string>();
+    for (const entry of deck.side) {
+      const key = entry.card.name.trim().toLowerCase();
+      if (seenNames.has(key)) {
+        issues.push({
+          code: 'too-many-copies',
+          severity: 'error',
+          cardId: entry.card.cardId,
+          cardName: entry.card.name,
+          message: `${entry.card.name}: i Battlefield devono essere tre nomi diversi.`,
+        });
+      }
+      seenNames.add(key);
+    }
   }
 
   if (countMatching(deck, isAceSpec) > 1) {
@@ -663,11 +757,12 @@ export function validateDeck(
       seen.set(entry.card.name.trim().toLowerCase(), entry.card);
 
       const expected = sectionFor(entry.card, rules);
-      if (section === 'side') continue;
+      const skipSectionCheck =
+        section === 'side' ||
+        (rules.extraRole === 'commander' && section === 'extra') ||
+        (rules.extraRole === 'legend' && section === 'extra');
 
-      if (rules.extraRole === 'commander' && section === 'extra') continue;
-
-      if (section !== expected) {
+      if (!skipSectionCheck && section !== expected) {
         if (rules.extraRole === 'leader' && expected === 'extra') {
           issues.push({
             code: 'wrong-section',
@@ -676,6 +771,24 @@ export function validateDeck(
             cardId: entry.card.cardId,
             cardName: entry.card.name,
             message: `${entry.card.name} è un Leader e va nel riquadro Leader.`,
+          });
+        } else if (rules.extraRole === 'legend' && expected === 'extra') {
+          issues.push({
+            code: 'wrong-section',
+            severity: 'error',
+            section,
+            cardId: entry.card.cardId,
+            cardName: entry.card.name,
+            message: `${entry.card.name} è un Legend e va nel riquadro Legend.`,
+          });
+        } else if (rules.extraRole === 'legend' && expected === 'side') {
+          issues.push({
+            code: 'wrong-section',
+            severity: 'error',
+            section,
+            cardId: entry.card.cardId,
+            cardName: entry.card.name,
+            message: `${entry.card.name} è un Battlefield.`,
           });
         } else if (rules.extraRole === 'extra' || !rules.extraRole) {
           issues.push({
@@ -694,7 +807,10 @@ export function validateDeck(
           rules.extraRole === 'commander'
             ? entry.card.colorIdentity ?? entry.card.colors ?? []
             : entry.card.colors ?? [];
-        const illegal = cardColors.filter((c) => !extraColors.includes(c));
+        const illegal = cardColors.filter((c) => {
+          if (/^colorless$/i.test(c)) return false;
+          return !extraColors.some((e) => e.toLowerCase() === c.toLowerCase());
+        });
         if (illegal.length > 0) {
           issues.push({
             code: 'color-identity',
@@ -704,7 +820,9 @@ export function validateDeck(
             message:
               rules.extraRole === 'leader'
                 ? `${entry.card.name} non è di un colore del Leader.`
-                : `${entry.card.name} è fuori dalla color identity del Commander.`,
+                : rules.extraRole === 'legend'
+                  ? `${entry.card.name} è fuori dai domini del Legend.`
+                  : `${entry.card.name} è fuori dalla color identity del Commander.`,
           });
         }
       }
@@ -743,6 +861,7 @@ export function validateDeck(
 
 export function getSectionLabel(section: DeckSection, rules?: FormatRules): string {
   if (section === 'extra' && rules?.extraLabel) return rules.extraLabel;
+  if (section === 'side' && rules?.sideLabel) return rules.sideLabel;
   switch (section) {
     case 'main':
       return 'Main Deck';
@@ -788,6 +907,10 @@ export function restrictionLabel(card: DeckCard, rules: FormatRules): string | n
     const status = (card.banStatus ?? '').toLowerCase();
     if (status === 'forbidden' || status === 'banned') return 'Vietata';
     if (status === 'limited') return 'Limitata';
+  }
+  if (rules.legalitySource === 'riftbound') {
+    const status = (card.banStatus ?? '').toLowerCase();
+    if (status === 'forbidden' || status === 'banned') return 'Bannata';
   }
   return null;
 }

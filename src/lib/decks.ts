@@ -78,6 +78,7 @@ export function coverImageUrl(gameType: string, cardId: string): string {
     case 'One Piece':
       return `https://static.dotgg.gg/onepiece/card/${cardId}.webp`;
     default:
+      if (/^https?:\/\//i.test(cardId)) return cardId;
       return cardImageUrl(cardId);
   }
 }
@@ -180,7 +181,7 @@ export function searchResultToDeckCard(
   card.rules = result.rules ?? [];
   card.cardType = result.card_type ?? null;
   card.banStatus = result.ban_status ?? null;
-  card.isExtraDeck = result.card_type === 'LEADER';
+  card.isExtraDeck = result.card_type === 'LEADER' || result.card_type === 'Legend';
   return card;
 }
 
@@ -326,6 +327,32 @@ async function loadCardsForGame(
       card.colors = r.colors ?? [];
       card.banStatus = r.ban_status;
       card.isExtraDeck = r.card_type === 'LEADER';
+      byId.set(r.id, card);
+    }
+    return byId;
+  }
+
+  if (gameType === 'Riftbound') {
+    const { data } = await client
+      .from('riftbound_cards')
+      .select('id, name, image_url, image_large, card_type, domains, ban_status, set_code, rarity')
+      .in('id', ids);
+    for (const row of data ?? []) {
+      const r = row as {
+        id: string;
+        name: string;
+        image_url: string | null;
+        image_large: string | null;
+        card_type: string | null;
+        domains: string[] | null;
+        ban_status: string | null;
+      };
+      const card = blankCard(r.id, r.name, r.image_url);
+      card.imageLarge = r.image_large;
+      card.cardType = r.card_type;
+      card.colors = r.domains ?? [];
+      card.banStatus = r.ban_status;
+      card.isExtraDeck = r.card_type === 'Legend';
       byId.set(r.id, card);
     }
   }

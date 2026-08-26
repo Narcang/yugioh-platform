@@ -33,6 +33,7 @@ const GAMES = [
   ['pokemon', 'pokemon_cards', 'pokemon_db.json'],
   ['magic', 'magic_cards', 'magic_db.json'],
   ['onepiece', 'onepiece_cards', 'onepiece_db.json'],
+  ['riftbound', 'riftbound_cards', null],
 ];
 
 const supabase = url && key ? createClient(url, key) : null;
