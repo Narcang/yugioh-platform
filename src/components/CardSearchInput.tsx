@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
+import { onCardImageError } from '@/lib/decks';
 
 /**
  * Shared card search box.
@@ -136,7 +137,7 @@ const CardSearchInput: React.FC<CardSearchInputProps> = ({
                             className="search-result-item"
                             onClick={() => handleSelect(res)}
                         >
-                            <img src={res.image_url} alt="" />
+                            <img src={res.image_url} alt="" onError={onCardImageError} />
                             <span className="result-name">{res.name}</span>
                             {res.type && <span className="result-type">{res.type}</span>}
                         </div>

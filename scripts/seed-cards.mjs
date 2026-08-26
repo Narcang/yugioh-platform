@@ -588,8 +588,9 @@ async function seedRiftbound() {
 const DECKPLANET_FW_URL =
   'https://api.deckplanet.net/cardsearch/fusion_world_cards?limit=100000';
 
-function fusionWorldImage(id) {
-  return `https://www.dbs-cardgame.com/fw/images/cards/card/en/${id}_f.webp`;
+function fusionWorldImage(id, type) {
+  const suffix = type === 'LEADER' ? '_f' : '';
+  return `https://www.dbs-cardgame.com/fw/images/cards/card/en/${id}${suffix}.webp`;
 }
 
 function mapDragonBallCard(card) {
@@ -604,8 +605,8 @@ function mapDragonBallCard(card) {
   return {
     id,
     name,
-    image_url: fusionWorldImage(id),
-    image_large: fusionWorldImage(id),
+    image_url: fusionWorldImage(id, type),
+    image_large: fusionWorldImage(id, type),
     set_code: card.card_series ?? null,
     rarity: card.card_rarity ?? null,
     card_type: type,

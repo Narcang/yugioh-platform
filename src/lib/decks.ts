@@ -61,6 +61,24 @@ export function cardFullImageUrl(cardId: string): string {
   return `https://images.ygoprodeck.com/images/cards/${cardId}.jpg`;
 }
 
+/** Official Fusion World art. Leaders have a back face, so Bandai serves them as *_f.webp. */
+export function fusionWorldImageUrl(cardId: string, cardType?: string | null): string {
+  const suffix = (cardType ?? '').toUpperCase() === 'LEADER' ? '_f' : '';
+  return `https://www.dbs-cardgame.com/fw/images/cards/card/en/${cardId}${suffix}.webp`;
+}
+
+/** If the first Bandai URL 404s, try the other suffix once. */
+export function onCardImageError(event: { currentTarget: HTMLImageElement }): void {
+  const img = event.currentTarget;
+  if (img.dataset.fallbackTried) return;
+  const src = img.currentSrc || img.src;
+  if (!src.includes('dbs-cardgame.com/fw/images')) return;
+  img.dataset.fallbackTried = '1';
+  img.src = src.includes('_f.webp')
+    ? src.replace(/_f\.webp(?:\?.*)?$/, '.webp')
+    : src.replace(/\.webp(?:\?.*)?$/, '_f.webp');
+}
+
 /** Cover art for a deck tile, using each game's public CDN. */
 export function coverImageUrl(gameType: string, cardId: string): string {
   switch (gameType) {
@@ -78,7 +96,9 @@ export function coverImageUrl(gameType: string, cardId: string): string {
     case 'One Piece':
       return `https://static.dotgg.gg/onepiece/card/${cardId}.webp`;
     case 'Dragon Ball':
-      return `https://www.dbs-cardgame.com/fw/images/cards/card/en/${cardId}_f.webp`;
+      if (/^https?:\/\//i.test(cardId)) return cardId;
+      // Deck covers are the Leader, whose front art uses the _f suffix.
+      return fusionWorldImageUrl(cardId, 'LEADER');
     default:
       if (/^https?:\/\//i.test(cardId)) return cardId;
       return cardImageUrl(cardId);

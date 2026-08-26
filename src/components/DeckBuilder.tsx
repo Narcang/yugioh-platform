@@ -30,6 +30,7 @@ import {
     deckToRows,
     entryImageUrl,
     loadDeck,
+    onCardImageError,
     previewImageUrl,
     searchResultToDeckCard,
 } from '@/lib/decks';
@@ -267,7 +268,7 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
                 deck.extra[0]?.card ||
                 null;
             const cover =
-                meta.game_type === 'Riftbound'
+                meta.game_type === 'Riftbound' || meta.game_type === 'Dragon Ball'
                     ? coverCard?.imageUrl || coverCard?.imageLarge || coverCard?.cardId || null
                     : coverCard?.cardId || null;
 
@@ -352,6 +353,7 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
                         src={entryImageUrl(entry.card, gameType)}
                         alt={entry.card.name}
                         loading="lazy"
+                        onError={onCardImageError}
                     />
                     <span className="entry-qty">×{entry.quantity}</span>
                 </button>
@@ -468,6 +470,7 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
                                     key={preview.cardId}
                                     src={previewImageUrl(preview, meta.game_type)}
                                     alt={preview.name}
+                                    onError={onCardImageError}
                                 />
                                 <span className="preview-name">{preview.name}</span>
                             </>
@@ -590,7 +593,7 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
             {zoomed && (
                 <div className="card-zoom" onClick={() => setZoomed(null)}>
                     <div className="card-zoom-inner" onClick={(e) => e.stopPropagation()}>
-                        <img src={previewImageUrl(zoomed, meta.game_type)} alt={zoomed.name} />
+                        <img src={previewImageUrl(zoomed, meta.game_type)} alt={zoomed.name} onError={onCardImageError} />
                         <div>
                             <h3>{zoomed.name}</h3>
                             <p>{zoomed.typeLine || zoomed.cardType || zoomed.frameType || zoomed.supertype}</p>
