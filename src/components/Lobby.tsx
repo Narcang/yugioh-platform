@@ -3,9 +3,6 @@ import React, { useState } from 'react';
 import { useLayout } from '@/context/LayoutContext';
 
 import CreateRoomModal, { RoomData } from './CreateRoomModal';
-import AuthModal from './AuthModal';
-import UserAccountSettings from './UserAccountSettings';
-import AdminPanel from './AdminPanel';
 import Footer from './Footer';
 import SiteNav from './SiteNav';
 
@@ -15,13 +12,9 @@ import { getFirstPhase, getMatchModeLabel, MatchMode } from '@/lib/gameConfig';
 
 const Lobby: React.FC = () => {
     const { setAppView, setCurrentRoomId, setIsSettingsOpen, setGameType, setGameFormat, setCurrentPhase, setCurrentTurn, setMaxPlayers, setMatchMode } = useLayout();
-    const { user, profile, isAdmin, signOut, session } = useAuth();
+    const { user, profile, isAdmin, session } = useAuth();
     const [joinCode, setJoinCode] = useState('');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-    const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
-    const [isUserSettingsOpen, setIsUserSettingsOpen] = useState(false);
-    const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
 
     // Supabase State
     const [rooms, setRooms] = useState<any[]>([]);
@@ -278,111 +271,8 @@ const Lobby: React.FC = () => {
 
     return (
         <div className="lobby-container">
-            <SiteNav showAccount={false} />
+            <SiteNav showLogo />
             <div className="lobby-content">
-                <header className="lobby-header" style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr auto 1fr',
-                    alignItems: 'center',
-                    padding: '20px 40px'
-                }}>
-                    <div style={{ visibility: 'hidden' }}>
-                        {/* Empty left column for balance */}
-                        <button className="primary-btn small">Placeholder</button>
-                    </div>
-
-                    <div style={{ textAlign: 'center' }}>
-                        <img
-                            src="/logo.png?v=2"
-                            alt="PlayTCG.Online"
-                            style={{
-                                height: '120px',
-                                width: 'auto',
-                                marginBottom: '20px'
-                            }}
-                        />
-                        <p className="game-subtitle">Select your game mode</p>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', position: 'relative' }}>
-                        {user ? (
-                            <div
-                                className="user-avatar"
-                                style={{
-                                    cursor: 'pointer',
-                                    border: '2px solid #FFFFFF',
-                                    width: '40px',
-                                    height: '40px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    borderRadius: '50%',
-                                    background: '#EF4444',
-                                    color: '#FFFFFF'
-                                }}
-                                onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                                title={profile?.username || user.email || 'User'}
-                            >
-                                {profile?.avatar_url ? (
-                                    <img src={profile.avatar_url} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                ) : (
-                                    <span style={{ fontWeight: 'bold' }}>{profile?.username?.substring(0, 2).toUpperCase() || user.email?.substring(0, 2).toUpperCase()}</span>
-                                )}
-                            </div>
-                        ) : (
-                            <button className="primary-btn small" onClick={() => setIsAuthModalOpen(true)}>Accedi</button>
-                        )}
-
-                        {isProfileDropdownOpen && user && (
-                            <div className="dropdown-menu" style={{
-                                position: 'absolute',
-                                top: '50px',
-                                right: '0',
-                                background: '#1a1a1a',
-                                border: '1px solid #333',
-                                borderRadius: '8px',
-                                padding: '10px',
-                                zIndex: 100,
-                                minWidth: '150px',
-                                boxShadow: '0 4px 6px rgba(0,0,0,0.5)'
-                            }}>
-                                <div style={{ padding: '8px', borderBottom: '1px solid #333', marginBottom: '8px', color: '#888', fontSize: '12px' }}>
-                                    {profile?.username || user.email}
-                                </div>
-                                {isAdmin && (
-                                    <button
-                                        style={{ width: '100%', textAlign: 'left', padding: '8px', background: 'none', border: 'none', color: '#F4C430', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
-                                        onClick={() => {
-                                            setIsAdminPanelOpen(true);
-                                            setIsProfileDropdownOpen(false);
-                                        }}
-                                    >
-                                        <span>🛡️</span> Pannello Admin
-                                    </button>
-                                )}
-                                <button
-                                    style={{ width: '100%', textAlign: 'left', padding: '8px', background: 'none', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
-                                    onClick={() => {
-                                        setIsUserSettingsOpen(true);
-                                        setIsProfileDropdownOpen(false);
-                                    }}
-                                >
-                                    <span>⚙️</span> Impostazioni
-                                </button>
-                                <button
-                                    style={{ width: '100%', textAlign: 'left', padding: '8px', background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
-                                    onClick={() => {
-                                        signOut();
-                                        setIsProfileDropdownOpen(false);
-                                    }}
-                                >
-                                    <span>🚪</span> Esci
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </header>
-
                 <div className="lobby-main">
                     {/* Matchmaking Section */}
                     <section className="lobby-section matchmaking">
@@ -469,7 +359,7 @@ const Lobby: React.FC = () => {
                             />
                             <button
                                 onClick={() => handleJoinGame()}
-                                className="primary-btn small btn-custom-game"
+                                className="lobby-join-btn"
                             >
                                 Join
                             </button>
@@ -513,7 +403,7 @@ const Lobby: React.FC = () => {
                                             )}
                                         </div>
                                         <span style={{ flex: 1, color: '#9CA3AF' }}>{room.language || 'ITA'}</span>
-                                        <span style={{ flex: 1, textAlign: 'center', color: isFull ? '#EF4444' : '#10B981' }}>
+                                        <span className={`room-players${isFull ? ' full' : ''}`} style={{ flex: 1, textAlign: 'center' }}>
                                             {room.currentPlayers}/{room.maxPlayers}
                                         </span>
                                         <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
@@ -593,10 +483,6 @@ const Lobby: React.FC = () => {
                     </div>
                 </div>
             )}
-
-            <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
-            <UserAccountSettings isOpen={isUserSettingsOpen} onClose={() => setIsUserSettingsOpen(false)} />
-            <AdminPanel isOpen={isAdminPanelOpen} onClose={() => setIsAdminPanelOpen(false)} />
 
             <Footer />
         </div>
