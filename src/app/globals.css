@@ -1014,14 +1014,21 @@ input:checked+.slider:before {
   width: 100%;
   box-sizing: border-box;
   display: flex;
-  align-items: center;
-  gap: 20px;
-  padding: 10px 24px;
+  justify-content: center;
+  padding: 10px 32px;
   background: #0d0d0d;
   border-bottom: 1px solid #262626;
   position: sticky;
   top: 0;
   z-index: 50;
+}
+
+.site-nav-inner {
+  width: 100%;
+  max-width: 980px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 
 .site-nav-brand {
@@ -1080,8 +1087,8 @@ input:checked+.slider:before {
 .site-nav-cta {
   padding: 9px 16px;
   border-radius: 6px;
-  background: #f4c430;
-  color: #000;
+  background: #fff;
+  color: #111;
   font-size: 0.88rem;
   font-weight: 700;
   text-decoration: none;
@@ -1089,7 +1096,7 @@ input:checked+.slider:before {
 }
 
 .site-nav-cta:hover {
-  background: #ffd85c;
+  background: #e8e8e8;
 }
 
 .site-nav-login {
@@ -1135,8 +1142,11 @@ input:checked+.slider:before {
 
 @media (max-width: 640px) {
   .site-nav {
-    gap: 10px;
     padding: 8px 12px;
+  }
+
+  .site-nav-inner {
+    gap: 10px;
   }
 
   .site-nav-brand img {
@@ -1158,6 +1168,54 @@ input:checked+.slider:before {
     width: 32px;
     height: 32px;
   }
+}
+
+.landing-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 100vh;
+  width: 100%;
+  color: #fff;
+  text-align: center;
+  background-color: #000;
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)),
+    url('/landing-bg.jpg?v=2');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  overflow-y: auto;
+}
+
+.landing-container .site-nav {
+  background: rgba(8, 8, 8, 0.55);
+  backdrop-filter: blur(12px);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.landing-hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 24px 16px 40px;
+}
+
+.landing-hero img {
+  filter: drop-shadow(0 16px 32px rgba(0, 0, 0, 0.55));
+}
+
+.landing-copy {
+  font-size: 1.2rem;
+  margin-bottom: 3rem;
+  max-width: 600px;
+  line-height: 1.6;
+  color: #fff;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.7);
 }
 
 /* Lobby Styles */

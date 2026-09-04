@@ -49,38 +49,40 @@ const SiteNav: React.FC<SiteNavProps> = ({ showLogo = false, showAccount = true 
 
     return (
         <nav className="site-nav">
-            {showLogo && (
-                <Link href="/" className="site-nav-brand" aria-label="Torna al portale">
-                    <img src="/logo.png" alt="PlayTCG.Online" />
-                </Link>
-            )}
-
-            <div className="site-nav-links">
-                {LINKS.filter((link) => !link.requiresAuth || user).map((link) => (
-                    <Link
-                        key={link.href}
-                        href={link.href}
-                        className={isActive(link.href) ? 'site-nav-link active' : 'site-nav-link'}
-                    >
-                        {link.label}
+            <div className="site-nav-inner">
+                {showLogo && (
+                    <Link href="/" className="site-nav-brand" aria-label="Torna al portale">
+                        <img src="/logo.png?v=2" alt="PlayTCG.Online" />
                     </Link>
-                ))}
-            </div>
+                )}
 
-            <div className="site-nav-actions">
-                <Link href="/decks/new" className="site-nav-cta">Crea un mazzo</Link>
+                <div className="site-nav-links">
+                    {LINKS.filter((link) => !link.requiresAuth || user).map((link) => (
+                        <Link
+                            key={link.href}
+                            href={link.href}
+                            className={isActive(link.href) ? 'site-nav-link active' : 'site-nav-link'}
+                        >
+                            {link.label}
+                        </Link>
+                    ))}
+                </div>
 
-                {showAccount && (user ? (
-                    <Link href="/" className="site-nav-account" title={profile?.username ?? user.email ?? 'Profilo'}>
-                        {profile?.avatar_url
-                            ? <img src={profile.avatar_url} alt="" />
-                            : <span>{initials}</span>}
-                    </Link>
-                ) : (
-                    <button className="site-nav-login" onClick={() => setIsAuthOpen(true)}>
-                        Accedi
-                    </button>
-                ))}
+                <div className="site-nav-actions">
+                    <Link href="/decks/new" className="site-nav-cta">Crea un mazzo</Link>
+
+                    {showAccount && (user ? (
+                        <Link href="/" className="site-nav-account" title={profile?.username ?? user.email ?? 'Profilo'}>
+                            {profile?.avatar_url
+                                ? <img src={profile.avatar_url} alt="" />
+                                : <span>{initials}</span>}
+                        </Link>
+                    ) : (
+                        <button className="site-nav-login" onClick={() => setIsAuthOpen(true)}>
+                            Accedi
+                        </button>
+                    ))}
+                </div>
             </div>
 
             <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />

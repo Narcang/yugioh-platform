@@ -293,7 +293,7 @@ const Lobby: React.FC = () => {
 
                     <div style={{ textAlign: 'center' }}>
                         <img
-                            src="/logo.png"
+                            src="/logo.png?v=2"
                             alt="PlayTCG.Online"
                             style={{
                                 height: '120px',

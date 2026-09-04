@@ -15,23 +15,12 @@ const LandingPage: React.FC = () => {
     // For now we'll let them click "Gioca"
 
     return (
-        <div className="landing-container" style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            minHeight: '100vh',
-            width: '100vw',
-            background: '#000000',
-            color: '#FFFFFF',
-            textAlign: 'center'
-        }}>
+        <div className="landing-container">
             <SiteNav />
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+            <div className="landing-hero">
             <div style={{ marginBottom: '2rem' }}>
-                {/* User must place logo.png in public folder */}
                 <img
-                    src="/logo.png"
+                    src="/logo.png?v=2"
                     alt="PlayTCG.Online"
                     style={{
                         maxWidth: '400px',
@@ -40,7 +29,7 @@ const LandingPage: React.FC = () => {
                     }}
                 />
             </div>
-            <p style={{ fontSize: '1.2rem', marginBottom: '3rem', maxWidth: '600px', lineHeight: '1.6', color: '#FFFFFF' }}>
+            <p className="landing-copy">
                 Benvenuto su <strong>PlayTCG.Online</strong>.
                 Gioca online con i tuoi amici, gestisci i tuoi LP e lancia i dadi in tempo reale.
             </p>
