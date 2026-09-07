@@ -6,10 +6,12 @@ import { useAuth } from '@/context/AuthContext';
 import AuthModal from './AuthModal';
 import Footer from './Footer';
 import SiteNav from './SiteNav';
+import { useLocale } from '@/context/LocaleContext';
 
 const LandingPage: React.FC = () => {
     const { setAppView } = useLayout();
     const { user } = useAuth();
+    const { t } = useLocale();
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
     // If user is already logged in, maybe redirect to Lobby?
@@ -31,8 +33,8 @@ const LandingPage: React.FC = () => {
                 />
             </div>
             <p className="landing-copy">
-                Benvenuto su <strong>PlayTCG.Online</strong>.
-                Gioca online con i tuoi amici da PC o smartphone, gestisci i tuoi LP e lancia i dadi in tempo reale.
+                {t.landing.welcome} <strong>PlayTCG.Online</strong>.
+                {' '}{t.landing.copy}
             </p>
 
             <div className="landing-actions" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', maxWidth: '300px' }}>
@@ -54,7 +56,7 @@ const LandingPage: React.FC = () => {
                         }}
                         onClick={() => setAppView('lobby')}
                     >
-                        Entra nella Lobby
+                        {t.landing.enterLobby}
                     </button>
                 ) : (
                     <>
@@ -72,20 +74,20 @@ const LandingPage: React.FC = () => {
                             }}
                             onClick={() => setIsAuthModalOpen(true)}
                         >
-                            Accedi / Registrati
+                            {t.landing.loginRegister}
                         </button>
                         <button
                             className="btn-secondary"
                             style={{ padding: '15px', fontSize: '1.1rem' }}
                             onClick={() => setAppView('lobby')}
                         >
-                            Entra come Ospite
+                            {t.landing.guest}
                         </button>
                     </>
                 )}
             </div>
             <Link href="/come-funziona" className="landing-how-link">
-                Come funziona
+                {t.landing.howItWorks}
             </Link>
 
                 <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />

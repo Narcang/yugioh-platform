@@ -9,10 +9,12 @@ import SiteNav from './SiteNav';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
 import { getFirstPhase, getMatchModeLabel, MatchMode } from '@/lib/gameConfig';
+import { useLocale } from '@/context/LocaleContext';
 
 const Lobby: React.FC = () => {
     const { setAppView, setCurrentRoomId, setIsSettingsOpen, setGameType, setGameFormat, setCurrentPhase, setCurrentTurn, setMaxPlayers, setMatchMode } = useLayout();
     const { user, profile, isAdmin, session } = useAuth();
+    const { t } = useLocale();
     const [joinCode, setJoinCode] = useState('');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
@@ -113,7 +115,7 @@ const Lobby: React.FC = () => {
         }
 
         if (!room) {
-            alert('Stanza non trovata');
+            alert(t.lobby.roomNotFound);
             return;
         }
 
@@ -156,7 +158,7 @@ const Lobby: React.FC = () => {
 
     const handleCreateRoom = async (data: RoomData) => {
         if (!user) {
-            alert("Devi effettuare il login per creare una stanza!");
+            alert(t.lobby.loginToCreate);
             return;
         }
         try {
@@ -245,7 +247,7 @@ const Lobby: React.FC = () => {
 
     const handleRoomClick = (room: any) => {
         if (room.currentPlayers >= room.maxPlayers) {
-            alert("Questa lobby è piena!");
+            alert(t.lobby.roomFull);
             return;
         }
 
@@ -265,7 +267,7 @@ const Lobby: React.FC = () => {
             handleJoinGame(selectedRoom);
             setIsPasswordPromptOpen(false);
         } else {
-            alert("Password non corretta!");
+            alert(t.lobby.passwordWrong);
         }
     };
 
@@ -276,13 +278,13 @@ const Lobby: React.FC = () => {
                 <div className="lobby-main">
                     {/* Matchmaking Section */}
                     <section className="lobby-section matchmaking">
-                        <h2 className="section-heading">Matchmaking</h2>
+                        <h2 className="section-heading">{t.lobby.matchmaking}</h2>
                         <div className="card-grid">
                             <div className="lobby-card ranked disabled" style={{ position: 'relative', opacity: 0.7, cursor: 'not-allowed' }}>
                                 <div className="card-icon">🏆</div>
                                 <div className="card-info">
-                                    <h3>Ranked Match</h3>
-                                    <p>Compete for the top spot on the leaderboard.</p>
+                                    <h3>{t.lobby.ranked}</h3>
+                                    <p>{t.lobby.rankedCopy}</p>
                                 </div>
                                 <div style={{
                                     position: 'absolute',
@@ -303,14 +305,14 @@ const Lobby: React.FC = () => {
                                         border: '2px solid #fff',
                                         padding: '8px 16px',
                                         transform: 'rotate(-5deg)'
-                                    }}>Coming Soon</span>
+                                    }}> {t.lobby.comingSoon}</span>
                                 </div>
                             </div>
                             <div className="lobby-card quick disabled" style={{ position: 'relative', opacity: 0.7, cursor: 'not-allowed' }}>
                                 <div className="card-icon">⚡</div>
                                 <div className="card-info">
-                                    <h3>Quick Match</h3>
-                                    <p>Jump into a casual game instantly.</p>
+                                    <h3>{t.lobby.quick}</h3>
+                                    <p>{t.lobby.quickCopy}</p>
                                 </div>
                                 <div style={{
                                     position: 'absolute',
@@ -331,7 +333,7 @@ const Lobby: React.FC = () => {
                                         border: '2px solid #fff',
                                         padding: '8px 16px',
                                         transform: 'rotate(-5deg)'
-                                    }}>Coming Soon</span>
+                                    }}> {t.lobby.comingSoon}</span>
                                 </div>
                             </div>
                         </div>
@@ -340,19 +342,19 @@ const Lobby: React.FC = () => {
                     {/* Custom Games Section */}
                     <section className="lobby-section custom-games">
                         <div className="section-header-row">
-                            <h2 className="section-heading">Custom Games</h2>
+                            <h2 className="section-heading">{t.lobby.customGames}</h2>
                             <button
                                 onClick={() => setIsCreateModalOpen(true)}
                                 className="secondary-btn btn-custom-game"
                             >
-                                + Create Room
+                                {t.lobby.createRoom}
                             </button>
                         </div>
 
                         <div className="join-room-row">
                             <input
                                 type="text"
-                                placeholder="Enter Room Code..."
+                                placeholder={t.lobby.roomCode}
                                 value={joinCode}
                                 onChange={(e) => setJoinCode(e.target.value)}
                                 className="lobby-input"
@@ -361,17 +363,17 @@ const Lobby: React.FC = () => {
                                 onClick={() => handleJoinGame()}
                                 className="lobby-join-btn"
                             >
-                                Join
+                                {t.lobby.join}
                             </button>
                         </div>
 
                         <div className="room-list">
                             <div className="room-list-header">
-                                <span style={{ flex: 2.5 }}>Host</span>
-                                <span style={{ flex: 1.5 }}>Game & Format</span>
-                                <span style={{ flex: 1 }}>Lang</span>
-                                <span style={{ flex: 1, textAlign: 'center' }}>Players</span>
-                                <span style={{ flex: 1, textAlign: 'right' }}>Action</span>
+                                <span style={{ flex: 2.5 }}>{t.lobby.host}</span>
+                                <span style={{ flex: 1.5 }}>{t.lobby.gameFormat}</span>
+                                <span style={{ flex: 1 }}>{t.lobby.lang}</span>
+                                <span style={{ flex: 1, textAlign: 'center' }}>{t.lobby.players}</span>
+                                <span style={{ flex: 1, textAlign: 'right' }}>{t.lobby.action}</span>
                             </div>
                             {rooms.map(room => {
                                 const isFull = room.currentPlayers >= room.maxPlayers;
@@ -381,13 +383,13 @@ const Lobby: React.FC = () => {
                                             <span style={{ fontWeight: 600 }}>{room.host}</span>
                                             {room.isPublic ? (
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" style={{ opacity: 0.8 }}>
-                                                    <title>Public</title>
+                                                    <title>{t.lobby.public}</title>
                                                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                                                     <path d="M7 11V7a5 5 0 0 1 10 0" />
                                                 </svg>
                                             ) : (
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" style={{ opacity: 0.8 }}>
-                                                    <title>Private</title>
+                                                    <title>{t.lobby.private}</title>
                                                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                                                     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                                                 </svg>
@@ -409,7 +411,7 @@ const Lobby: React.FC = () => {
                                         <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
                                             {isAdmin && (
                                                 <button
-                                                    title="Chiudi lobby (admin)"
+                                                    title={t.lobby.closeLobby}
                                                     onClick={(e) => handleDeleteRoom(e, room.id)}
                                                     style={{
                                                         background: 'transparent',
@@ -439,7 +441,7 @@ const Lobby: React.FC = () => {
                                                     background: isFull ? '#4B5563' : 'rgba(255,255,255,0.1)'
                                                 }}
                                             >
-                                                {isFull ? 'Full' : 'Join'}
+                                                {isFull ? t.lobby.full : t.lobby.join}
                                             </button>
                                         </div>
                                     </div>
@@ -461,12 +463,12 @@ const Lobby: React.FC = () => {
                 <div className="modal-overlay">
                     <div className="create-room-modal" style={{ maxWidth: '400px' }}>
                         <div className="modal-header">
-                            <h2>Password Richiesta</h2>
+                            <h2>{t.lobby.passwordTitle}</h2>
                             <button className="close-btn" onClick={() => setIsPasswordPromptOpen(false)}>&times;</button>
                         </div>
                         <form onSubmit={handlePasswordSubmit} className="modal-form">
                             <div className="form-section">
-                                <label className="input-label">Inserisci la password per entrare</label>
+                                <label className="input-label">{t.lobby.passwordLabel}</label>
                                 <input
                                     type="password"
                                     className="text-input"
@@ -476,8 +478,8 @@ const Lobby: React.FC = () => {
                                 />
                             </div>
                             <div className="modal-footer">
-                                <button type="button" className="btn-secondary" onClick={() => setIsPasswordPromptOpen(false)}>Annulla</button>
-                                <button type="submit" className="btn-primary">Conferma</button>
+                                <button type="button" className="btn-secondary" onClick={() => setIsPasswordPromptOpen(false)}>{t.lobby.cancel}</button>
+                                <button type="submit" className="btn-primary">{t.lobby.confirm}</button>
                             </div>
                         </form>
                     </div>

@@ -6,6 +6,8 @@ import { useAuth } from '@/context/AuthContext';
 import AuthModal from './AuthModal';
 import UserAccountSettings from './UserAccountSettings';
 import AdminPanel from './AdminPanel';
+import LanguageSwitch from './LanguageSwitch';
+import { useLocale } from '@/context/LocaleContext';
 
 /**
  * Slim site header.
@@ -30,20 +32,21 @@ interface SiteNavProps {
     showAccount?: boolean;
 }
 
-const LINKS = [
-    { href: '/come-funziona', label: 'Come funziona' },
-    { href: '/decks', label: 'Esplora' },
-    { href: '/decks/mine', label: 'I tuoi deck', requiresAuth: true },
-];
-
 const SiteNav: React.FC<SiteNavProps> = ({ showLogo = false, showAccount = true }) => {
     const pathname = usePathname();
     const { user, profile, isAdmin, signOut } = useAuth();
+    const { t } = useLocale();
     const [isAuthOpen, setIsAuthOpen] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isUserSettingsOpen, setIsUserSettingsOpen] = useState(false);
     const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+
+    const links = [
+        { href: '/come-funziona', label: t.nav.howItWorks },
+        { href: '/decks', label: t.nav.explore },
+        { href: '/decks/mine', label: t.nav.myDecks, requiresAuth: true },
+    ];
 
     const isActive = (href: string) =>
         pathname === href || pathname.startsWith(`${href}/`);
@@ -70,7 +73,7 @@ const SiteNav: React.FC<SiteNavProps> = ({ showLogo = false, showAccount = true 
         <nav className="site-nav">
             <div className={`site-nav-inner${showLogo ? ' site-nav-inner--branded' : ''}`}>
                 <div className="site-nav-links">
-                    {LINKS.filter((link) => !link.requiresAuth || user).map((link) => (
+                    {links.filter((link) => !link.requiresAuth || user).map((link) => (
                         <Link
                             key={link.href}
                             href={link.href}
@@ -82,13 +85,13 @@ const SiteNav: React.FC<SiteNavProps> = ({ showLogo = false, showAccount = true 
                 </div>
 
                 {showLogo && (
-                    <Link href="/" className="site-nav-brand" aria-label="Torna al portale">
+                    <Link href="/" className="site-nav-brand" aria-label={t.nav.home}>
                         <img src="/logo.png?v=2" alt="PlayTCG.Online" />
                     </Link>
                 )}
 
                 <div className="site-nav-actions">
-                    <Link href="/decks/new" className="site-nav-cta">Crea un mazzo</Link>
+                    <Link href="/decks/new" className="site-nav-cta">{t.nav.createDeck}</Link>
 
                     {showAccount && (user ? (
                         <div className="site-nav-account-wrap" ref={menuRef}>
@@ -119,7 +122,7 @@ const SiteNav: React.FC<SiteNavProps> = ({ showLogo = false, showAccount = true 
                                                 setIsMenuOpen(false);
                                             }}
                                         >
-                                            <span>🛡️</span> Pannello Admin
+                                            <span>🛡️</span> {t.nav.admin}
                                         </button>
                                     )}
                                     <button
@@ -130,7 +133,7 @@ const SiteNav: React.FC<SiteNavProps> = ({ showLogo = false, showAccount = true 
                                             setIsMenuOpen(false);
                                         }}
                                     >
-                                        <span>⚙️</span> Impostazioni
+                                        <span>⚙️</span> {t.nav.settings}
                                     </button>
                                     <button
                                         type="button"
@@ -141,16 +144,17 @@ const SiteNav: React.FC<SiteNavProps> = ({ showLogo = false, showAccount = true 
                                             setIsMenuOpen(false);
                                         }}
                                     >
-                                        <span>🚪</span> Esci
+                                        <span>🚪</span> {t.nav.signOut}
                                     </button>
                                 </div>
                             )}
                         </div>
                     ) : (
                         <button className="site-nav-login" onClick={() => setIsAuthOpen(true)}>
-                            Accedi
+                            {t.nav.login}
                         </button>
                     ))}
+                    <LanguageSwitch />
                 </div>
             </div>
 

@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
+import { useLocale } from '@/context/LocaleContext';
 
 interface AuthModalProps {
     isOpen: boolean;
@@ -10,6 +11,7 @@ interface AuthModalProps {
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     const { refreshProfile } = useAuth();
+    const { t } = useLocale();
     const [mode, setMode] = useState<'signin' | 'signup'>('signin');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -62,7 +64,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 if (error) throw error;
                 // If email confirmation is required, Supabase won't sign in immediately.
                 // Assuming default "Confirm Email" is OFF for this demo, or we notify user.
-                alert("Registrazione completata! Controlla la tua email per confermare (se richiesto).");
+                alert(t.auth.signupOk);
                 await refreshProfile();
                 onClose();
             } else {
@@ -76,7 +78,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 onClose();
             }
         } catch (err: any) {
-            setError(err.message || 'Errore durante l\'autenticazione');
+            setError(err.message || t.auth.error);
         } finally {
             setLoading(false);
         }
@@ -86,7 +88,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         <div className="modal-overlay">
             <div className="create-room-modal" style={{ maxWidth: '400px' }}>
                 <div className="modal-header">
-                    <h2>{mode === 'signin' ? 'Accedi' : 'Registrati'}</h2>
+                    <h2>{mode === 'signin' ? t.auth.login : t.auth.register}</h2>
                     <button className="close-btn" onClick={onClose}>&times;</button>
                 </div>
 
@@ -96,14 +98,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                         style={{ background: 'none', border: 'none', color: mode === 'signin' ? '#F4C430' : '#888', padding: '10px', cursor: 'pointer', borderBottom: mode === 'signin' ? '2px solid #F4C430' : 'none' }}
                         onClick={() => setMode('signin')}
                     >
-                        Accedi
+                        {t.auth.login}
                     </button>
                     <button
                         className={`tab-btn ${mode === 'signup' ? 'active' : ''}`}
                         style={{ background: 'none', border: 'none', color: mode === 'signup' ? '#F4C430' : '#888', padding: '10px', cursor: 'pointer', borderBottom: mode === 'signup' ? '2px solid #F4C430' : 'none' }}
                         onClick={() => setMode('signup')}
                     >
-                        Registrati
+                        {t.auth.register}
                     </button>
                 </div>
 
@@ -117,7 +119,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                     {mode === 'signup' && (
                         <>
                             <div className="form-section">
-                                <label className="input-label">Username</label>
+                                <label className="input-label">{t.auth.username}</label>
                                 <input
                                     type="text"
                                     className="text-input"
@@ -128,7 +130,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                                 />
                             </div>
                             <div className="form-section">
-                                <label className="input-label">Nome Completo</label>
+                                <label className="input-label">{t.auth.fullName}</label>
                                 <input
                                     type="text"
                                     className="text-input"
@@ -140,7 +142,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                     )}
 
                     <div className="form-section">
-                        <label className="input-label">Email</label>
+                        <label className="input-label">{t.auth.email}</label>
                         <input
                             type="email"
                             className="text-input"
@@ -150,7 +152,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                         />
                     </div>
                     <div className="form-section">
-                        <label className="input-label">Password</label>
+                        <label className="input-label">{t.auth.password}</label>
                         <input
                             type="password"
                             className="text-input"
@@ -162,9 +164,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                     </div>
 
                     <div className="modal-footer">
-                        <button type="button" className="btn-secondary" onClick={onClose}>Annulla</button>
+                        <button type="button" className="btn-secondary" onClick={onClose}>{t.auth.cancel}</button>
                         <button type="submit" className="btn-primary" disabled={loading}>
-                            {loading ? 'Caricamento...' : (mode === 'signin' ? 'Entra' : 'Crea Account')}
+                            {loading ? t.auth.loading : (mode === 'signin' ? t.auth.enter : t.auth.createAccount)}
                         </button>
                     </div>
                 </form>

@@ -37,6 +37,7 @@ export const viewport: Viewport = {
 import { MediaProvider } from "@/context/MediaContext";
 import { LayoutProvider } from "@/context/LayoutContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { LocaleProvider } from "@/context/LocaleContext";
 
 export default function RootLayout({
   children,
@@ -44,14 +45,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="it">
       <body className={`${geistSans.variable} ${geistMono.variable} ${cinzel.variable}`}>
         <AuthProvider>
-          <MediaProvider>
-            <LayoutProvider>
-              {children}
-            </LayoutProvider>
-          </MediaProvider>
+          <LocaleProvider>
+            <MediaProvider>
+              <LayoutProvider>
+                {children}
+              </LayoutProvider>
+            </MediaProvider>
+          </LocaleProvider>
         </AuthProvider>
       </body>
     </html>

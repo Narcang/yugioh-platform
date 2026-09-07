@@ -1106,6 +1106,74 @@ input:checked+.slider:before {
   flex-shrink: 0;
 }
 
+.lang-switch {
+  position: relative;
+}
+
+.lang-switch-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid #404040;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.lang-switch-btn:hover {
+  border-color: #fff;
+}
+
+.lang-switch-btn svg {
+  display: block;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.lang-switch-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  min-width: 160px;
+  z-index: 80;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.lang-switch-menu button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  border: none;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.88rem;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.lang-switch-menu button:hover,
+.lang-switch-menu button.active {
+  background: #262626;
+}
+
+.lang-switch-menu svg {
+  display: block;
+  border-radius: 2px;
+}
+
 .site-nav-cta {
   padding: 9px 16px;
   border-radius: 6px;
