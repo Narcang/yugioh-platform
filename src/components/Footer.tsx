@@ -2,7 +2,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { useLocale } from '@/context/LocaleContext';
-import { RIOT_DISCLAIMER, WIZARDS_FAN_NOTICE, WIZARDS_FAN_POLICY_URL } from '@/lib/legal';
+import { WIZARDS_FAN_POLICY_URL } from '@/lib/legal';
 
 const Footer: React.FC = () => {
     const { t } = useLocale();
@@ -21,7 +21,7 @@ const Footer: React.FC = () => {
             <div className="site-footer-legal">
                 <p>{t.footer.unofficial}</p>
                 <p>
-                    {WIZARDS_FAN_NOTICE}{' '}
+                    {t.footer.wizardsNotice}{' '}
                     <a
                         href={WIZARDS_FAN_POLICY_URL}
                         target="_blank"
@@ -31,7 +31,7 @@ const Footer: React.FC = () => {
                     </a>
                     .
                 </p>
-                <p>{RIOT_DISCLAIMER}</p>
+                <p>{t.footer.riotDisclaimer}</p>
                 <p>{t.footer.sources}</p>
             </div>
         </footer>
