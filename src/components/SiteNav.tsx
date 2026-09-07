@@ -45,6 +45,7 @@ const SiteNav: React.FC<SiteNavProps> = ({ showLogo = false, showAccount = true 
 
     const links = [
         { href: '/come-funziona', label: t.nav.howItWorks },
+        { href: '/about', label: t.nav.about },
         { href: '/decks', label: t.nav.explore },
         { href: '/decks/mine', label: t.nav.myDecks, requiresAuth: true },
     ];
