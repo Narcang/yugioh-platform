@@ -1,7 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { supabaseServer } from '@/lib/supabaseServer';
-import { SITE_URL } from '@/lib/seo';
-import { languageAlternates } from '@/lib/seo';
+import { absUrl, languageAlternates } from '@/lib/seo';
 import { LOCALES } from '@/lib/i18n';
 import { withLocalePrefix } from '@/lib/localePath';
 
@@ -10,7 +9,7 @@ function localizedEntry(
   extra: Omit<MetadataRoute.Sitemap[number], 'url' | 'alternates'>,
 ): MetadataRoute.Sitemap {
   return LOCALES.map((locale) => ({
-    url: `${SITE_URL}${withLocalePrefix(unprefixedPath, locale)}`,
+    url: absUrl(withLocalePrefix(unprefixedPath, locale)),
     alternates: { languages: languageAlternates(unprefixedPath) },
     ...extra,
   }));

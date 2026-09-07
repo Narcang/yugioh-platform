@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { LOCALES, Locale } from './i18n';
 import { withLocalePrefix } from './localePath';
 
-export const SITE_URL = 'https://playtcg.online';
+export const SITE_URL = 'https://www.playtcg.online';
 export const SITE_NAME = 'PlayTCG.Online';
 
 export const OG_LOCALE: Record<Locale, string> = {
