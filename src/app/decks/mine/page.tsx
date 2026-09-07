@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
+import LocaleLink from '@/components/LocaleLink';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
 import DeckCardLink from '@/components/DeckCardLink';
@@ -44,7 +44,7 @@ export default function MyDecksPage() {
             <div className="decks-empty">
                 <h2>Serve un account</h2>
                 <p>Usa il tasto Accedi qui in alto per vedere e modificare i tuoi mazzi.</p>
-                <Link href="/decks" className="deck-btn">Intanto guarda i mazzi pubblici</Link>
+                <LocaleLink href="/decks" className="deck-btn">Intanto guarda i mazzi pubblici</LocaleLink>
             </div>
         );
     }
@@ -63,7 +63,7 @@ export default function MyDecksPage() {
                         modificarlo.
                     </p>
                 </div>
-                <Link href="/decks/new" className="deck-btn primary">Crea un mazzo</Link>
+                <LocaleLink href="/decks/new" className="deck-btn primary">Crea un mazzo</LocaleLink>
             </header>
 
             {error && <div className="decks-error" style={{ marginBottom: 16 }}>{error}</div>}
@@ -72,7 +72,7 @@ export default function MyDecksPage() {
                 <div className="decks-empty">
                     <h2>Nessun mazzo ancora</h2>
                     <p>Costruisci il primo: scegli gioco e formato e aggiungi le carte.</p>
-                    <Link href="/decks/new" className="deck-btn primary">Crea un mazzo</Link>
+                    <LocaleLink href="/decks/new" className="deck-btn primary">Crea un mazzo</LocaleLink>
                 </div>
             ) : (
                 <div className="deck-grid">

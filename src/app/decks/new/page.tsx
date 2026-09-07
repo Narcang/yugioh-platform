@@ -1,16 +1,19 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
+import LocaleLink from '@/components/LocaleLink';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
+import { useLocale } from '@/context/LocaleContext';
 import { GAME_FORMATS, GAME_TYPES } from '@/lib/gameConfig';
 import { getFormatRules, isDeckBuilderSupported, formatRulesHint } from '@/lib/deckRules';
 import { DECKS_TABLE } from '@/lib/decks';
+import { withLocalePrefix } from '@/lib/localePath';
 
 export default function NewDeckPage() {
     const router = useRouter();
     const { user, isLoading } = useAuth();
+    const { locale } = useLocale();
 
     const [gameType, setGameType] = useState('Yugioh');
     const [format, setFormat] = useState(GAME_FORMATS['Yugioh'][0]);
@@ -50,7 +53,7 @@ export default function NewDeckPage() {
                 .single();
 
             if (insertError) throw insertError;
-            router.push(`/decks/${data.id}`);
+            router.push(withLocalePrefix(`/decks/${data.id}`, locale));
         } catch (err) {
             console.error('[decks/new] create failed', err);
             setError(err instanceof Error ? err.message : 'Impossibile creare il mazzo.');
@@ -67,7 +70,7 @@ export default function NewDeckPage() {
             <div className="decks-empty">
                 <h2>Serve un account</h2>
                 <p>Usa il tasto Accedi qui in alto per creare e salvare i tuoi mazzi.</p>
-                <Link href="/decks" className="deck-btn">Intanto guarda i mazzi pubblici</Link>
+                <LocaleLink href="/decks" className="deck-btn">Intanto guarda i mazzi pubblici</LocaleLink>
             </div>
         );
     }
@@ -176,7 +179,7 @@ export default function NewDeckPage() {
                     >
                         {isSaving ? 'Creazione…' : 'Crea e aggiungi carte'}
                     </button>
-                    <Link href="/decks/mine" className="deck-btn">Annulla</Link>
+                    <LocaleLink href="/decks/mine" className="deck-btn">Annulla</LocaleLink>
                 </div>
             </form>
         </>

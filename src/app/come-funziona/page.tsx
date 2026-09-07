@@ -1,5 +1,5 @@
 "use client";
-import Link from 'next/link';
+import LocaleLink from '@/components/LocaleLink';
 import { useLocale } from '@/context/LocaleContext';
 
 export default function ComeFunzionaPage() {
@@ -17,12 +17,12 @@ export default function ComeFunzionaPage() {
           <span className="how-pill">{how.pillPlayers}</span>
         </div>
         <div className="how-hero-actions">
-          <a href="/?lobby=1" className="how-btn primary">
+          <LocaleLink href="/?lobby=1" className="how-btn primary">
             {how.enterLobby}
-          </a>
-          <Link href="/decks" className="how-btn ghost">
+          </LocaleLink>
+          <LocaleLink href="/decks" className="how-btn ghost">
             {how.exploreDecks}
-          </Link>
+          </LocaleLink>
         </div>
       </section>
 
@@ -73,15 +73,15 @@ export default function ComeFunzionaPage() {
         <h2>{how.ctaTitle}</h2>
         <p>{how.ctaBody}</p>
         <div className="how-hero-actions">
-          <a href="/?lobby=1" className="how-btn primary">
+          <LocaleLink href="/?lobby=1" className="how-btn primary">
             {how.enterLobby}
-          </a>
+          </LocaleLink>
         </div>
       </section>
 
       <p className="how-note">
         {how.legal}{' '}
-        <Link href="/terms">{t.footer.terms}</Link>
+        <LocaleLink href="/terms">{t.footer.terms}</LocaleLink>
       </p>
     </>
   );

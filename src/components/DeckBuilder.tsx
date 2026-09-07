@@ -1,9 +1,11 @@
 ﻿"use client";
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
+import LocaleLink from './LocaleLink';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
+import { useLocale } from '@/context/LocaleContext';
+import { withLocalePrefix } from '@/lib/localePath';
 import CardSearchInput, { CardSearchResult } from './CardSearchInput';
 import {
     DECK_SECTIONS,
@@ -63,6 +65,7 @@ function searchHint(rules: ReturnType<typeof getFormatRules>): string {
 const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
     const router = useRouter();
     const { user, isLoading: isAuthLoading } = useAuth();
+    const { locale } = useLocale();
 
     const [meta, setMeta] = useState<DeckMeta | null>(initialData?.meta ?? null);
     const [deck, setDeck] = useState<DeckContents>(initialData?.deck ?? emptyDeck());
@@ -304,7 +307,7 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
             setSaveError(error.message);
             return;
         }
-        router.push('/decks/mine');
+        router.push(withLocalePrefix('/decks/mine', locale));
     };
 
     const toggleVisibility = async () => {
@@ -411,7 +414,7 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, initialData }) => {
             <div className="decks-empty">
                 <h2>Mazzo non trovato</h2>
                 <p>Il mazzo non esiste, è stato eliminato oppure è privato.</p>
-                <Link href="/decks" className="deck-btn primary">Esplora i mazzi pubblici</Link>
+                <LocaleLink href="/decks" className="deck-btn primary">Esplora i mazzi pubblici</LocaleLink>
             </div>
         );
     }

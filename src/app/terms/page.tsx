@@ -1,5 +1,5 @@
 "use client";
-import Link from 'next/link';
+import LocaleLink from '@/components/LocaleLink';
 import LegalShell from '@/components/LegalShell';
 import { useLocale } from '@/context/LocaleContext';
 import { TERMS } from '@/lib/i18n-legal';
@@ -13,7 +13,7 @@ export default function TermsPage() {
     <LegalShell>
       <article className="legal-doc">
         <p className="legal-kicker">
-          <Link href="/">{t.nav.home}</Link>
+          <LocaleLink href="/">{t.nav.home}</LocaleLink>
         </p>
         <h1>{copy.title}</h1>
         <p className="legal-updated">{copy.updated}</p>

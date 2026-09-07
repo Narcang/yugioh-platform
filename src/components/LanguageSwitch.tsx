@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { LOCALES, LOCALE_META, Locale } from '@/lib/i18n';
 import { useLocale } from '@/context/LocaleContext';
+import { stripLocalePrefix, withLocalePrefix } from '@/lib/localePath';
 
 const Flag: React.FC<{ locale: Locale }> = ({ locale }) => {
     switch (locale) {
@@ -97,6 +98,16 @@ const LanguageSwitch: React.FC = () => {
                                 className={code === locale ? 'active' : undefined}
                                 onClick={() => {
                                     setLocale(code);
+                                    const search = window.location.search;
+                                    const current = window.location.pathname || '/';
+                                    const next = withLocalePrefix(stripLocalePrefix(current), code);
+                                    if (next !== current) {
+                                        // usePathname() is the rewritten path (`/come-funziona`
+                                        // even when the bar shows `/en/come-funziona`), so
+                                        // router.push would no-op. Full navigation keeps URL,
+                                        // html lang and hreflang in sync for crawlers and humans.
+                                        window.location.assign(`${next}${search}`);
+                                    }
                                     setOpen(false);
                                 }}
                             >

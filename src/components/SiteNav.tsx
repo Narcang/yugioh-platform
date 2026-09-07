@@ -1,13 +1,14 @@
 "use client";
 import React, { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import AuthModal from './AuthModal';
 import UserAccountSettings from './UserAccountSettings';
 import AdminPanel from './AdminPanel';
 import LanguageSwitch from './LanguageSwitch';
+import LocaleLink from './LocaleLink';
 import { useLocale } from '@/context/LocaleContext';
+import { stripLocalePrefix } from '@/lib/localePath';
 
 /**
  * Slim site header.
@@ -48,8 +49,10 @@ const SiteNav: React.FC<SiteNavProps> = ({ showLogo = false, showAccount = true 
         { href: '/decks/mine', label: t.nav.myDecks, requiresAuth: true },
     ];
 
-    const isActive = (href: string) =>
-        pathname === href || pathname.startsWith(`${href}/`);
+    const isActive = (href: string) => {
+        const current = stripLocalePrefix(pathname || '/');
+        return current === href || (href !== '/' && current.startsWith(`${href}/`));
+    };
 
     const initials =
         profile?.username?.substring(0, 2).toUpperCase() ??
@@ -74,24 +77,24 @@ const SiteNav: React.FC<SiteNavProps> = ({ showLogo = false, showAccount = true 
             <div className={`site-nav-inner${showLogo ? ' site-nav-inner--branded' : ''}`}>
                 <div className="site-nav-links">
                     {links.filter((link) => !link.requiresAuth || user).map((link) => (
-                        <Link
+                        <LocaleLink
                             key={link.href}
                             href={link.href}
                             className={isActive(link.href) ? 'site-nav-link active' : 'site-nav-link'}
                         >
                             {link.label}
-                        </Link>
+                        </LocaleLink>
                     ))}
                 </div>
 
                 {showLogo && (
-                    <Link href="/" className="site-nav-brand" aria-label={t.nav.home}>
+                    <LocaleLink href="/" className="site-nav-brand" aria-label={t.nav.home}>
                         <img src="/logo.png?v=2" alt="PlayTCG.Online" />
-                    </Link>
+                    </LocaleLink>
                 )}
 
                 <div className="site-nav-actions">
-                    <Link href="/decks/new" className="site-nav-cta">{t.nav.createDeck}</Link>
+                    <LocaleLink href="/decks/new" className="site-nav-cta">{t.nav.createDeck}</LocaleLink>
 
                     {showAccount && (user ? (
                         <div className="site-nav-account-wrap" ref={menuRef}>

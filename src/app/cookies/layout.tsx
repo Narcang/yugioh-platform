@@ -1,35 +1,26 @@
 import type { Metadata } from 'next';
-import SiteNav from '@/components/SiteNav';
-import Footer from '@/components/Footer';
 import { SEO } from '@/lib/i18n-seo';
 import { getRequestLocale } from '@/lib/getRequestLocale';
 import { SITE_NAME, pageAlternates } from '@/lib/seo';
-import './decks.css';
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale();
-  const seo = SEO[locale].decks;
+  const seo = SEO[locale].cookies;
   return {
     title: seo.title,
     description: seo.description,
     keywords: seo.keywords,
-    alternates: pageAlternates('/decks', locale),
+    alternates: pageAlternates('/cookies', locale),
     twitter: {
-      card: 'summary_large_image',
+      card: 'summary',
       title: `${seo.title} | ${SITE_NAME}`,
       description: seo.description,
     },
   };
 }
 
-export default function DecksLayout({
+export default function CookiesLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  return (
-    <div className="decks-shell">
-      <SiteNav showLogo />
-      <main className="decks-main">{children}</main>
-      <Footer />
-    </div>
-  );
+  return children;
 }

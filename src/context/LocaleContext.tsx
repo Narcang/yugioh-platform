@@ -1,12 +1,7 @@
 "use client";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import {
-    detectBrowserLocale,
-    Locale,
-    LOCALE_STORAGE_KEY,
-    MESSAGES,
-    readStoredLocale,
-} from '@/lib/i18n';
+import { Locale, LOCALE_STORAGE_KEY, MESSAGES } from '@/lib/i18n';
+import { LOCALE_COOKIE } from '@/lib/localePath';
 
 interface LocaleContextValue {
     locale: Locale;
@@ -16,19 +11,26 @@ interface LocaleContextValue {
 
 const LocaleContext = createContext<LocaleContextValue | undefined>(undefined);
 
-export const LocaleProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [locale, setLocaleState] = useState<Locale>('it');
+function persistLocale(next: Locale) {
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, next);
+    document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=31536000; samesite=lax`;
+    document.documentElement.lang = next;
+}
+
+export const LocaleProvider: React.FC<{ children: React.ReactNode; initialLocale: Locale }> = ({
+    children,
+    initialLocale,
+}) => {
+    const [locale, setLocaleState] = useState<Locale>(initialLocale);
 
     useEffect(() => {
-        const initial = readStoredLocale() ?? detectBrowserLocale();
-        setLocaleState(initial);
-        document.documentElement.lang = initial;
-    }, []);
+        setLocaleState(initialLocale);
+        persistLocale(initialLocale);
+    }, [initialLocale]);
 
     const setLocale = useCallback((next: Locale) => {
         setLocaleState(next);
-        window.localStorage.setItem(LOCALE_STORAGE_KEY, next);
-        document.documentElement.lang = next;
+        persistLocale(next);
     }, []);
 
     const value = useMemo<LocaleContextValue>(

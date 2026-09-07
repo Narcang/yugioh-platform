@@ -1,10 +1,23 @@
 import type { Metadata } from 'next';
+import { SEO } from '@/lib/i18n-seo';
+import { getRequestLocale } from '@/lib/getRequestLocale';
+import { SITE_NAME, pageAlternates } from '@/lib/seo';
 
-export const metadata: Metadata = {
-  title: 'Terms of Service | PlayTCG.Online',
-  description:
-    'Unofficial fan tabletop for paper TCGs. Not affiliated with Konami, Wizards of the Coast, The Pokémon Company, Bandai or Riot Games.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getRequestLocale();
+  const seo = SEO[locale].terms;
+  return {
+    title: seo.title,
+    description: seo.description,
+    keywords: seo.keywords,
+    alternates: pageAlternates('/terms', locale),
+    twitter: {
+      card: 'summary',
+      title: `${seo.title} | ${SITE_NAME}`,
+      description: seo.description,
+    },
+  };
+}
 
 export default function TermsLayout({
   children,

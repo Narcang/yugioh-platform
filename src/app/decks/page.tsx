@@ -1,14 +1,7 @@
-import type { Metadata } from 'next';
-import Link from 'next/link';
 import DeckCardLink from '@/components/DeckCardLink';
+import LocaleLink from '@/components/LocaleLink';
 import { supabaseServer } from '@/lib/supabaseServer';
 import { PublicDeckSummary } from '@/lib/decks';
-
-export const metadata: Metadata = {
-  title: 'Esplora i mazzi | PlayTCG.Online',
-  description:
-    'Sfoglia i mazzi condivisi dalla community: lista carte, formato e controllo di legalità.',
-};
 
 // Rendered on the server and refreshed periodically so search engines see the
 // deck list without running JavaScript.
@@ -37,7 +30,7 @@ export default async function ExploreDecksPage() {
             lista completa e se rispetta il formato.
           </p>
         </div>
-        <Link href="/decks/new" className="deck-btn primary">Crea il tuo</Link>
+        <LocaleLink href="/decks/new" className="deck-btn primary">Crea il tuo</LocaleLink>
       </header>
 
       {error ? (
@@ -49,7 +42,7 @@ export default async function ExploreDecksPage() {
         <div className="decks-empty">
           <h2>Ancora nessun mazzo pubblico</h2>
           <p>Puoi essere il primo: crea un mazzo e rendilo pubblico.</p>
-          <Link href="/decks/new" className="deck-btn primary">Crea un mazzo</Link>
+          <LocaleLink href="/decks/new" className="deck-btn primary">Crea un mazzo</LocaleLink>
         </div>
       ) : (
         <div className="deck-grid">

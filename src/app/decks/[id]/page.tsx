@@ -3,6 +3,8 @@ import DeckBuilder from '@/components/DeckBuilder';
 import { supabaseServer } from '@/lib/supabaseServer';
 import { loadDeck } from '@/lib/decks';
 import { countSection } from '@/lib/deckRules';
+import { getRequestLocale } from '@/lib/getRequestLocale';
+import { pageAlternates } from '@/lib/seo';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -26,10 +28,11 @@ async function loadPublicDeck(id: string) {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
+  const locale = await getRequestLocale();
   const loaded = await loadPublicDeck(id);
 
   if (!loaded) {
-    return { title: 'Mazzo | PlayTCG.Online', robots: { index: false } };
+    return { title: 'Mazzo', robots: { index: false, follow: false } };
   }
 
   const { meta, deck } = loaded;
@@ -39,9 +42,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     `Mazzo ${meta.game_type} per il formato ${meta.format}, ${size} carte nel Main Deck.`;
 
   return {
-    title: `${meta.name} — ${meta.format} | PlayTCG.Online`,
+    title: `${meta.name} — ${meta.format}`,
     description,
-    openGraph: { title: meta.name, description },
+    alternates: pageAlternates(`/decks/${id}`, locale),
+    openGraph: {
+      title: `${meta.name} — ${meta.format}`,
+      description,
+      type: 'article',
+    },
+    twitter: { card: 'summary', title: meta.name, description },
   };
 }
 

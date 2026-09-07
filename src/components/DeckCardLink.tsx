@@ -1,5 +1,5 @@
 import React from 'react';
-import Link from 'next/link';
+import LocaleLink from '@/components/LocaleLink';
 import { coverImageUrl } from '@/lib/decks';
 
 /**
@@ -30,7 +30,7 @@ const DeckCardLink: React.FC<DeckCardLinkProps> = ({
   author,
   cardCount,
 }) => (
-  <Link href={`/decks/${id}`} className="deck-card">
+  <LocaleLink href={`/decks/${id}`} className="deck-card">
     <div className="deck-card-cover">
       {coverCardId ? (
         <img src={coverImageUrl(gameType, coverCardId)} alt="" loading="lazy" />
@@ -59,7 +59,7 @@ const DeckCardLink: React.FC<DeckCardLinkProps> = ({
         {author && <span>di {author}</span>}
       </div>
     </div>
-  </Link>
+  </LocaleLink>
 );
 
 export default DeckCardLink;
