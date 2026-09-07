@@ -32,7 +32,7 @@ const LandingPage: React.FC = () => {
             </div>
             <p className="landing-copy">
                 Benvenuto su <strong>PlayTCG.Online</strong>.
-                Gioca online con i tuoi amici, gestisci i tuoi LP e lancia i dadi in tempo reale.
+                Gioca online con i tuoi amici da PC o smartphone, gestisci i tuoi LP e lancia i dadi in tempo reale.
             </p>
 
             <div className="landing-actions" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', maxWidth: '300px' }}>

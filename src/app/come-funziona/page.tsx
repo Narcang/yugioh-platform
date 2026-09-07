@@ -38,7 +38,7 @@ const STEPS = [
   },
   {
     title: 'Inquadra e gioca',
-    body: 'Punta la camera sul campo, sistema LP e fasi, e giocate come al tavolo vero. Le regole le applicate voi.',
+    body: 'Punta la camera sul campo — dal PC o dal telefono — sistema LP e fasi, e giocate come al tavolo vero. Le regole le applicate voi.',
   },
 ];
 
@@ -50,7 +50,13 @@ export default function ComeFunzionaPage() {
         <p>
           PlayTCG.Online è un tavolo virtuale per TCG di carta: ti vedi, senti e tieni
           LP, fasi e carte sotto controllo, come se foste nella stessa stanza.
+          Funziona dal computer e dallo smartphone, nel browser.
         </p>
+        <div className="how-pills" aria-label="In sintesi">
+          <span className="how-pill">Nessuna app</span>
+          <span className="how-pill">PC e smartphone</span>
+          <span className="how-pill">2–4 giocatori</span>
+        </div>
         <div className="how-hero-actions">
           <a href="/?lobby=1" className="how-btn primary">
             Entra nella lobby
@@ -59,6 +65,15 @@ export default function ComeFunzionaPage() {
             Esplora i mazzi
           </Link>
         </div>
+      </section>
+
+      <section className="how-highlight">
+        <h2>Pensato anche per il telefono</h2>
+        <p>
+          Apri il sito dal browser, inquadra il playmat con la camera posteriore
+          e ruota lo schermo per vedere tutto il campo. Il tavolo ha un layout
+          dedicato per smartphone: niente app da scaricare, niente cavo verso il PC.
+        </p>
       </section>
 
       <p className="how-section-title">Cosa trovi</p>
@@ -94,6 +109,14 @@ export default function ComeFunzionaPage() {
       <p className="how-section-title">Domande rapide</p>
       <section className="how-faq">
         <details>
+          <summary>Funziona dal telefono?</summary>
+          <p>
+            Sì. Apri playtcg.online nel browser dello smartphone: il tavolo si
+            adatta allo schermo e usa la camera posteriore per inquadrare il
+            playmat. Non serve un&apos;app.
+          </p>
+        </details>
+        <details>
           <summary>Devo avere un account?</summary>
           <p>
             No. Puoi entrare come ospite per una partita. L&apos;account serve se vuoi
@@ -118,7 +141,7 @@ export default function ComeFunzionaPage() {
 
       <section className="how-cta">
         <h2>Pronto a sederti?</h2>
-        <p>Apri una stanza, invita gli amici e inquadra il playmat.</p>
+        <p>Apri una stanza dal PC o dal telefono, invita gli amici e inquadra il playmat.</p>
         <div className="how-hero-actions">
           <a href="/?lobby=1" className="how-btn primary">
             Entra nella lobby

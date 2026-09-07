@@ -36,7 +36,47 @@
   color: #c4c4c4;
   font-size: 1.08rem;
   line-height: 1.6;
+  margin: 0 0 18px;
+}
+
+.how-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
   margin: 0 0 28px;
+}
+
+.how-pill {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #333;
+  background: #161616;
+  color: #e5e5e5;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.how-highlight {
+  background: #141414;
+  border: 1px solid #262626;
+  border-radius: 16px;
+  padding: 28px 28px 30px;
+  margin-bottom: 40px;
+}
+
+.how-highlight h2 {
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+}
+
+.how-highlight p {
+  margin: 0;
+  color: #b3b3b3;
+  line-height: 1.6;
+  font-size: 0.98rem;
+  max-width: 68ch;
 }
 
 .how-hero-actions {
@@ -243,5 +283,9 @@
 
   .how-main {
     padding: 28px 16px 56px;
+  }
+
+  .how-highlight {
+    padding: 22px 18px 24px;
   }
 }
