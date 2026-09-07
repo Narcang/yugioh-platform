@@ -1299,8 +1299,14 @@ input:checked+.slider:before {
 .lobby-container {
   width: 100vw;
   min-height: 100vh;
-  background: #fff;
-  color: #111;
+  background-color: #000;
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+    url('/lobby-bg.jpg?v=1');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  color: #fff;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
