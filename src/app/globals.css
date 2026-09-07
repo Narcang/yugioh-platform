@@ -1502,6 +1502,40 @@ input:checked+.slider:before {
   text-decoration: underline;
 }
 
+.landing-story {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto 8px;
+  padding: 0 16px 20px;
+  text-align: center;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.landing-story strong {
+  display: block;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.78);
+  margin-bottom: 6px;
+}
+
+.landing-story span {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.landing-story a {
+  color: rgba(255, 255, 255, 0.78);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.landing-story a:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
 /* Lobby Styles */
 .lobby-container {
   width: 100vw;

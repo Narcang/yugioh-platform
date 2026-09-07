@@ -11,6 +11,7 @@ const Footer: React.FC = () => {
         <footer className="site-footer">
             <div className="site-footer-links">
                 <LocaleLink href="/come-funziona">{t.nav.howItWorks}</LocaleLink>
+                <LocaleLink href="/about">{t.nav.about}</LocaleLink>
                 <LocaleLink href="/terms">{t.footer.terms}</LocaleLink>
                 <LocaleLink href="/privacy">{t.footer.privacy}</LocaleLink>
                 <LocaleLink href="/cookies">{t.footer.cookies}</LocaleLink>

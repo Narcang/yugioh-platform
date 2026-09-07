@@ -13,6 +13,7 @@ export interface SeoCopy {
     terms: PageSeo;
     privacy: PageSeo;
     cookies: PageSeo;
+    about: PageSeo;
 }
 
 const it: SeoCopy = {
@@ -60,6 +61,12 @@ const it: SeoCopy = {
             'Cookie policy di PlayTCG.Online: solo cookie tecnici per autenticazione e preferenze, niente profilazione.',
         keywords: ['cookie PlayTCG'],
     },
+    about: {
+        title: 'Chi siamo',
+        description:
+            'PlayTCG.Online è un progetto Be2Bit. Heritage di gioco dal 1996 con Artematica: videogiochi, card game e adesso il tavolo TCG online.',
+        keywords: ['chi siamo PlayTCG', 'Be2Bit', 'Artematica'],
+    },
 };
 
 const en: SeoCopy = {
@@ -106,6 +113,12 @@ const en: SeoCopy = {
         description: 'PlayTCG.Online cookie policy: strictly necessary cookies only, no profiling.',
         keywords: ['PlayTCG cookies'],
     },
+    about: {
+        title: 'About',
+        description:
+            'PlayTCG.Online is a Be2Bit project. Gaming heritage since 1996 with Artematica: videogames, card games, and now the online TCG table.',
+        keywords: ['about PlayTCG', 'Be2Bit', 'Artematica'],
+    },
 };
 
 const es: SeoCopy = {
@@ -142,6 +155,12 @@ const es: SeoCopy = {
         title: 'Política de cookies',
         description: 'Cookies de PlayTCG.Online: solo cookies técnicas, sin perfilado.',
         keywords: ['cookies PlayTCG'],
+    },
+    about: {
+        title: 'Quiénes somos',
+        description:
+            'PlayTCG.Online es un proyecto de Be2Bit. Herencia de juego desde 1996 con Artematica: videojuegos, card games y ahora la mesa TCG online.',
+        keywords: ['quiénes somos PlayTCG', 'Be2Bit', 'Artematica'],
     },
 };
 
@@ -180,6 +199,12 @@ const fr: SeoCopy = {
         description: 'Cookies de PlayTCG.Online : cookies techniques uniquement, pas de profilage.',
         keywords: ['cookies PlayTCG'],
     },
+    about: {
+        title: 'À propos',
+        description:
+            'PlayTCG.Online est un projet Be2Bit. Héritage jeu depuis 1996 avec Artematica : jeux vidéo, card games, puis la table TCG en ligne.',
+        keywords: ['à propos PlayTCG', 'Be2Bit', 'Artematica'],
+    },
 };
 
 const de: SeoCopy = {
@@ -217,6 +242,12 @@ const de: SeoCopy = {
         description: 'Cookies bei PlayTCG.Online: nur technisch notwendige Cookies, kein Profiling.',
         keywords: ['PlayTCG Cookies'],
     },
+    about: {
+        title: 'Über uns',
+        description:
+            'PlayTCG.Online ist ein Be2Bit-Projekt. Gaming-Erbe seit 1996 mit Artematica: Videospiele, Kartenspiele und jetzt der Online-TCG-Tisch.',
+        keywords: ['über PlayTCG', 'Be2Bit', 'Artematica'],
+    },
 };
 
 const pt: SeoCopy = {
@@ -253,6 +284,12 @@ const pt: SeoCopy = {
         title: 'Política de cookies',
         description: 'Cookies do PlayTCG.Online: só cookies técnicos, sem perfilamento.',
         keywords: ['cookies PlayTCG'],
+    },
+    about: {
+        title: 'Sobre',
+        description:
+            'A PlayTCG.Online é um projeto Be2Bit. Herança de jogo desde 1996 com a Artematica: videojogos, card games e agora a mesa TCG online.',
+        keywords: ['sobre PlayTCG', 'Be2Bit', 'Artematica'],
     },
 };
 

@@ -1,0 +1,248 @@
+.about-shell {
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: #0a0a0a;
+  color: #f5f5f5;
+  display: flex;
+  flex-direction: column;
+}
+
+.about-main {
+  flex: 1;
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+}
+
+.about-hero {
+  text-align: center;
+  padding: 28px 0 64px;
+}
+
+.about-kicker {
+  margin: 0 0 12px;
+  font-family: var(--font-cinzel), serif;
+  font-size: clamp(2rem, 6vw, 3.4rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.05;
+}
+
+.about-tagline {
+  margin: 0 auto 28px;
+  max-width: 28ch;
+  font-size: clamp(1.15rem, 2.4vw, 1.45rem);
+  line-height: 1.35;
+  color: #e8e8e8;
+}
+
+.about-lead {
+  margin: 0 auto;
+  max-width: 62ch;
+  color: #b8b8b8;
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+.about-section-title {
+  font-family: var(--font-cinzel), serif;
+  font-size: 1.15rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8a8a8a;
+  text-align: center;
+  margin: 0 0 36px;
+}
+
+.about-timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 560px;
+  margin: 0 auto 56px;
+  padding: 0;
+  list-style: none;
+}
+
+.about-era {
+  position: relative;
+  padding: 0 0 36px 0;
+  text-align: center;
+}
+
+.about-era:last-child {
+  padding-bottom: 0;
+}
+
+.about-year {
+  display: block;
+  font-family: var(--font-cinzel), serif;
+  font-size: clamp(2.4rem, 8vw, 4rem);
+  line-height: 1;
+  color: #f4c430;
+  margin-bottom: 10px;
+}
+
+.about-era h3 {
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+}
+
+.about-era p {
+  margin: 0 auto;
+  max-width: 40ch;
+  color: #b3b3b3;
+  line-height: 1.55;
+}
+
+.about-arrow {
+  display: block;
+  width: 1px;
+  height: 44px;
+  margin: 8px auto 20px;
+  background: linear-gradient(#f4c430, #3a3a3a);
+  position: relative;
+}
+
+.about-arrow::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -2px;
+  width: 7px;
+  height: 7px;
+  border-right: 1px solid #666;
+  border-bottom: 1px solid #666;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.about-thread {
+  background: #141414;
+  border: 1px solid #262626;
+  border-radius: 16px;
+  padding: 28px 28px 30px;
+  margin-bottom: 56px;
+}
+
+.about-thread h2 {
+  margin: 0 0 10px;
+  font-size: 1.25rem;
+}
+
+.about-thread p {
+  margin: 0;
+  color: #b3b3b3;
+  line-height: 1.65;
+  font-size: 0.98rem;
+}
+
+.about-studios {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 56px;
+}
+
+.about-studio {
+  background: #111;
+  border: 1px solid #262626;
+  border-radius: 16px;
+  padding: 24px 22px 22px;
+  display: flex;
+  flex-direction: column;
+  min-height: 220px;
+}
+
+.about-studio-role {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #8a8a8a;
+  margin: 0 0 16px;
+}
+
+.about-mark {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  margin-bottom: 16px;
+}
+
+.about-mark img {
+  max-height: 48px;
+  max-width: 180px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.about-wordmark {
+  font-family: var(--font-cinzel), serif;
+  font-size: 1.35rem;
+  letter-spacing: 0.04em;
+}
+
+.about-studio p {
+  margin: 0 0 18px;
+  color: #b3b3b3;
+  line-height: 1.55;
+  font-size: 0.92rem;
+  flex: 1;
+}
+
+.about-studio a {
+  color: #f4c430;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.about-studio a:hover {
+  text-decoration: underline;
+}
+
+.about-cta {
+  text-align: center;
+  padding: 8px 0 0;
+}
+
+.about-cta h2 {
+  margin: 0 0 10px;
+  font-size: 1.4rem;
+}
+
+.about-cta p {
+  margin: 0 0 22px;
+  color: #b3b3b3;
+}
+
+.about-cta-link {
+  display: inline-block;
+  padding: 12px 22px;
+  border-radius: 10px;
+  background: #f4c430;
+  color: #111;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.about-cta-link:hover {
+  filter: brightness(1.05);
+}
+
+@media (max-width: 720px) {
+  .about-main {
+    padding: 32px 16px 64px;
+  }
+
+  .about-studios {
+    grid-template-columns: 1fr;
+  }
+
+  .about-thread {
+    padding: 22px 18px 24px;
+  }
+}

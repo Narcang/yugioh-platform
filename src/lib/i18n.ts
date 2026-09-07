@@ -47,6 +47,7 @@ const it = {
         admin: 'Pannello Admin',
         signOut: 'Esci',
         language: 'Lingua',
+        about: 'Chi siamo',
     },
     footer: {
         rights: 'Tutti i diritti riservati.',
@@ -202,6 +203,7 @@ const en: Messages = {
         admin: 'Admin panel',
         signOut: 'Log out',
         language: 'Language',
+        about: 'About',
     },
     footer: {
         rights: 'All rights reserved.',
@@ -357,6 +359,7 @@ const es: Messages = {
         admin: 'Panel de admin',
         signOut: 'Salir',
         language: 'Idioma',
+        about: 'Quiénes somos',
     },
     footer: {
         rights: 'Todos los derechos reservados.',
@@ -512,6 +515,7 @@ const fr: Messages = {
         admin: 'Panneau admin',
         signOut: 'Déconnexion',
         language: 'Langue',
+        about: 'À propos',
     },
     footer: {
         rights: 'Tous droits réservés.',
@@ -667,6 +671,7 @@ const de: Messages = {
         admin: 'Admin-Bereich',
         signOut: 'Abmelden',
         language: 'Sprache',
+        about: 'Über uns',
     },
     footer: {
         rights: 'Alle Rechte vorbehalten.',
@@ -822,6 +827,7 @@ const pt: Messages = {
         admin: 'Painel admin',
         signOut: 'Sair',
         language: 'Idioma',
+        about: 'Sobre',
     },
     footer: {
         rights: 'Todos os direitos reservados.',

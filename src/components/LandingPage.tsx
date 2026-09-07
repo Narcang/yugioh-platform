@@ -7,11 +7,13 @@ import AuthModal from './AuthModal';
 import Footer from './Footer';
 import SiteNav from './SiteNav';
 import { useLocale } from '@/context/LocaleContext';
+import { HOME_STORY } from '@/lib/i18n-about';
 
 const LandingPage: React.FC = () => {
     const { setAppView } = useLayout();
     const { user } = useAuth();
-    const { t } = useLocale();
+    const { locale, t } = useLocale();
+    const story = HOME_STORY[locale];
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
     // If user is already logged in, maybe redirect to Lobby?
@@ -92,6 +94,11 @@ const LandingPage: React.FC = () => {
 
                 <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
             </div>
+            <p className="landing-story">
+                <strong>{story.line}</strong>
+                <span>{story.byline}</span>
+                <LocaleLink href="/about">{story.link} →</LocaleLink>
+            </p>
             <Footer />
         </div>
     );

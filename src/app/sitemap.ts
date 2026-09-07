@@ -25,6 +25,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.9,
     }),
+    ...localizedEntry('/about', {
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    }),
     ...localizedEntry('/decks', { lastModified: now, changeFrequency: 'daily', priority: 0.8 }),
     ...localizedEntry('/terms', { lastModified: now, changeFrequency: 'yearly', priority: 0.4 }),
     ...localizedEntry('/privacy', { lastModified: now, changeFrequency: 'yearly', priority: 0.3 }),
