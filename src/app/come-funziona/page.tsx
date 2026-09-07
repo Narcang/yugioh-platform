@@ -79,7 +79,10 @@ export default function ComeFunzionaPage() {
         </div>
       </section>
 
-      <p className="how-note">{how.legal}</p>
+      <p className="how-note">
+        {how.legal}{' '}
+        <Link href="/terms">{t.footer.terms}</Link>
+      </p>
     </>
   );
 }

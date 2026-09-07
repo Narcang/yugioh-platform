@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import SiteNav from '@/components/SiteNav';
+import Footer from '@/components/Footer';
 import './decks.css';
 
 export const metadata: Metadata = {
@@ -15,6 +16,7 @@ export default function DecksLayout({
     <div className="decks-shell">
       <SiteNav showLogo />
       <main className="decks-main">{children}</main>
+      <Footer />
     </div>
   );
 }

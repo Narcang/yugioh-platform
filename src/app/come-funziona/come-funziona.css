@@ -275,6 +275,10 @@
   margin-right: auto;
 }
 
+.how-note a {
+  color: #9a9a9a;
+}
+
 @media (max-width: 800px) {
   .how-features,
   .how-steps {
