@@ -39,7 +39,7 @@ export function absUrl(path = '/'): string {
 }
 
 /** hreflang map for a path without locale prefix (`/` or `/come-funziona`). */
-export function languageAlternates(unprefixedPath: string): NonNullable<Metadata['alternates']>['languages'] {
+export function languageAlternates(unprefixedPath: string): Record<string, string> {
   const languages: Record<string, string> = {
     'x-default': absUrl(unprefixedPath),
   };
