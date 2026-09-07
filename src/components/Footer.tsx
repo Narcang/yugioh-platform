@@ -12,6 +12,7 @@ const Footer: React.FC = () => {
             width: '100%',
         }}>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '10px' }}>
+                <Link href="/come-funziona" style={{ color: '#888', textDecoration: 'none' }}>Come funziona</Link>
                 <Link href="/privacy" style={{ color: '#888', textDecoration: 'none' }}>Privacy Policy</Link>
                 <Link href="/cookies" style={{ color: '#888', textDecoration: 'none' }}>Cookie Policy</Link>
             </div>

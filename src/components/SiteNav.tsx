@@ -31,6 +31,7 @@ interface SiteNavProps {
 }
 
 const LINKS = [
+    { href: '/come-funziona', label: 'Come funziona' },
     { href: '/decks', label: 'Esplora' },
     { href: '/decks/mine', label: 'I tuoi deck', requiresAuth: true },
 ];

@@ -53,6 +53,11 @@ function RoomUrlHandler() {
       };
 
       fetchRoomDetails();
+      return;
+    }
+
+    if (searchParams.get('lobby')) {
+      setAppView('lobby');
     }
   }, [searchParams, setCurrentRoomId, setAppView, setGameType, setGameFormat, setCurrentPhase, setCurrentTurn, setMaxPlayers, setMatchMode, user]);
 

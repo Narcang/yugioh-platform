@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useLayout } from '@/context/LayoutContext';
 import { useAuth } from '@/context/AuthContext';
 import AuthModal from './AuthModal';
@@ -83,6 +84,9 @@ const LandingPage: React.FC = () => {
                     </>
                 )}
             </div>
+            <Link href="/come-funziona" className="landing-how-link">
+                Come funziona
+            </Link>
 
                 <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
             </div>
