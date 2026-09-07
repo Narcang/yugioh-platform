@@ -1,25 +1,28 @@
-export const LOCALES = ['it', 'en', 'es'] as const;
+export const LOCALES = ['it', 'en', 'es', 'fr', 'de', 'pt'] as const;
 export type Locale = (typeof LOCALES)[number];
 
 export const LOCALE_META: Record<Locale, { label: string }> = {
     it: { label: 'Italiano' },
     en: { label: 'English' },
     es: { label: 'Español' },
+    fr: { label: 'Français' },
+    de: { label: 'Deutsch' },
+    pt: { label: 'Português' },
 };
 
 export const LOCALE_STORAGE_KEY = 'playtcg-locale';
 
 export function isLocale(value: string | null | undefined): value is Locale {
-    return value === 'it' || value === 'en' || value === 'es';
+    return (LOCALES as readonly string[]).includes(value ?? '');
 }
 
-/** Prefer the browser language list (es-MX → es). GPS is not used. */
+/** Prefer the browser language list (pt-BR → pt). GPS is not used. */
 export function detectBrowserLocale(): Locale {
     if (typeof navigator === 'undefined') return 'it';
     const tags = [...(navigator.languages ?? []), navigator.language].filter(Boolean);
     for (const tag of tags) {
         const base = tag.toLowerCase().split('-')[0];
-        if (base === 'es' || base === 'en' || base === 'it') return base;
+        if (isLocale(base)) return base;
     }
     return 'it';
 }
@@ -479,4 +482,451 @@ const es: Messages = {
     },
 };
 
-export const MESSAGES: Record<Locale, Messages> = { it, en, es };
+const fr: Messages = {
+    nav: {
+        howItWorks: 'Comment ça marche',
+        explore: 'Explorer',
+        myDecks: 'Tes decks',
+        createDeck: 'Créer un deck',
+        login: 'Connexion',
+        home: "Retour à l'accueil",
+        settings: 'Paramètres',
+        admin: 'Panneau admin',
+        signOut: 'Déconnexion',
+        language: 'Langue',
+    },
+    footer: {
+        rights: 'Tous droits réservés.',
+        privacy: 'Politique de confidentialité',
+        cookies: 'Politique cookies',
+    },
+    landing: {
+        welcome: 'Bienvenue sur',
+        copy: 'Joue en ligne avec tes amis depuis un PC ou un smartphone, gère tes LP et lance les dés en temps réel.',
+        enterLobby: 'Entrer dans le lobby',
+        loginRegister: 'Connexion / Inscription',
+        guest: 'Entrer en invité',
+        howItWorks: 'Comment ça marche',
+    },
+    auth: {
+        login: 'Connexion',
+        register: 'Inscription',
+        username: 'Pseudo',
+        fullName: 'Nom complet',
+        email: 'Email',
+        password: 'Mot de passe',
+        cancel: 'Annuler',
+        enter: 'Entrer',
+        createAccount: 'Créer un compte',
+        loading: 'Chargement…',
+        signupOk: 'Inscription terminée ! Vérifie ton email pour confirmer si demandé.',
+        error: "Erreur d'authentification",
+    },
+    lobby: {
+        matchmaking: 'Matchmaking',
+        ranked: 'Partie classée',
+        rankedCopy: 'Vise le haut du classement.',
+        quick: 'Partie rapide',
+        quickCopy: 'Rejoins tout de suite une partie casual.',
+        comingSoon: 'Bientôt',
+        customGames: 'Parties custom',
+        createRoom: '+ Créer une salle',
+        roomCode: 'Entre le code de salle…',
+        join: 'Rejoindre',
+        host: 'Hôte',
+        gameFormat: 'Jeu et format',
+        lang: 'Langue',
+        players: 'Joueurs',
+        action: 'Action',
+        full: 'Pleine',
+        public: 'Publique',
+        private: 'Privée',
+        roomNotFound: 'Salle introuvable',
+        roomFull: 'Ce lobby est plein !',
+        loginToCreate: 'Tu dois te connecter pour créer une salle !',
+        closeLobby: 'Fermer le lobby (admin)',
+        passwordTitle: 'Mot de passe requis',
+        passwordLabel: 'Entre le mot de passe pour rejoindre',
+        passwordWrong: 'Mot de passe incorrect !',
+        confirm: 'Confirmer',
+        cancel: 'Annuler',
+    },
+    how: {
+        title: 'La table de jeu, à distance.',
+        lead: 'PlayTCG.Online est une table virtuelle pour les TCG papier : vous vous voyez, vous vous parlez, et vous gardez LP, phases et cartes sous contrôle — comme dans la même pièce. Ça marche sur ordinateur et téléphone, dans le navigateur.',
+        pillsLabel: 'En bref',
+        pillNoApp: "Pas d'appli",
+        pillDevices: 'PC et téléphone',
+        pillPlayers: '2–4 joueurs',
+        enterLobby: 'Entrer dans le lobby',
+        exploreDecks: 'Parcourir les decks',
+        mobileTitle: 'Pensé aussi pour le téléphone',
+        mobileBody: "Ouvre le site dans le navigateur, vise le playmat avec la caméra arrière et tourne l'écran pour voir tout le terrain. La table a une mise en page dédiée au smartphone : pas d'appli à installer, pas de câble vers le PC.",
+        whatYouGet: 'Ce que tu trouves',
+        howToStart: 'Par où commencer',
+        faq: 'Questions rapides',
+        shotPlaceholder: 'Capture de la table à 4 joueurs — arrive après les premiers tests',
+        shotCaption: 'La vue de la partie prendra place ici, comme sur une vraie table.',
+        ctaTitle: "Prêt à t'asseoir ?",
+        ctaBody: 'Ouvre une salle depuis un PC ou un téléphone, invite tes amis et cadre le playmat.',
+        legal: "PlayTCG.Online n'est pas affilié à Konami, Wizards of the Coast, The Pokémon Company, Bandai ou Riot. Les marques appartiennent à leurs titulaires respectifs.",
+        features: [
+            {
+                title: 'Audio et vidéo',
+                body: "Cadre le playmat avec une webcam ou un téléphone et reste en appel avec les autres joueurs. Pas de client à installer : ouvre le navigateur et tu es à la table.",
+            },
+            {
+                title: 'Cartes à portée de recherche',
+                body: 'Cherche une carte dans les catalogues et montre-la à tout le monde. Ça marche pour Yu-Gi-Oh!, Magic, Pokémon, One Piece, Dragon Ball et Riftbound.',
+            },
+            {
+                title: 'LP, phases et dés',
+                body: 'Points de vie, phases du tour et lancers de dés restent visibles et synchronisés. Moins de « t’as combien de life ? » et plus de jeu.',
+            },
+            {
+                title: 'De 2 à 4 à la table',
+                body: 'Choisis une grille ou le gros plan sur le joueur actif. Ça va pour un duel ou un pod de quatre.',
+            },
+            {
+                title: 'À qui le tour',
+                body: 'Un indicateur de tour donne le rythme. Quand tu passes, tout le monde le voit.',
+            },
+            {
+                title: 'Des decks pour chaque jeu',
+                body: 'Construis et partage des decks avec les règles du format. Ensuite tu rejoins une salle et tu joues avec les cartes papier sur ta table.',
+            },
+        ],
+        steps: [
+            {
+                title: 'Entre',
+                body: "Inscris-toi ou continue en invité. Rien à télécharger.",
+            },
+            {
+                title: 'Ouvre une salle',
+                body: 'Crée une custom game ou rejoins avec un code. Choisis le jeu, le format et le nombre de joueurs.',
+            },
+            {
+                title: 'Cadre et joue',
+                body: 'Pointe la caméra sur le terrain — depuis un PC ou un téléphone — règle LP et phases, et jouez comme à une vraie table. Les règles, c’est vous.',
+            },
+        ],
+        faqs: [
+            {
+                q: 'Ça marche sur téléphone ?',
+                a: 'Oui. Ouvre playtcg.online dans le navigateur du téléphone : la table s’adapte à l’écran et utilise la caméra arrière pour cadrer le playmat. Pas besoin d’appli.',
+            },
+            {
+                q: 'Il faut un compte ?',
+                a: 'Non. Tu peux entrer en invité pour une partie. Le compte sert à garder les decks et un profil.',
+            },
+            {
+                q: 'Quels jeux sont supportés ?',
+                a: 'Yu-Gi-Oh!, Magic, Pokémon, One Piece, Dragon Ball (Fusion World) et Riftbound. La même table, des catalogues et des règles de deck différents.',
+            },
+            {
+                q: 'C’est un client officiel ?',
+                a: 'Non. C’est une table virtuelle : les cartes papier sont les vôtres, et vous appliquez les règles ensemble, comme sur un tabletop classique.',
+            },
+        ],
+    },
+};
+
+const de: Messages = {
+    nav: {
+        howItWorks: 'So funktioniert’s',
+        explore: 'Entdecken',
+        myDecks: 'Deine Decks',
+        createDeck: 'Deck erstellen',
+        login: 'Anmelden',
+        home: 'Zurück zur Startseite',
+        settings: 'Einstellungen',
+        admin: 'Admin-Bereich',
+        signOut: 'Abmelden',
+        language: 'Sprache',
+    },
+    footer: {
+        rights: 'Alle Rechte vorbehalten.',
+        privacy: 'Datenschutz',
+        cookies: 'Cookie-Richtlinie',
+    },
+    landing: {
+        welcome: 'Willkommen bei',
+        copy: 'Spiel online mit deinen Freunden am PC oder Handy, verwalte LP und würfle in Echtzeit.',
+        enterLobby: 'Zur Lobby',
+        loginRegister: 'Anmelden / Registrieren',
+        guest: 'Als Gast eintreten',
+        howItWorks: 'So funktioniert’s',
+    },
+    auth: {
+        login: 'Anmelden',
+        register: 'Registrieren',
+        username: 'Benutzername',
+        fullName: 'Vollständiger Name',
+        email: 'E-Mail',
+        password: 'Passwort',
+        cancel: 'Abbrechen',
+        enter: 'Eintreten',
+        createAccount: 'Konto erstellen',
+        loading: 'Lädt…',
+        signupOk: 'Registrierung fertig! Prüfe deine E-Mail zur Bestätigung, falls nötig.',
+        error: 'Fehler bei der Anmeldung',
+    },
+    lobby: {
+        matchmaking: 'Matchmaking',
+        ranked: 'Ranglistenspiel',
+        rankedCopy: 'Kämpfe um die Spitze der Rangliste.',
+        quick: 'Schnelles Spiel',
+        quickCopy: 'Steig sofort in eine lockere Partie ein.',
+        comingSoon: 'Demnächst',
+        customGames: 'Custom-Spiele',
+        createRoom: '+ Raum erstellen',
+        roomCode: 'Raumcode eingeben…',
+        join: 'Beitreten',
+        host: 'Host',
+        gameFormat: 'Spiel und Format',
+        lang: 'Sprache',
+        players: 'Spieler',
+        action: 'Aktion',
+        full: 'Voll',
+        public: 'Öffentlich',
+        private: 'Privat',
+        roomNotFound: 'Raum nicht gefunden',
+        roomFull: 'Diese Lobby ist voll!',
+        loginToCreate: 'Zum Erstellen eines Raums musst du dich anmelden!',
+        closeLobby: 'Lobby schließen (Admin)',
+        passwordTitle: 'Passwort erforderlich',
+        passwordLabel: 'Passwort zum Beitreten eingeben',
+        passwordWrong: 'Falsches Passwort!',
+        confirm: 'Bestätigen',
+        cancel: 'Abbrechen',
+    },
+    how: {
+        title: 'Der Spieltisch, aus der Ferne.',
+        lead: 'PlayTCG.Online ist ein virtueller Tisch für Papier-TCGs: ihr seht euch, sprecht miteinander und haltet LP, Phasen und Karten im Blick — als wärt ihr im selben Raum. Das läuft am Computer und am Handy, im Browser.',
+        pillsLabel: 'Kurz gesagt',
+        pillNoApp: 'Keine App',
+        pillDevices: 'PC und Handy',
+        pillPlayers: '2–4 Spieler',
+        enterLobby: 'Zur Lobby',
+        exploreDecks: 'Decks entdecken',
+        mobileTitle: 'Auch fürs Handy gedacht',
+        mobileBody: 'Öffne die Seite im Browser, richte die Rückkamera auf das Playmat und drehe den Bildschirm, um das ganze Feld zu sehen. Der Tisch hat ein eigenes Smartphone-Layout: keine App, kein Kabel zum PC.',
+        whatYouGet: 'Was du findest',
+        howToStart: 'So startest du',
+        faq: 'Kurze Fragen',
+        shotPlaceholder: 'Screenshot des 4-Spieler-Tisches — kommt nach den ersten Tests',
+        shotCaption: 'Hier kommt die Partieansicht hin, wie am echten Tisch.',
+        ctaTitle: 'Bereit Platz zu nehmen?',
+        ctaBody: 'Öffne einen Raum vom PC oder Handy, lade deine Freunde ein und rahme das Playmat ein.',
+        legal: 'PlayTCG.Online ist nicht mit Konami, Wizards of the Coast, The Pokémon Company, Bandai oder Riot verbunden. Alle Marken gehören den jeweiligen Inhabern.',
+        features: [
+            {
+                title: 'Audio und Video',
+                body: 'Richte Webcam oder Handy auf das Playmat und bleib im Gespräch mit den anderen Spielern. Kein Client: Browser auf, und du sitzt am Tisch.',
+            },
+            {
+                title: 'Karten per Suche',
+                body: 'Such eine Karte in den Katalogen und zeig sie allen. Funktioniert für Yu-Gi-Oh!, Magic, Pokémon, One Piece, Dragon Ball und Riftbound.',
+            },
+            {
+                title: 'LP, Phasen und Würfel',
+                body: 'Lebenspunkte, Zugphasen und Würfe bleiben sichtbar und synchron. Weniger „wie viel Leben hast du?“ und mehr Spiel.',
+            },
+            {
+                title: '2 bis 4 am Tisch',
+                body: 'Wähle ein Raster oder die Nahaufnahme des aktiven Spielers. Gut für ein Duell oder ein Pod mit vier Spielern.',
+            },
+            {
+                title: 'Wer ist dran',
+                body: 'Ein Zuganzeiger hält das Spiel im Fluss. Wenn du passt, sehen es alle.',
+            },
+            {
+                title: 'Decks für jedes Spiel',
+                body: 'Baue und teile Decks mit den Formatregeln. Dann gehst du in einen Raum und spielst mit den Papierkarten auf deinem Tisch.',
+            },
+        ],
+        steps: [
+            {
+                title: 'Rein',
+                body: 'Registrier dich oder komm als Gast. Nichts zum Herunterladen.',
+            },
+            {
+                title: 'Raum öffnen',
+                body: 'Erstell ein Custom Game oder tritt mit einem Code bei. Wähle Spiel, Format und Spielerzahl.',
+            },
+            {
+                title: 'Einrahmen und spielen',
+                body: 'Richt die Kamera aufs Feld — vom PC oder Handy — stell LP und Phasen ein, und spielt wie am echten Tisch. Die Regeln wendet ihr an.',
+            },
+        ],
+        faqs: [
+            {
+                q: 'Geht das am Handy?',
+                a: 'Ja. Öffne playtcg.online im Handy-Browser: der Tisch passt sich dem Bildschirm an und nutzt die Rückkamera für das Playmat. Keine App nötig.',
+            },
+            {
+                q: 'Brauche ich ein Konto?',
+                a: 'Nein. Du kannst als Gast zu einer Partie. Ein Konto brauchst du für Decks und ein Profil.',
+            },
+            {
+                q: 'Welche Spiele unterstützt ihr?',
+                a: 'Yu-Gi-Oh!, Magic, Pokémon, One Piece, Dragon Ball (Fusion World) und Riftbound. Gleicher Tisch, andere Kataloge und Deckregeln.',
+            },
+            {
+                q: 'Ist das ein offizieller Client?',
+                a: 'Nein. Es ist ein virtueller Tisch: die Papierkarten habt ihr, und die Regeln wendet ihr gemeinsam an, wie beim klassischen Tabletop.',
+            },
+        ],
+    },
+};
+
+const pt: Messages = {
+    nav: {
+        howItWorks: 'Como funciona',
+        explore: 'Explorar',
+        myDecks: 'Seus decks',
+        createDeck: 'Criar um deck',
+        login: 'Entrar',
+        home: 'Voltar ao início',
+        settings: 'Configurações',
+        admin: 'Painel admin',
+        signOut: 'Sair',
+        language: 'Idioma',
+    },
+    footer: {
+        rights: 'Todos os direitos reservados.',
+        privacy: 'Política de privacidade',
+        cookies: 'Política de cookies',
+    },
+    landing: {
+        welcome: 'Bem-vindo ao',
+        copy: 'Jogue online com seus amigos no PC ou no celular, gerencie os LP e role os dados em tempo real.',
+        enterLobby: 'Entrar no lobby',
+        loginRegister: 'Entrar / Cadastrar',
+        guest: 'Entrar como convidado',
+        howItWorks: 'Como funciona',
+    },
+    auth: {
+        login: 'Entrar',
+        register: 'Cadastrar',
+        username: 'Usuário',
+        fullName: 'Nome completo',
+        email: 'Email',
+        password: 'Senha',
+        cancel: 'Cancelar',
+        enter: 'Entrar',
+        createAccount: 'Criar conta',
+        loading: 'Carregando…',
+        signupOk: 'Cadastro concluído! Confira o email para confirmar, se for pedido.',
+        error: 'Erro de autenticação',
+    },
+    lobby: {
+        matchmaking: 'Matchmaking',
+        ranked: 'Partida ranqueada',
+        rankedCopy: 'Dispute os primeiros lugares da classificação.',
+        quick: 'Partida rápida',
+        quickCopy: 'Entre agora em uma partida casual.',
+        comingSoon: 'Em breve',
+        customGames: 'Partidas custom',
+        createRoom: '+ Criar sala',
+        roomCode: 'Digite o código da sala…',
+        join: 'Entrar',
+        host: 'Host',
+        gameFormat: 'Jogo e formato',
+        lang: 'Idioma',
+        players: 'Jogadores',
+        action: 'Ação',
+        full: 'Cheia',
+        public: 'Pública',
+        private: 'Privada',
+        roomNotFound: 'Sala não encontrada',
+        roomFull: 'Este lobby está cheio!',
+        loginToCreate: 'Você precisa entrar para criar uma sala!',
+        closeLobby: 'Fechar lobby (admin)',
+        passwordTitle: 'Senha necessária',
+        passwordLabel: 'Digite a senha para entrar',
+        passwordWrong: 'Senha incorreta!',
+        confirm: 'Confirmar',
+        cancel: 'Cancelar',
+    },
+    how: {
+        title: 'A mesa de jogo, à distância.',
+        lead: 'PlayTCG.Online é uma mesa virtual para TCG de papel: vocês se veem, conversam e mantêm LP, fases e cartas sob controle — como se estivessem na mesma sala. Funciona no computador e no celular, no navegador.',
+        pillsLabel: 'Em resumo',
+        pillNoApp: 'Sem app',
+        pillDevices: 'PC e celular',
+        pillPlayers: '2–4 jogadores',
+        enterLobby: 'Entrar no lobby',
+        exploreDecks: 'Explorar decks',
+        mobileTitle: 'Pensado também para o celular',
+        mobileBody: 'Abra o site no navegador, aponte a câmera traseira para o playmat e gire a tela para ver o campo inteiro. A mesa tem um layout para smartphone: sem app para instalar, sem cabo para o PC.',
+        whatYouGet: 'O que você encontra',
+        howToStart: 'Como começar',
+        faq: 'Perguntas rápidas',
+        shotPlaceholder: 'Print da mesa com 4 jogadores — chega depois dos primeiros testes',
+        shotCaption: 'Aqui fica a visão da partida, como na mesa de verdade.',
+        ctaTitle: 'Pronto para sentar?',
+        ctaBody: 'Abra uma sala no PC ou no celular, convide os amigos e enquadre o playmat.',
+        legal: 'PlayTCG.Online não é afiliado à Konami, Wizards of the Coast, The Pokémon Company, Bandai ou Riot. As marcas pertencem aos respectivos donos.',
+        features: [
+            {
+                title: 'Áudio e vídeo',
+                body: 'Enquadre o playmat com a webcam ou o celular e fique em chamada com os outros jogadores. Sem cliente para instalar: abra o navegador e você está na mesa.',
+            },
+            {
+                title: 'Cartas na busca',
+                body: 'Pesquise uma carta nos catálogos e mostre para todo mundo. Funciona com Yu-Gi-Oh!, Magic, Pokémon, One Piece, Dragon Ball e Riftbound.',
+            },
+            {
+                title: 'LP, fases e dados',
+                body: 'Pontos de vida, fases do turno e rolagens de dados ficam visíveis e sincronizados. Menos «quanto você tem de vida?» e mais jogo.',
+            },
+            {
+                title: 'De 2 a 4 na mesa',
+                body: 'Escolha um grid ou o close no jogador ativo. Serve para um duelo ou um pod de quatro.',
+            },
+            {
+                title: 'De quem é o turno',
+                body: 'Um indicador de turno marca o ritmo. Quando você passa, todo mundo vê.',
+            },
+            {
+                title: 'Decks para cada jogo',
+                body: 'Monte e compartilhe decks com as regras do formato. Depois você entra numa sala e joga com as cartas de papel da sua mesa.',
+            },
+        ],
+        steps: [
+            {
+                title: 'Entre',
+                body: 'Cadastre-se ou continue como convidado. Não tem nada para baixar.',
+            },
+            {
+                title: 'Abra uma sala',
+                body: 'Crie uma custom game ou entre com o código. Escolha jogo, formato e número de jogadores.',
+            },
+            {
+                title: 'Enquadre e jogue',
+                body: 'Aponte a câmera para o campo — no PC ou no celular — ajuste LP e fases, e joguem como numa mesa de verdade. As regras vocês aplicam.',
+            },
+        ],
+        faqs: [
+            {
+                q: 'Funciona no celular?',
+                a: 'Sim. Abra playtcg.online no navegador do celular: a mesa se adapta à tela e usa a câmera traseira para enquadrar o playmat. Não precisa de app.',
+            },
+            {
+                q: 'Preciso de uma conta?',
+                a: 'Não. Você pode entrar como convidado numa partida. A conta serve para guardar decks e um perfil.',
+            },
+            {
+                q: 'Quais jogos vocês suportam?',
+                a: 'Yu-Gi-Oh!, Magic, Pokémon, One Piece, Dragon Ball (Fusion World) e Riftbound. A mesma mesa, catálogos e regras de deck diferentes.',
+            },
+            {
+                q: 'É um cliente oficial?',
+                a: 'Não. É uma mesa virtual: as cartas de papel são de vocês, e as regras vocês aplicam juntos, como num tabletop clássico.',
+            },
+        ],
+    },
+};
+
+export const MESSAGES: Record<Locale, Messages> = { it, en, es, fr, de, pt };

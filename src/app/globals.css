@@ -1143,7 +1143,9 @@ input:checked+.slider:before {
   background: #1a1a1a;
   border: 1px solid #333;
   border-radius: 8px;
-  min-width: 160px;
+  min-width: 170px;
+  max-height: min(70vh, 360px);
+  overflow-y: auto;
   z-index: 80;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
