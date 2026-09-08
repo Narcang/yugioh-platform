@@ -22,6 +22,7 @@ interface GameAreaProps {
     onMoveFieldCard?: (instanceId: string, x: number, y: number) => void;
     onReturnToHand?: (instanceId: string) => void;
     onToGraveyard?: (instanceId: string) => void;
+    onToExile?: (instanceId: string) => void;
     onUpdateFieldCard?: (instanceId: string, patch: FieldPlayOpts) => void;
 }
 
@@ -69,7 +70,13 @@ const RemoteSlot: React.FC<{
             )}
 
             {peer.playMode === 'digital' && (
-                <DigitalField field={peer.field} dropId={peer.id} readOnly />
+                <DigitalField
+                    field={peer.field}
+                    graveyard={peer.graveyard}
+                    exile={peer.exile}
+                    dropId={peer.id}
+                    readOnly
+                />
             )}
 
             <PlayerOverlay
@@ -96,6 +103,7 @@ const GameArea: React.FC<GameAreaProps> = ({
     onMoveFieldCard,
     onReturnToHand,
     onToGraveyard,
+    onToExile,
     onUpdateFieldCard,
 }) => {
     const {
@@ -244,6 +252,7 @@ const GameArea: React.FC<GameAreaProps> = ({
                         onMove={onMoveFieldCard}
                         onReturnToHand={onReturnToHand}
                         onToGraveyard={onToGraveyard}
+                        onToExile={onToExile}
                         onUpdateCard={onUpdateFieldCard}
                     />
                 ) : localStream && isVideoEnabled ? (

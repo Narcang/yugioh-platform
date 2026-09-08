@@ -25,7 +25,13 @@ export interface PlayerBoard {
     hand: BoardCard[];
     field: BoardCard[];
     graveyard: BoardCard[];
+    exile: BoardCard[];
 }
+
+export type BoardZone = keyof PlayerBoard;
+export type OpenPile = 'graveyard' | 'exile';
+
+const ZONES: BoardZone[] = ['library', 'extra', 'hand', 'field', 'graveyard', 'exile'];
 
 /** What opponents are allowed to see. Hand and library stay private. */
 export interface PublicBoardView {
@@ -34,11 +40,14 @@ export interface PublicBoardView {
     extraCount: number;
     handCount: number;
     graveyardCount: number;
+    exileCount: number;
     field: BoardCard[];
+    graveyard: BoardCard[];
+    exile: BoardCard[];
 }
 
 export function emptyBoard(): PlayerBoard {
-    return { library: [], extra: [], hand: [], field: [], graveyard: [] };
+    return { library: [], extra: [], hand: [], field: [], graveyard: [], exile: [] };
 }
 
 export function toPublicBoard(board: PlayerBoard): PublicBoardView {
@@ -48,6 +57,9 @@ export function toPublicBoard(board: PlayerBoard): PublicBoardView {
         extraCount: board.extra.length,
         handCount: board.hand.length,
         graveyardCount: board.graveyard.length,
+        exileCount: board.exile.length,
+        graveyard: board.graveyard,
+        exile: board.exile,
         field: board.field.map((card) =>
             card.faceDown
                 ? {
@@ -75,6 +87,67 @@ export function nextFieldSlot(field: BoardCard[]): { x: number; y: number } {
         x: 0.2 + (i % 5) * 0.15,
         y: 0.4 + Math.floor(i / 5) * 0.22,
     };
+}
+
+export function stripFieldState(card: BoardCard): BoardCard {
+    return {
+        instanceId: card.instanceId,
+        cardId: card.cardId,
+        name: card.name,
+        imageUrl: card.imageUrl,
+    };
+}
+
+export function takeCard(board: PlayerBoard, instanceId: string): { board: PlayerBoard; card: BoardCard } | null {
+    for (const zone of ZONES) {
+        const card = board[zone].find((item) => item.instanceId === instanceId);
+        if (!card) continue;
+        return {
+            card,
+            board: {
+                ...board,
+                [zone]: board[zone].filter((item) => item.instanceId !== instanceId),
+            },
+        };
+    }
+    return null;
+}
+
+export function placeCard(
+    board: PlayerBoard,
+    card: BoardCard,
+    zone: BoardZone,
+    opts?: { faceDown?: boolean; position?: 'attack' | 'defense'; x?: number; y?: number }
+): PlayerBoard {
+    const clean = stripFieldState(card);
+    if (zone === 'field') {
+        const slot = nextFieldSlot(board.field);
+        return {
+            ...board,
+            field: [
+                ...board.field,
+                {
+                    ...clean,
+                    x: opts?.x ?? slot.x,
+                    y: opts?.y ?? slot.y,
+                    faceDown: opts?.faceDown ?? false,
+                    position: opts?.position ?? 'attack',
+                },
+            ],
+        };
+    }
+    return { ...board, [zone]: [...board[zone], clean] };
+}
+
+export function moveCard(
+    board: PlayerBoard,
+    instanceId: string,
+    zone: BoardZone,
+    opts?: { faceDown?: boolean; position?: 'attack' | 'defense'; x?: number; y?: number }
+): PlayerBoard {
+    const taken = takeCard(board, instanceId);
+    if (!taken) return board;
+    return placeCard(taken.board, taken.card, zone, opts);
 }
 
 function expandSection(entries: { card: DeckCard; quantity: number }[], gameType: string): BoardCard[] {
@@ -109,6 +182,7 @@ export function boardFromDeck(deck: DeckContents, gameType: string): PlayerBoard
         hand: [],
         field: [],
         graveyard: [],
+        exile: [],
     };
 }
 

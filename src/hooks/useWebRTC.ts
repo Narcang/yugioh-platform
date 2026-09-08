@@ -48,6 +48,8 @@ export interface RemotePeer {
     rotation: number;
     playMode: PlayMode;
     field: BoardCard[];
+    graveyard: BoardCard[];
+    exile: BoardCard[];
     libraryCount: number;
     handCount: number;
 }
@@ -139,6 +141,8 @@ export const useWebRTC = (
                     rotation: patch.rotation ?? 0,
                     playMode: patch.playMode ?? 'physical',
                     field: patch.field ?? [],
+                    graveyard: patch.graveyard ?? [],
+                    exile: patch.exile ?? [],
                     libraryCount: patch.libraryCount ?? 0,
                     handCount: patch.handCount ?? 0,
                 }];
@@ -212,6 +216,8 @@ export const useWebRTC = (
                         upsertPeer(peerId, {
                             playMode: 'digital',
                             field: view.field ?? [],
+                            graveyard: view.graveyard ?? [],
+                            exile: view.exile ?? [],
                             libraryCount: view.libraryCount ?? 0,
                             handCount: view.handCount ?? 0,
                         });
@@ -459,6 +465,8 @@ export const useWebRTC = (
                 upsertPeer(payload.from, {
                     playMode: 'digital',
                     field: view.field ?? [],
+                    graveyard: view.graveyard ?? [],
+                    exile: view.exile ?? [],
                     libraryCount: view.libraryCount ?? 0,
                     handCount: view.handCount ?? 0,
                 });

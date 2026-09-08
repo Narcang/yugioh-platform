@@ -16,9 +16,10 @@ import { loadDeck } from '@/lib/decks';
 import {
     boardFromDeck,
     drawFrom,
+    moveCard,
     shuffleLibrary,
     toPublicBoard,
-    type BoardCard,
+    type BoardZone,
     type PlayerBoard,
 } from '@/lib/digitalBoard';
 
@@ -111,25 +112,11 @@ const GameRoom: React.FC = () => {
     };
 
     const dropOnField = (instanceId: string, x: number, y: number, opts?: FieldPlayOpts) => {
-        setBoard((prev) => {
-            if (!prev) return prev;
-            const card = prev.hand.find((c) => c.instanceId === instanceId);
-            if (!card) return prev;
-            return {
-                ...prev,
-                hand: prev.hand.filter((c) => c.instanceId !== instanceId),
-                field: [
-                    ...prev.field,
-                    {
-                        ...card,
-                        x,
-                        y,
-                        faceDown: opts?.faceDown ?? false,
-                        position: opts?.position ?? 'attack',
-                    },
-                ],
-            };
-        });
+        setBoard((prev) => (prev ? moveCard(prev, instanceId, 'field', { ...opts, x, y }) : prev));
+    };
+
+    const relocate = (instanceId: string, zone: BoardZone, opts?: FieldPlayOpts) => {
+        setBoard((prev) => (prev ? moveCard(prev, instanceId, zone, opts) : prev));
     };
 
     const updateFieldCard = (instanceId: string, patch: FieldPlayOpts) => {
@@ -140,42 +127,6 @@ const GameRoom: React.FC = () => {
                 field: prev.field.map((card) =>
                     card.instanceId === instanceId ? { ...card, ...patch } : card
                 ),
-            };
-        });
-    };
-
-    const stripFieldState = (card: BoardCard): BoardCard => ({
-        instanceId: card.instanceId,
-        cardId: card.cardId,
-        name: card.name,
-        imageUrl: card.imageUrl,
-    });
-
-    const returnToHand = (instanceId: string) => {
-        setBoard((prev) => {
-            if (!prev) return prev;
-            const card = prev.field.find((c) => c.instanceId === instanceId);
-            if (!card) return prev;
-            return {
-                ...prev,
-                field: prev.field.filter((c) => c.instanceId !== instanceId),
-                hand: [...prev.hand, stripFieldState(card)],
-            };
-        });
-    };
-
-    const toGraveyard = (instanceId: string) => {
-        setBoard((prev) => {
-            if (!prev) return prev;
-            const card =
-                prev.hand.find((c) => c.instanceId === instanceId) ??
-                prev.field.find((c) => c.instanceId === instanceId);
-            if (!card) return prev;
-            return {
-                ...prev,
-                hand: prev.hand.filter((c) => c.instanceId !== instanceId),
-                field: prev.field.filter((c) => c.instanceId !== instanceId),
-                graveyard: [...prev.graveyard, stripFieldState(card)],
             };
         });
     };
@@ -202,8 +153,9 @@ const GameRoom: React.FC = () => {
                 myField={board?.field ?? []}
                 gameType={gameType}
                 onMoveFieldCard={moveOnField}
-                onReturnToHand={returnToHand}
-                onToGraveyard={toGraveyard}
+                onReturnToHand={(id) => relocate(id, 'hand')}
+                onToGraveyard={(id) => relocate(id, 'graveyard')}
+                onToExile={(id) => relocate(id, 'exile')}
                 onUpdateFieldCard={updateFieldCard}
             />
             <RightPanel
@@ -226,7 +178,7 @@ const GameRoom: React.FC = () => {
                     onDraw={() => setBoard((prev) => (prev ? drawFrom(prev, 'library') : prev))}
                     onDrawExtra={() => setBoard((prev) => (prev ? drawFrom(prev, 'extra') : prev))}
                     onShuffle={() => setBoard((prev) => (prev ? shuffleLibrary(prev) : prev))}
-                    onToGraveyard={toGraveyard}
+                    onRelocate={relocate}
                     onDropOnField={dropOnField}
                 />
             )}

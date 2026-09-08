@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocale } from '@/context/LocaleContext';
 import { useLayout } from '@/context/LayoutContext';
-import type { BoardCard, PlayerBoard } from '@/lib/digitalBoard';
+import type { BoardCard, BoardZone, OpenPile, PlayerBoard } from '@/lib/digitalBoard';
 import { nextFieldSlot, usesBattlePosition } from '@/lib/digitalBoard';
 import { onCardImageError } from '@/lib/decks';
 
@@ -75,7 +75,7 @@ function CardActionMenu({
     }, [onClose]);
 
     const width = 220;
-    const height = 280;
+    const height = 340;
     const left = Math.min(Math.max(8, x), window.innerWidth - width - 8);
     const top = Math.min(Math.max(8, y), window.innerHeight - height - 8);
 
@@ -93,14 +93,105 @@ function CardActionMenu({
     );
 }
 
+function ZoneViewer({
+    pile,
+    cards,
+    readOnly,
+    onClose,
+    onRelocate,
+}: {
+    pile: OpenPile;
+    cards: BoardCard[];
+    readOnly?: boolean;
+    onClose: () => void;
+    onRelocate?: (instanceId: string, zone: BoardZone) => void;
+}) {
+    const { t } = useLocale();
+    const inspect = useInspectCard();
+    const [menu, setMenu] = useState<{ card: BoardCard; x: number; y: number } | null>(null);
+    const title = pile === 'graveyard' ? t.play.graveyard : t.play.exile;
+
+    const move = (id: string, zone: BoardZone) => {
+        onRelocate?.(id, zone);
+        setMenu(null);
+    };
+
+    return createPortal(
+        <div className="digital-zone-overlay" onPointerDown={onClose}>
+            <div
+                className="digital-zone-panel"
+                data-card-menu
+                onPointerDown={(event) => event.stopPropagation()}
+            >
+                <div className="digital-zone-head">
+                    <h3>
+                        {title} <strong>{cards.length}</strong>
+                    </h3>
+                    <button type="button" className="digital-zone-close" onClick={onClose} aria-label="Close">
+                        ✕
+                    </button>
+                </div>
+                {cards.length === 0 ? (
+                    <p className="digital-zone-empty">{t.play.emptyZone}</p>
+                ) : (
+                    <div className="digital-zone-grid">
+                        {cards.map((card) => (
+                            <button
+                                key={card.instanceId}
+                                type="button"
+                                className="digital-zone-card"
+                                onClick={(event) => {
+                                    inspect(card);
+                                    if (!readOnly && onRelocate) {
+                                        setMenu({ card, x: event.clientX, y: event.clientY });
+                                    }
+                                }}
+                                aria-label={card.name}
+                            >
+                                <img src={card.imageUrl} alt={card.name} draggable={false} onError={onCardImageError} />
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
+            {menu && (
+                <CardActionMenu x={menu.x} y={menu.y} onClose={() => setMenu(null)}>
+                    <button type="button" onClick={() => move(menu.card.instanceId, 'hand')}>
+                        {t.play.toHand}
+                    </button>
+                    <button type="button" onClick={() => move(menu.card.instanceId, 'field')}>
+                        {t.play.toField}
+                    </button>
+                    <button type="button" onClick={() => move(menu.card.instanceId, 'library')}>
+                        {t.play.toLibrary}
+                    </button>
+                    {pile === 'graveyard' ? (
+                        <button type="button" onClick={() => move(menu.card.instanceId, 'exile')}>
+                            {t.play.toExile}
+                        </button>
+                    ) : (
+                        <button type="button" onClick={() => move(menu.card.instanceId, 'graveyard')}>
+                            {t.play.toGraveyard}
+                        </button>
+                    )}
+                </CardActionMenu>
+            )}
+        </div>,
+        document.body
+    );
+}
+
 interface DigitalFieldProps {
     field: BoardCard[];
     dropId: string;
     readOnly?: boolean;
     gameType?: string;
+    graveyard?: BoardCard[];
+    exile?: BoardCard[];
     onMove?: (instanceId: string, x: number, y: number) => void;
     onReturnToHand?: (instanceId: string) => void;
     onToGraveyard?: (instanceId: string) => void;
+    onToExile?: (instanceId: string) => void;
     onUpdateCard?: (instanceId: string, patch: FieldPlayOpts) => void;
 }
 
@@ -109,15 +200,19 @@ export const DigitalField: React.FC<DigitalFieldProps> = ({
     dropId,
     readOnly,
     gameType = '',
+    graveyard = [],
+    exile = [],
     onMove,
     onReturnToHand,
     onToGraveyard,
+    onToExile,
     onUpdateCard,
 }) => {
     const { t } = useLocale();
     const inspect = useInspectCard();
     const fieldRef = useRef<HTMLDivElement>(null);
     const [menu, setMenu] = useState<CardMenu | null>(null);
+    const [openPile, setOpenPile] = useState<OpenPile | null>(null);
     const battle = usesBattlePosition(gameType);
 
     const relativePos = (clientX: number, clientY: number) => {
@@ -166,6 +261,14 @@ export const DigitalField: React.FC<DigitalFieldProps> = ({
             target.removeEventListener('pointerup', up);
             if (dragging) {
                 const under = document.elementFromPoint(ev.clientX, ev.clientY);
+                if (onToGraveyard && under?.closest('[data-digital-gy]')) {
+                    onToGraveyard(card.instanceId);
+                    return;
+                }
+                if (onToExile && under?.closest('[data-digital-exile]')) {
+                    onToExile(card.instanceId);
+                    return;
+                }
                 if (onReturnToHand && under?.closest('[data-digital-hand]')) {
                     onReturnToHand(card.instanceId);
                 }
@@ -185,6 +288,19 @@ export const DigitalField: React.FC<DigitalFieldProps> = ({
             data-digital-field={dropId}
             onClick={(event) => event.stopPropagation()}
         >
+            {readOnly && (
+                <div className="digital-opp-piles">
+                    <button type="button" onClick={() => setOpenPile('graveyard')}>
+                        <span>{t.play.graveyard}</span>
+                        <strong>{graveyard.length}</strong>
+                    </button>
+                    <button type="button" onClick={() => setOpenPile('exile')}>
+                        <span>{t.play.exile}</span>
+                        <strong>{exile.length}</strong>
+                    </button>
+                </div>
+            )}
+
             {field.map((card) => {
                 const defense = card.position === 'defense';
                 const hideIdentity = Boolean(readOnly && card.faceDown);
@@ -214,6 +330,15 @@ export const DigitalField: React.FC<DigitalFieldProps> = ({
                         }}
                     >
                         {t.play.toGraveyard}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            onToExile?.(menu.card.instanceId);
+                            setMenu(null);
+                        }}
+                    >
+                        {t.play.toExile}
                     </button>
                     {battle && pos !== 'attack' && (
                         <button
@@ -258,6 +383,15 @@ export const DigitalField: React.FC<DigitalFieldProps> = ({
                 </CardActionMenu>
                 );
             })()}
+
+            {openPile && (
+                <ZoneViewer
+                    pile={openPile}
+                    cards={openPile === 'graveyard' ? graveyard : exile}
+                    readOnly
+                    onClose={() => setOpenPile(null)}
+                />
+            )}
         </div>
     );
 };
@@ -268,7 +402,7 @@ interface DigitalHandProps {
     onDraw: () => void;
     onDrawExtra: () => void;
     onShuffle: () => void;
-    onToGraveyard: (instanceId: string) => void;
+    onRelocate: (instanceId: string, zone: BoardZone, opts?: FieldPlayOpts) => void;
     draggingId: string | null;
     setDraggingId: (id: string | null) => void;
     onDropOnField: (instanceId: string, x: number, y: number, opts?: FieldPlayOpts) => void;
@@ -280,7 +414,7 @@ export const DigitalHand: React.FC<DigitalHandProps> = ({
     onDraw,
     onDrawExtra,
     onShuffle,
-    onToGraveyard,
+    onRelocate,
     draggingId,
     setDraggingId,
     onDropOnField,
@@ -288,6 +422,7 @@ export const DigitalHand: React.FC<DigitalHandProps> = ({
     const { t } = useLocale();
     const inspect = useInspectCard();
     const [menu, setMenu] = useState<CardMenu | null>(null);
+    const [openPile, setOpenPile] = useState<OpenPile | null>(null);
     const battle = usesBattlePosition(gameType);
 
     const playCard = (card: BoardCard, opts: FieldPlayOpts) => {
@@ -335,9 +470,12 @@ export const DigitalHand: React.FC<DigitalHandProps> = ({
             }
             const under = document.elementFromPoint(ev.clientX, ev.clientY);
             const fieldEl = under?.closest('[data-digital-field="self"]') as HTMLElement | null;
-            const gy = under?.closest('[data-digital-gy]');
-            if (gy) {
-                onToGraveyard(card.instanceId);
+            if (under?.closest('[data-digital-gy]')) {
+                onRelocate(card.instanceId, 'graveyard');
+                return;
+            }
+            if (under?.closest('[data-digital-exile]')) {
+                onRelocate(card.instanceId, 'exile');
                 return;
             }
             if (fieldEl) {
@@ -368,9 +506,23 @@ export const DigitalHand: React.FC<DigitalHandProps> = ({
                         <strong>{board.extra.length}</strong>
                     </button>
                 )}
-                <button type="button" className="digital-pile" data-digital-gy>
+                <button
+                    type="button"
+                    className="digital-pile"
+                    data-digital-gy
+                    onClick={() => setOpenPile('graveyard')}
+                >
                     <span>{t.play.graveyard}</span>
                     <strong>{board.graveyard.length}</strong>
+                </button>
+                <button
+                    type="button"
+                    className="digital-pile"
+                    data-digital-exile
+                    onClick={() => setOpenPile('exile')}
+                >
+                    <span>{t.play.exile}</span>
+                    <strong>{board.exile.length}</strong>
                 </button>
                 <button type="button" className="digital-pile ghost" onClick={onShuffle}>
                     {t.play.shuffle}
@@ -407,7 +559,34 @@ export const DigitalHand: React.FC<DigitalHandProps> = ({
                             {t.play.setDefense}
                         </button>
                     )}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            onRelocate(menu.card.instanceId, 'graveyard');
+                            setMenu(null);
+                        }}
+                    >
+                        {t.play.toGraveyard}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            onRelocate(menu.card.instanceId, 'exile');
+                            setMenu(null);
+                        }}
+                    >
+                        {t.play.toExile}
+                    </button>
                 </CardActionMenu>
+            )}
+
+            {openPile && (
+                <ZoneViewer
+                    pile={openPile}
+                    cards={openPile === 'graveyard' ? board.graveyard : board.exile}
+                    onClose={() => setOpenPile(null)}
+                    onRelocate={onRelocate}
+                />
             )}
         </div>
     );
