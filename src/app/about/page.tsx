@@ -20,6 +20,7 @@ function BrandMark({ src, name }: { src: string; name: string }) {
       src={src}
       alt={name}
       className="about-logo"
+      decoding="async"
       onError={() => setFailed(true)}
     />
   );

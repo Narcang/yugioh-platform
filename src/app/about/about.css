@@ -167,16 +167,19 @@
 .about-mark {
   display: flex;
   align-items: center;
-  min-height: 88px;
+  width: 88px;
+  height: 88px;
   margin-bottom: 16px;
+  background: transparent;
 }
 
+.about-logo,
 .about-mark img {
-  max-height: 88px;
-  max-width: 200px;
-  width: auto;
-  height: auto;
+  width: 88px;
+  height: 88px;
   object-fit: contain;
+  object-position: left center;
+  background: transparent;
 }
 
 .about-wordmark {
