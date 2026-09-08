@@ -1,31 +1,42 @@
-import React from 'react';
+"use client";
+import LocaleLink from '@/components/LocaleLink';
 import LegalShell from '@/components/LegalShell';
+import { useLocale } from '@/context/LocaleContext';
+import { COOKIES } from '@/lib/i18n-policies';
 
 export default function CookiePolicy() {
+    const { locale, t } = useLocale();
+    const copy = COOKIES[locale];
+
     return (
         <LegalShell>
             <article className="legal-doc">
-                <h1>Cookie Policy - PlayTCG.Online</h1>
-                <p className="legal-updated">Ultimo aggiornamento: 23 Marzo 2026</p>
-
-                <h2>Cosa sono i cookie?</h2>
-                <p>
-                    I cookie sono piccoli file di testo che i siti visitati inviano al terminale dell&apos;utente, dove vengono memorizzati, per poi essere ritrasmessi agli stessi siti alla visita successiva.
+                <p className="legal-kicker">
+                    <LocaleLink href="/">{t.nav.home}</LocaleLink>
                 </p>
+                <h1>{copy.title}</h1>
+                <p className="legal-updated">{copy.updated}</p>
 
-                <h2>Quali cookie utilizziamo?</h2>
-                <p>
-                    PlayTCG.Online utilizza esclusivamente <strong>cookie tecnici e strettamente necessari</strong> al funzionamento della piattaforma. Non utilizziamo cookie di profilazione o tracciamento pubblicitario di terze parti.
-                </p>
-                <ul>
-                    <li><strong>Autenticazione:</strong> Utilizzati per mantenere la sessione utente attiva e sicura tra le pagine.</li>
-                    <li><strong>Preferenze:</strong> Per memorizzare le impostazioni visive o di gioco salvate localmente sul dispositivo dell&apos;utente.</li>
-                </ul>
-
-                <h2>Gestione dei cookie</h2>
-                <p>
-                    Puoi impostare il tuo browser per rifiutare tutti i cookie o per indicare quando un cookie viene inviato. Tuttavia, alcune funzionalità del nostro servizio (come il login) potrebbero non funzionare correttamente senza i cookie tecnici abilitati.
-                </p>
+                {copy.sections.map((section, index) => (
+                    <section key={section.h}>
+                        <h2>{section.h}</h2>
+                        {section.paragraphs.map((paragraph) => (
+                            <p key={paragraph.slice(0, 48)}>{paragraph}</p>
+                        ))}
+                        {index === 0 && (
+                            <p>
+                                <LocaleLink href="/privacy">{t.footer.privacy}</LocaleLink>
+                            </p>
+                        )}
+                        {section.list && (
+                            <ul>
+                                {section.list.map((item) => (
+                                    <li key={item}>{item}</li>
+                                ))}
+                            </ul>
+                        )}
+                    </section>
+                ))}
             </article>
         </LegalShell>
     );

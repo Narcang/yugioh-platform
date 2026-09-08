@@ -59,6 +59,8 @@ const it = {
         riotDisclaimer: 'PlayTCG.Online non è sponsorizzato da Riot Games e non riflette le opinioni di Riot Games né di chiunque sia ufficialmente coinvolto nella produzione o gestione delle proprietà Riot Games. Riot Games, Riftbound e tutte le proprietà associate sono marchi o marchi registrati di Riot Games, Inc.',
         sources: 'Immagini e dati delle carte sono forniti da YGOPRODeck, Scryfall, Pokémon TCG API (pokemontcg.io), DOTGG e dai cataloghi pubblici degli editori, solo a scopo identificativo. Non rivendichiamo la proprietà di illustrazioni o materiali di gioco.',
         wizardsPolicy: 'Fan Content Policy di Wizards',
+        madeBy: 'PlayTCG.Online è un progetto di',
+        ai: 'Trasparenza AI: PlayTCG.Online utilizza anche strumenti di intelligenza artificiale a supporto della creazione e revisione di alcuni testi e immagini.',
     },
     landing: {
         welcome: 'Benvenuto su',
@@ -215,6 +217,8 @@ const en: Messages = {
         riotDisclaimer: 'PlayTCG.Online is not endorsed by Riot Games and does not reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, Riftbound and all associated properties are trademarks or registered trademarks of Riot Games, Inc.',
         sources: 'Card images and data are provided by YGOPRODeck, Scryfall, the Pokémon TCG API (pokemontcg.io), DOTGG, and the publishers’ public catalogues, for identification only. We do not claim ownership of any card artwork or game materials.',
         wizardsPolicy: 'Wizards Fan Content Policy',
+        madeBy: 'PlayTCG.Online is a project of',
+        ai: 'AI transparency: PlayTCG.Online also uses artificial intelligence tools to help create and review some texts and images.',
     },
     landing: {
         welcome: 'Welcome to',
@@ -371,6 +375,8 @@ const es: Messages = {
         riotDisclaimer: 'PlayTCG.Online no está respaldado por Riot Games y no refleja las opiniones de Riot Games ni de nadie involucrado oficialmente en la producción o gestión de las propiedades de Riot Games. Riot Games, Riftbound y todas las propiedades asociadas son marcas o marcas registradas de Riot Games, Inc.',
         sources: 'Las imágenes y los datos de las cartas los proporcionan YGOPRODeck, Scryfall, Pokémon TCG API (pokemontcg.io), DOTGG y los catálogos públicos de los editores, solo para identificar cartas. No reclamamos la propiedad de ilustraciones ni materiales de juego.',
         wizardsPolicy: 'Fan Content Policy de Wizards',
+        madeBy: 'PlayTCG.Online es un proyecto de',
+        ai: 'Transparencia IA: PlayTCG.Online también usa herramientas de inteligencia artificial para apoyar la creación y revisión de algunos textos e imágenes.',
     },
     landing: {
         welcome: 'Bienvenido a',
@@ -527,6 +533,8 @@ const fr: Messages = {
         riotDisclaimer: 'PlayTCG.Online n’est pas soutenu par Riot Games et ne reflète pas les opinions de Riot Games ni de quiconque officiellement impliqué dans la production ou la gestion des propriétés Riot Games. Riot Games, Riftbound et toutes les propriétés associées sont des marques ou des marques déposées de Riot Games, Inc.',
         sources: 'Les images et données des cartes sont fournies par YGOPRODeck, Scryfall, Pokémon TCG API (pokemontcg.io), DOTGG et les catalogues publics des éditeurs, uniquement pour identifier les cartes. Nous ne revendiquons aucune propriété sur les illustrations ou matériaux de jeu.',
         wizardsPolicy: 'Fan Content Policy de Wizards',
+        madeBy: 'PlayTCG.Online est un projet de',
+        ai: 'Transparence IA : PlayTCG.Online utilise aussi des outils d’intelligence artificielle pour aider à créer et réviser certains textes et images.',
     },
     landing: {
         welcome: 'Bienvenue sur',
@@ -683,6 +691,8 @@ const de: Messages = {
         riotDisclaimer: 'PlayTCG.Online wird von Riot Games nicht unterstützt und gibt nicht die Ansichten von Riot Games oder von Personen wieder, die offiziell an der Produktion oder Verwaltung von Riot-Games-Eigenschaften beteiligt sind. Riot Games, Riftbound und alle zugehörigen Eigenschaften sind Marken oder eingetragene Marken von Riot Games, Inc.',
         sources: 'Kartenbilder und -daten stammen von YGOPRODeck, Scryfall, der Pokémon TCG API (pokemontcg.io), DOTGG und den öffentlichen Katalogen der Verlage, nur zur Identifikation. Wir beanspruchen kein Eigentum an Artworks oder Spielmaterialien.',
         wizardsPolicy: 'Wizards Fan Content Policy',
+        madeBy: 'PlayTCG.Online ist ein Projekt von',
+        ai: 'KI-Transparenz: PlayTCG.Online nutzt auch KI-Werkzeuge zur Erstellung und Prüfung einiger Texte und Bilder.',
     },
     landing: {
         welcome: 'Willkommen bei',
@@ -839,6 +849,8 @@ const pt: Messages = {
         riotDisclaimer: 'PlayTCG.Online não é endossado pela Riot Games e não reflete as opiniões da Riot Games nem de ninguém oficialmente envolvido na produção ou gestão das propriedades da Riot Games. Riot Games, Riftbound e todas as propriedades associadas são marcas ou marcas registradas da Riot Games, Inc.',
         sources: 'Imagens e dados das cartas são fornecidos por YGOPRODeck, Scryfall, Pokémon TCG API (pokemontcg.io), DOTGG e pelos catálogos públicos das editoras, só para identificação. Não reivindicamos a propriedade de artes ou materiais de jogo.',
         wizardsPolicy: 'Fan Content Policy da Wizards',
+        madeBy: 'PlayTCG.Online é um projeto da',
+        ai: 'Transparência de IA: o PlayTCG.Online também usa ferramentas de inteligência artificial para apoiar a criação e revisão de alguns textos e imagens.',
     },
     landing: {
         welcome: 'Bem-vindo ao',

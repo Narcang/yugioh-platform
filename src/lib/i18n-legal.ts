@@ -14,12 +14,13 @@ export interface TermsCopy {
 
 const it: TermsCopy = {
     title: 'Termini di servizio',
-    updated: 'Ultimo aggiornamento: 7 settembre 2026',
+    updated: 'Ultimo aggiornamento: 8 settembre 2026',
     sections: [
         {
             h: '1. Che cos’è PlayTCG.Online',
             paragraphs: [
                 'PlayTCG.Online è un tavolo virtuale per giocare a TCG di carta a distanza: video, audio, punti vita, fasi, dadi, ricerca carte e costruzione mazzi. Non è un client ufficiale, non vende carte e non sostituisce i giochi cartacei. Le carte di carta le avete voi; le regole le applicate voi, come a un tavolo vero.',
+                'PlayTCG.Online è un progetto di Be2Bit Ltd (Malta, VAT MT21599411).',
             ],
         },
         {
@@ -102,12 +103,13 @@ const it: TermsCopy = {
 
 const en: TermsCopy = {
     title: 'Terms of Service',
-    updated: 'Last updated: 7 September 2026',
+    updated: 'Last updated: 8 September 2026',
     sections: [
         {
             h: '1. What PlayTCG.Online is',
             paragraphs: [
                 'PlayTCG.Online is a virtual table for playing paper TCGs remotely: video, audio, life points, phases, dice, card search and deck building. It is not an official client, it does not sell cards, and it does not replace the paper games. You bring the paper cards; you apply the rules, as you would at a real table.',
+                'PlayTCG.Online is a project of Be2Bit Ltd (Malta, VAT MT21599411).',
             ],
         },
         {
@@ -190,12 +192,13 @@ const en: TermsCopy = {
 
 const es: TermsCopy = {
     title: 'Términos del servicio',
-    updated: 'Última actualización: 7 de septiembre de 2026',
+    updated: 'Última actualización: 8 de septiembre de 2026',
     sections: [
         {
             h: '1. Qué es PlayTCG.Online',
             paragraphs: [
                 'PlayTCG.Online es una mesa virtual para jugar TCG de cartas a distancia: vídeo, audio, puntos de vida, fases, dados, búsqueda de cartas y construcción de mazos. No es un cliente oficial, no vende cartas y no sustituye los juegos de papel. Las cartas las tenéis vosotros; las reglas las aplicáis vosotros, como en una mesa real.',
+                'PlayTCG.Online es un proyecto de Be2Bit Ltd (Malta, VAT MT21599411).',
             ],
         },
         {
@@ -278,12 +281,13 @@ const es: TermsCopy = {
 
 const fr: TermsCopy = {
     title: 'Conditions d’utilisation',
-    updated: 'Dernière mise à jour : 7 septembre 2026',
+    updated: 'Dernière mise à jour : 8 septembre 2026',
     sections: [
         {
             h: '1. Qu’est-ce que PlayTCG.Online',
             paragraphs: [
                 'PlayTCG.Online est une table virtuelle pour jouer aux TCG papier à distance : vidéo, audio, points de vie, phases, dés, recherche de cartes et construction de decks. Ce n’est pas un client officiel, on ne vend pas de cartes et on ne remplace pas les jeux papier. Les cartes papier sont les vôtres ; les règles, vous les appliquez, comme à une vraie table.',
+                'PlayTCG.Online est un projet de Be2Bit Ltd (Malte, VAT MT21599411).',
             ],
         },
         {
@@ -366,12 +370,13 @@ const fr: TermsCopy = {
 
 const de: TermsCopy = {
     title: 'Nutzungsbedingungen',
-    updated: 'Zuletzt aktualisiert: 7. September 2026',
+    updated: 'Zuletzt aktualisiert: 8. September 2026',
     sections: [
         {
             h: '1. Was PlayTCG.Online ist',
             paragraphs: [
                 'PlayTCG.Online ist ein virtueller Tisch für Papier-TCGs aus der Ferne: Video, Audio, Lebenspunkte, Phasen, Würfel, Kartensuche und Deckbuilding. Es ist kein offizieller Client, verkauft keine Karten und ersetzt die Papierspiele nicht. Die Papierkarten habt ihr; die Regeln wendet ihr an, wie am echten Tisch.',
+                'PlayTCG.Online ist ein Projekt von Be2Bit Ltd (Malta, VAT MT21599411).',
             ],
         },
         {
@@ -454,12 +459,13 @@ const de: TermsCopy = {
 
 const pt: TermsCopy = {
     title: 'Termos de serviço',
-    updated: 'Última atualização: 7 de setembro de 2026',
+    updated: 'Última atualização: 8 de setembro de 2026',
     sections: [
         {
             h: '1. O que é o PlayTCG.Online',
             paragraphs: [
                 'PlayTCG.Online é uma mesa virtual para jogar TCG de papel à distância: vídeo, áudio, pontos de vida, fases, dados, busca de cartas e construção de decks. Não é um cliente oficial, não vende cartas e não substitui os jogos de papel. As cartas de papel são de vocês; as regras vocês aplicam, como numa mesa de verdade.',
+                'PlayTCG.Online é um projeto da Be2Bit Ltd (Malta, VAT MT21599411).',
             ],
         },
         {

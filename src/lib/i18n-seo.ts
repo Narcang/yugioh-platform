@@ -52,7 +52,7 @@ const it: SeoCopy = {
     },
     privacy: {
         title: 'Privacy Policy',
-        description: 'Informativa sulla privacy di PlayTCG.Online: dati di account, sessione ospite e diritti GDPR.',
+        description: 'Informativa sulla privacy di PlayTCG.Online, progetto Be2Bit Ltd: dati di account, sessione ospite, diritti GDPR e uso di strumenti di intelligenza artificiale.',
         keywords: ['privacy PlayTCG', 'GDPR'],
     },
     cookies: {
@@ -105,7 +105,7 @@ const en: SeoCopy = {
     },
     privacy: {
         title: 'Privacy Policy',
-        description: 'PlayTCG.Online privacy policy: account data, guest sessions and GDPR rights.',
+        description: 'PlayTCG.Online privacy policy, a Be2Bit Ltd project: account data, guest sessions, GDPR rights and use of AI tools.',
         keywords: ['PlayTCG privacy', 'GDPR'],
     },
     cookies: {
@@ -148,7 +148,7 @@ const es: SeoCopy = {
     },
     privacy: {
         title: 'Política de privacidad',
-        description: 'Privacidad de PlayTCG.Online: datos de cuenta, sesión de invitado y derechos GDPR.',
+        description: 'Privacidad de PlayTCG.Online, proyecto de Be2Bit Ltd: datos de cuenta, sesión de invitado, derechos GDPR y uso de herramientas de IA.',
         keywords: ['privacidad PlayTCG'],
     },
     cookies: {
@@ -191,7 +191,7 @@ const fr: SeoCopy = {
     },
     privacy: {
         title: 'Politique de confidentialité',
-        description: 'Confidentialité de PlayTCG.Online : données de compte, session invité et droits RGPD.',
+        description: 'Confidentialité de PlayTCG.Online, projet Be2Bit Ltd : données de compte, session invité, droits RGPD et usage d’outils d’IA.',
         keywords: ['confidentialité PlayTCG'],
     },
     cookies: {
@@ -234,7 +234,7 @@ const de: SeoCopy = {
     },
     privacy: {
         title: 'Datenschutz',
-        description: 'Datenschutz von PlayTCG.Online: Kontodaten, Gastsitzungen und DSGVO-Rechte.',
+        description: 'Datenschutz von PlayTCG.Online, einem Projekt von Be2Bit Ltd: Kontodaten, Gastsitzungen, DSGVO-Rechte und Einsatz von KI-Werkzeugen.',
         keywords: ['PlayTCG Datenschutz'],
     },
     cookies: {
@@ -277,7 +277,7 @@ const pt: SeoCopy = {
     },
     privacy: {
         title: 'Política de privacidade',
-        description: 'Privacidade do PlayTCG.Online: dados da conta, sessão de convidado e direitos GDPR.',
+        description: 'Privacidade do PlayTCG.Online, projeto da Be2Bit Ltd: dados da conta, sessão de convidado, direitos GDPR e uso de ferramentas de IA.',
         keywords: ['privacidade PlayTCG'],
     },
     cookies: {

@@ -1,44 +1,77 @@
-import React from 'react';
+"use client";
+import LocaleLink from '@/components/LocaleLink';
 import LegalShell from '@/components/LegalShell';
+import { useLocale } from '@/context/LocaleContext';
+import {
+    BE2BIT_CONTACTS_URL,
+    BE2BIT_LEGAL_NAME,
+    BE2BIT_SEAT,
+    BE2BIT_URL,
+    BE2BIT_VAT,
+} from '@/lib/about';
+import { PRIVACY } from '@/lib/i18n-policies';
 
 export default function PrivacyPolicy() {
+    const { locale, t } = useLocale();
+    const copy = PRIVACY[locale];
+
     return (
         <LegalShell>
             <article className="legal-doc">
-                <h1>Informativa sulla Privacy - PlayTCG.Online</h1>
-                <p className="legal-updated">Ultimo aggiornamento: 23 Marzo 2026</p>
-
-                <h2>1. Introduzione e Impegno alla Conformità</h2>
-                <p>
-                    PlayTCG.Online (&quot;noi&quot;, &quot;ci&quot; o &quot;nostro&quot;) pone la protezione dei dati al centro della propria tecnologia. La presente Informativa descrive come gestiamo i dati sulla piattaforma di gioco PlayTCG.Online.
-                    Dichiariamo esplicitamente che i nostri servizi sono progettati per essere pienamente conformi alle seguenti normative dell&apos;Unione Europea: GDPR (Regolamento UE 2016/679) e Digital Services Act (DSA - Regolamento UE 2022/2065).
+                <p className="legal-kicker">
+                    <LocaleLink href="/">{t.nav.home}</LocaleLink>
                 </p>
+                <h1>{copy.title}</h1>
+                <p className="legal-updated">{copy.updated}</p>
 
-                <h2>2. Titolare del Trattamento</h2>
-                <p>
-                    Il titolare del trattamento è:<br />
-                    <strong>[NOME TITOLARE provvisorio]</strong><br />
-                    Email: [INSERIRE EMAIL]
-                </p>
+                {copy.sections.slice(0, 1).map((section) => (
+                    <section key={section.h}>
+                        <h2>{section.h}</h2>
+                        {section.paragraphs.map((paragraph) => (
+                            <p key={paragraph.slice(0, 48)}>{paragraph}</p>
+                        ))}
+                    </section>
+                ))}
 
-                <h2>3. Architettura &quot;Privacy-by-Design&quot;: Modalità di Accesso</h2>
-                <p>Offriamo diverse modalità di accesso su PlayTCG.Online:</p>
-                <ul>
-                    <li><strong>Accesso come Ospite:</strong> Non viene richiesto alcun dato associato ad un profilo persistente. I dati della sessione sono temporanei.</li>
-                    <li><strong>Accesso Registrato:</strong> L&apos;utente si registra per conservare avatar e preferenze, fornendo i dati strettamente necessari all&apos;autenticazione tramite Supabase.</li>
-                </ul>
+                <section>
+                    <h2>{copy.controllerH}</h2>
+                    <p>
+                        {copy.controllerIntro}
+                        <br />
+                        <strong>{BE2BIT_LEGAL_NAME}</strong>
+                        <br />
+                        {BE2BIT_SEAT}
+                        <br />
+                        VAT {BE2BIT_VAT}
+                    </p>
+                    <p>
+                        {copy.websiteLabel}:{' '}
+                        <a href={BE2BIT_URL} target="_blank" rel="noopener noreferrer">
+                            be2bit.com
+                        </a>
+                        <br />
+                        {copy.contactsLabel}:{' '}
+                        <a href={BE2BIT_CONTACTS_URL} target="_blank" rel="noopener noreferrer">
+                            be2bit.com/contatti
+                        </a>
+                    </p>
+                </section>
 
-                <h2>4. Dati di Gioco e Finalità del Trattamento</h2>
-                <p>Registriamo dati esclusivamente per finalità funzionali al servizio di gioco (Art. 6 GDPR, esecuzione di un contratto):</p>
-                <ul>
-                    <li>Impostazioni del profilo: Avatar, Nickname scelti dall&apos;utente.</li>
-                    <li>Svolgimento partita: Azioni di gioco e inviti in lobby.</li>
-                </ul>
-
-                <h2>5. Diritti dell&apos;Utente e Diritto all&apos;Oblio</h2>
-                <p>
-                    In conformità agli Artt. 15-22 del GDPR, l&apos;utente può esercitare i propri diritti di accesso ed eliminazione account (diritto all&apos;oblio) contattandoci direttamente all&apos;indirizzo email indicato sopra.
-                </p>
+                {copy.sections.slice(1).map((section) => (
+                    <section key={section.h} id={section.id}>
+                        <h2>{section.h}</h2>
+                        {section.paragraphs.map((paragraph) => (
+                            <p key={paragraph.slice(0, 48)}>{paragraph}</p>
+                        ))}
+                        {section.list && (
+                            <ul>
+                                {section.list.map((item) => (
+                                    <li key={item}>{item}</li>
+                                ))}
+                            </ul>
+                        )}
+                    </section>
+                ))}
             </article>
         </LegalShell>
     );
