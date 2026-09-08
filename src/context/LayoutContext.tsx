@@ -1,6 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { getBaseLifePoints, getFirstPhase, MatchMode } from '@/lib/gameConfig';
+import { getBaseLifePoints, getFirstPhase, MatchMode, PlayMode } from '@/lib/gameConfig';
 
 type LayoutMode = 'grid' | 'fullscreen' | 'boxed'; // grid=50/50, fullscreen=100/0, boxed=PIP
 // 'self' for the local player, otherwise a remote peer id
@@ -50,6 +50,10 @@ interface LayoutContextType {
     setMaxPlayers: (count: number) => void;
     matchMode: MatchMode;
     setMatchMode: (mode: MatchMode) => void;
+    playMode: PlayMode;
+    setPlayMode: (mode: PlayMode) => void;
+    selectedDeckId: string | null;
+    setSelectedDeckId: (id: string | null) => void;
 }
 
 const LayoutContext = createContext<LayoutContextType | undefined>(undefined);
@@ -94,6 +98,8 @@ export const LayoutProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     // Multiplayer config (2-4 players)
     const [maxPlayers, setMaxPlayers] = useState<number>(2);
     const [matchMode, setMatchMode] = useState<MatchMode>('ffa');
+    const [playMode, setPlayMode] = useState<PlayMode>('physical');
+    const [selectedDeckId, setSelectedDeckId] = useState<string | null>(null);
 
 
     // Timer Countdown
@@ -184,6 +190,10 @@ export const LayoutProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             setMaxPlayers,
             matchMode,
             setMatchMode,
+            playMode,
+            setPlayMode,
+            selectedDeckId,
+            setSelectedDeckId,
         }}>
             {children}
         </LayoutContext.Provider>

@@ -2,7 +2,8 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { RealtimeChannel } from '@supabase/supabase-js';
-import { MatchMode, TeamId, autoTeamFor, buildTurnOrder } from '@/lib/gameConfig';
+import { MatchMode, PlayMode, TeamId, autoTeamFor, buildTurnOrder } from '@/lib/gameConfig';
+import type { BoardCard, PublicBoardView } from '@/lib/digitalBoard';
 
 const ICE_SERVERS = {
     iceServers: [
@@ -45,6 +46,10 @@ export interface RemotePeer {
     team: TeamId | null;
     /** Quarter turns this peer applied to their own camera */
     rotation: number;
+    playMode: PlayMode;
+    field: BoardCard[];
+    libraryCount: number;
+    handCount: number;
 }
 
 interface PeerMeta {
@@ -57,6 +62,7 @@ interface PresencePayload {
     username: string;
     team?: TeamId;
     rotation?: number;
+    playMode?: PlayMode;
 }
 
 /**
@@ -73,7 +79,8 @@ export const useWebRTC = (
     localStream: MediaStream | null,
     username: string = 'User',
     matchMode: MatchMode = 'ffa',
-    videoRotation: number = 0
+    videoRotation: number = 0,
+    playMode: PlayMode = 'physical',
 ) => {
     const [peers, setPeers] = useState<RemotePeer[]>([]);
     const [isConnected, setIsConnected] = useState(false);
@@ -94,6 +101,8 @@ export const useWebRTC = (
     const teamRef = useRef<TeamId>('A');
     const rotationRef = useRef(videoRotation);
     rotationRef.current = videoRotation;
+    const playModeRef = useRef(playMode);
+    playModeRef.current = playMode;
 
     const [latestReceivedCard, setLatestReceivedCard] = useState<any | null>(null);
     const [latestReceivedPhase, setLatestReceivedPhase] = useState<string | null>(null);
@@ -128,6 +137,10 @@ export const useWebRTC = (
                     lifePoints: patch.lifePoints ?? null,
                     team: patch.team ?? null,
                     rotation: patch.rotation ?? 0,
+                    playMode: patch.playMode ?? 'physical',
+                    field: patch.field ?? [],
+                    libraryCount: patch.libraryCount ?? 0,
+                    handCount: patch.handCount ?? 0,
                 }];
             }
             const next = [...prev];
@@ -194,6 +207,16 @@ export const useWebRTC = (
                     case 'turn-change':
                         setActivePlayerId(parsed.data);
                         break;
+                    case 'board-update': {
+                        const view = parsed.data as PublicBoardView;
+                        upsertPeer(peerId, {
+                            playMode: 'digital',
+                            field: view.field ?? [],
+                            libraryCount: view.libraryCount ?? 0,
+                            handCount: view.handCount ?? 0,
+                        });
+                        break;
+                    }
                 }
             } catch { }
         };
@@ -326,17 +349,18 @@ export const useWebRTC = (
                     const peerUsername = entry?.username ?? 'Duelist';
                     const peerTeam = entry?.team ?? null;
                     const peerRotation = entry?.rotation ?? 0;
+                    const peerPlayMode = entry?.playMode ?? 'physical';
                     if (peerConnections.current.has(peerId)) {
                         peerMeta.current.set(peerId, {
                             username: peerUsername,
                             isOfferer: peerMeta.current.get(peerId)?.isOfferer ?? false,
                         });
-                        upsertPeer(peerId, { username: peerUsername, team: peerTeam, rotation: peerRotation });
+                        upsertPeer(peerId, { username: peerUsername, team: peerTeam, rotation: peerRotation, playMode: peerPlayMode });
                         return;
                     }
                     const iAmOfferer = myId < peerId;
                     const pc = ensurePeerConnection(peerId, peerUsername, iAmOfferer);
-                    upsertPeer(peerId, { team: peerTeam, rotation: peerRotation });
+                    upsertPeer(peerId, { team: peerTeam, rotation: peerRotation, playMode: peerPlayMode });
                     if (iAmOfferer) {
                         createOffer(peerId, pc);
                     } else {
@@ -429,6 +453,16 @@ export const useWebRTC = (
                 if (payload.from === myId) return;
                 setActivePlayerId(payload.data);
             })
+            .on('broadcast', { event: 'board-update' }, ({ payload }) => {
+                if (payload.from === myId) return;
+                const view = payload.data as PublicBoardView;
+                upsertPeer(payload.from, {
+                    playMode: 'digital',
+                    field: view.field ?? [],
+                    libraryCount: view.libraryCount ?? 0,
+                    handCount: view.handCount ?? 0,
+                });
+            })
             .subscribe(async (status) => {
                 addLog(`Supabase: ${status}`);
                 if (status === 'SUBSCRIBED') {
@@ -437,6 +471,7 @@ export const useWebRTC = (
                         username: usernameRef.current,
                         team: teamRef.current,
                         rotation: rotationRef.current,
+                        playMode: playModeRef.current,
                     });
                 }
             });
@@ -515,6 +550,7 @@ export const useWebRTC = (
     const sendCard = useCallback((cardData: any) => broadcast('card-declared', cardData), [broadcast]);
     const sendLP = useCallback((lp: number) => broadcast('lp-update', lp), [broadcast]);
     const sendPhase = useCallback((phase: string) => broadcast('phase-update', phase), [broadcast]);
+    const sendBoard = useCallback((board: PublicBoardView) => broadcast('board-update', board), [broadcast]);
 
     const sendPing = useCallback(() => broadcast('ping', Date.now()), [broadcast]);
 
@@ -537,8 +573,8 @@ export const useWebRTC = (
     // message, so a player joining later still sees the current values.
     useEffect(() => {
         if (!isSubscribed.current || !channel.current) return;
-        channel.current.track({ username: usernameRef.current, team: myTeam, rotation: videoRotation });
-    }, [myTeam, username, videoRotation]);
+        channel.current.track({ username: usernameRef.current, team: myTeam, rotation: videoRotation, playMode });
+    }, [myTeam, username, videoRotation, playMode]);
 
     const resolvedPeers = useMemo<RemotePeer[]>(
         () => peers.map(p => ({ ...p, team: p.team ?? autoTeamFor(sortedIds, p.id) })),
@@ -602,6 +638,7 @@ export const useWebRTC = (
         dataChannelState,
         sendLP,
         sendPhase,
+        sendBoard,
         latestReceivedPhase,
         myId,
         myTeam,

@@ -3,8 +3,10 @@ import React, { useRef, useEffect } from 'react';
 import { useMedia } from '@/context/MediaContext';
 import { useLayout } from '@/context/LayoutContext';
 import PlayerOverlay from './PlayerOverlay';
+import { DigitalField } from './DigitalBoard';
 import type { RemotePeer } from '@/hooks/useWebRTC';
 import type { TeamId } from '@/lib/gameConfig';
+import type { BoardCard } from '@/lib/digitalBoard';
 
 interface GameAreaProps {
     peers: RemotePeer[];
@@ -14,6 +16,10 @@ interface GameAreaProps {
     myTeam: TeamId;
     onTeamChange: (team: TeamId) => void;
     activePlayerId: string | null;
+    myPlayMode?: 'physical' | 'digital';
+    myField?: BoardCard[];
+    onMoveFieldCard?: (instanceId: string, x: number, y: number) => void;
+    onReturnToHand?: (instanceId: string) => void;
 }
 
 /** Renders one remote peer's video feed */
@@ -52,11 +58,15 @@ const RemoteSlot: React.FC<{
                     }}
                 />
             </div>
-            {!peer.stream && (
+            {!peer.stream && peer.playMode !== 'digital' && (
                 <div className="video-placeholder">
                     <p style={{ color: 'var(--text-muted)' }}>In attesa di {peer.username}...</p>
                     <div style={{ width: '30px', height: '30px', border: '2px solid var(--text-muted)', borderTopColor: 'transparent', borderRadius: '50%', margin: '10px auto', animation: 'spin 1s linear infinite' }}></div>
                 </div>
+            )}
+
+            {peer.playMode === 'digital' && (
+                <DigitalField field={peer.field} dropId={peer.id} readOnly />
             )}
 
             <PlayerOverlay
@@ -77,6 +87,10 @@ const GameArea: React.FC<GameAreaProps> = ({
     myTeam,
     onTeamChange,
     activePlayerId,
+    myPlayMode = 'physical',
+    myField = [],
+    onMoveFieldCard,
+    onReturnToHand,
 }) => {
     const {
         localStream,
@@ -203,20 +217,27 @@ const GameArea: React.FC<GameAreaProps> = ({
 
             {/* Local player */}
             <div
-                className={`player-slot self ${getSlotClass('self')} ${activePlayerId === myId ? 'active-turn' : ''}`}
+                className={`player-slot self ${getSlotClass('self')} ${activePlayerId === myId ? 'active-turn' : ''} ${myPlayMode === 'digital' ? 'digital-seat' : ''}`}
                 onClick={() => handlePlayerClick('self')}
-                onTouchStart={handlePinchStart}
-                onTouchMove={handlePinchMove}
-                onTouchEnd={() => { pinch.current = null; }}
+                onTouchStart={myPlayMode === 'digital' ? undefined : handlePinchStart}
+                onTouchMove={myPlayMode === 'digital' ? undefined : handlePinchMove}
+                onTouchEnd={myPlayMode === 'digital' ? undefined : () => { pinch.current = null; }}
                 style={{ cursor: 'pointer' }}
             >
-                {error && (
+                {error && myPlayMode !== 'digital' && (
                     <div style={{ position: 'absolute', top: '10px', left: '10px', right: '10px', background: '#EF4444', color: 'white', padding: '8px', borderRadius: '4px', zIndex: 100, fontSize: '12px', textAlign: 'center' }}>
                         {error}
                     </div>
                 )}
 
-                {localStream && isVideoEnabled ? (
+                {myPlayMode === 'digital' ? (
+                    <DigitalField
+                        field={myField}
+                        dropId="self"
+                        onMove={onMoveFieldCard}
+                        onReturnToHand={onReturnToHand}
+                    />
+                ) : localStream && isVideoEnabled ? (
                     <div className="video-frame">
                         <video
                             ref={videoRef}

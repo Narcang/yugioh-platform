@@ -3,16 +3,17 @@ import React, { useState } from 'react';
 import { useLayout } from '@/context/LayoutContext';
 
 import CreateRoomModal, { RoomData } from './CreateRoomModal';
+import { JoinPlayModal } from './PlayModePicker';
 import Footer from './Footer';
 import SiteNav from './SiteNav';
 
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
-import { getFirstPhase, getMatchModeLabel, MatchMode } from '@/lib/gameConfig';
+import { getFirstPhase, getMatchModeLabel, MatchMode, PlayMode } from '@/lib/gameConfig';
 import { useLocale } from '@/context/LocaleContext';
 
 const Lobby: React.FC = () => {
-    const { setAppView, setCurrentRoomId, setIsSettingsOpen, setGameType, setGameFormat, setCurrentPhase, setCurrentTurn, setMaxPlayers, setMatchMode } = useLayout();
+    const { setAppView, setCurrentRoomId, setIsSettingsOpen, setGameType, setGameFormat, setCurrentPhase, setCurrentTurn, setMaxPlayers, setMatchMode, setPlayMode, setSelectedDeckId } = useLayout();
     const { user, profile, isAdmin, session } = useAuth();
     const { t } = useLocale();
     const [joinCode, setJoinCode] = useState('');
@@ -25,6 +26,7 @@ const Lobby: React.FC = () => {
     const [isPasswordPromptOpen, setIsPasswordPromptOpen] = useState(false);
     const [selectedRoom, setSelectedRoom] = useState<any>(null);
     const [passwordInput, setPasswordInput] = useState('');
+    const [pendingJoin, setPendingJoin] = useState<any>(null);
 
     // Fetch Rooms & Subscribe to Realtime
     React.useEffect(() => {
@@ -152,8 +154,7 @@ const Lobby: React.FC = () => {
             setCurrentTurn('opponent');
         }
 
-        setCurrentRoomId(targetRoomId);
-        setAppView('game');
+        setPendingJoin(room);
     };
 
     const handleCreateRoom = async (data: RoomData) => {
@@ -200,6 +201,8 @@ const Lobby: React.FC = () => {
             // Creator goes first
             setCurrentTurn('self');
 
+            setPlayMode(data.playMode);
+            setSelectedDeckId(data.deckId);
             setCurrentRoomId(createdRoom.id);
             setAppView('game');
 
@@ -456,6 +459,20 @@ const Lobby: React.FC = () => {
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
                 onCreate={handleCreateRoom}
+            />
+
+            <JoinPlayModal
+                isOpen={Boolean(pendingJoin)}
+                gameType={pendingJoin?.gameType || pendingJoin?.settings?.gameType || 'Yugioh'}
+                onCancel={() => setPendingJoin(null)}
+                onConfirm={(mode: PlayMode, deckId: string | null) => {
+                    if (!pendingJoin) return;
+                    setPlayMode(mode);
+                    setSelectedDeckId(deckId);
+                    setCurrentRoomId(pendingJoin.id);
+                    setPendingJoin(null);
+                    setAppView('game');
+                }}
             />
 
             {/* Password Prompt Modal (Simple Inline) */}

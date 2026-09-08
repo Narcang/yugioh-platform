@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     MatchMode,
+    PlayMode,
     getAllowedPlayerCounts,
     getDefaultPlayerCount,
     getAllowedMatchModes,
@@ -11,6 +12,7 @@ import {
     getBaseLifePoints,
     GAME_FORMATS,
 } from '@/lib/gameConfig';
+import { PlayModePicker } from '@/components/PlayModePicker';
 
 interface CreateRoomModalProps {
     isOpen: boolean;
@@ -27,6 +29,8 @@ export interface RoomData {
     language: string;
     maxPlayers: number;
     matchMode: MatchMode;
+    playMode: PlayMode;
+    deckId: string | null;
 }
 
 const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClose, onCreate }) => {
@@ -38,6 +42,8 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClose, onCr
     const [description, setDescription] = useState('');
     const [maxPlayers, setMaxPlayers] = useState(() => getDefaultPlayerCount('Yugioh', GAME_FORMATS['Yugioh'][0]));
     const [matchMode, setMatchMode] = useState<MatchMode>('ffa');
+    const [playMode, setPlayMode] = useState<PlayMode>('physical');
+    const [deckId, setDeckId] = useState('');
 
     const allowedPlayerCounts = getAllowedPlayerCounts(gameType, format);
     const allowedMatchModes = getAllowedMatchModes(maxPlayers);
@@ -64,7 +70,18 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClose, onCr
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onCreate({ name, gameType, format, isPublic, description, language, maxPlayers, matchMode });
+        onCreate({
+            name,
+            gameType,
+            format,
+            isPublic,
+            description,
+            language,
+            maxPlayers,
+            matchMode,
+            playMode,
+            deckId: playMode === 'digital' ? deckId || null : null,
+        });
         onClose();
         // Reset form
         setName('');
@@ -170,6 +187,14 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClose, onCr
                         {' '}Vita iniziale: {baseLife} per giocatore.
                     </p>
 
+                    <PlayModePicker
+                        gameType={gameType}
+                        playMode={playMode}
+                        deckId={deckId}
+                        onPlayMode={setPlayMode}
+                        onDeckId={setDeckId}
+                    />
+
                     <div className="form-section checkbox-section">
                         <label className="toggle-switch-container">
                             <span className="input-label" style={{ marginBottom: 0 }}>Partita Pubblica</span>
@@ -200,7 +225,13 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClose, onCr
 
                     <div className="modal-footer">
                         <button type="button" className="btn-secondary" onClick={onClose}>Annulla</button>
-                        <button type="submit" className="btn-primary">Crea Lobby</button>
+                        <button
+                            type="submit"
+                            className="btn-primary"
+                            disabled={playMode === 'digital' && !deckId}
+                        >
+                            Crea Lobby
+                        </button>
                     </div>
                 </form>
             </div>

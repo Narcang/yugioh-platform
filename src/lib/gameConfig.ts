@@ -3,6 +3,7 @@
  */
 
 export type MatchMode = 'ffa' | 'teams';
+export type PlayMode = 'physical' | 'digital';
 
 export type TeamId = 'A' | 'B';
 

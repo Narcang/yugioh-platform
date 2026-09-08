@@ -446,3 +446,19 @@ export async function loadDeck(
 
   return { meta: meta as DeckMeta, deck: buildDeckContents(cardRows, byId) };
 }
+
+/** Owner's decks, optionally filtered by game, newest first. */
+export async function listOwnedDecks(
+  client: SupabaseClient,
+  ownerId: string,
+  gameType?: string
+): Promise<DeckMeta[]> {
+  let query = client
+    .from(DECKS_TABLE)
+    .select(DECK_META_COLUMNS)
+    .eq('owner_id', ownerId)
+    .order('updated_at', { ascending: false });
+  if (gameType) query = query.eq('game_type', gameType);
+  const { data } = await query;
+  return (data ?? []) as DeckMeta[];
+}
