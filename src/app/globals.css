@@ -2630,14 +2630,66 @@ input:checked+.slider:before {
   z-index: 5;
 }
 
+.digital-field-card.is-defense {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
 .digital-field-card img,
-.digital-hand-card img {
+.digital-hand-card img,
+.digital-field-card .digital-card-back {
   display: block;
   width: 100%;
   height: auto;
   border-radius: 4px;
   pointer-events: none;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+}
+
+.digital-card-back {
+  aspect-ratio: 59 / 86;
+  background:
+    linear-gradient(160deg, #3d2a10 0%, #141414 55%, #0a0a0a 100%);
+  border: 2px solid #c9a227;
+  box-sizing: border-box;
+}
+
+.digital-card-veil {
+  position: absolute;
+  inset: 0;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.48);
+  pointer-events: none;
+}
+
+.digital-card-menu {
+  position: fixed;
+  z-index: 90;
+  min-width: 200px;
+  max-width: 240px;
+  padding: 6px;
+  border-radius: 10px;
+  background: #161616;
+  border: 1px solid #333;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.digital-card-menu button {
+  text-align: left;
+  padding: 9px 10px;
+  border: 0;
+  background: transparent;
+  color: #eee;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.digital-card-menu button:hover,
+.digital-card-menu button:focus-visible {
+  background: #2a2a2a;
 }
 
 .digital-rack {

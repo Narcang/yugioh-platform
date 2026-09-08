@@ -6,7 +6,7 @@ import GameArea from '@/components/GameArea';
 import DiceModal from '@/components/DiceModal';
 import TurnNotification from '@/components/TurnNotification';
 import PhaseNotification from '@/components/PhaseNotification';
-import { DigitalHand } from '@/components/DigitalBoard';
+import { DigitalHand, type FieldPlayOpts } from '@/components/DigitalBoard';
 import { useLayout } from '@/context/LayoutContext';
 import { useMedia } from '@/context/MediaContext';
 import { useAuth } from '@/context/AuthContext';
@@ -18,6 +18,7 @@ import {
     drawFrom,
     shuffleLibrary,
     toPublicBoard,
+    type BoardCard,
     type PlayerBoard,
 } from '@/lib/digitalBoard';
 
@@ -109,7 +110,7 @@ const GameRoom: React.FC = () => {
         });
     };
 
-    const dropOnField = (instanceId: string, x: number, y: number) => {
+    const dropOnField = (instanceId: string, x: number, y: number, opts?: FieldPlayOpts) => {
         setBoard((prev) => {
             if (!prev) return prev;
             const card = prev.hand.find((c) => c.instanceId === instanceId);
@@ -117,21 +118,48 @@ const GameRoom: React.FC = () => {
             return {
                 ...prev,
                 hand: prev.hand.filter((c) => c.instanceId !== instanceId),
-                field: [...prev.field, { ...card, x, y }],
+                field: [
+                    ...prev.field,
+                    {
+                        ...card,
+                        x,
+                        y,
+                        faceDown: opts?.faceDown ?? false,
+                        position: opts?.position ?? 'attack',
+                    },
+                ],
             };
         });
     };
+
+    const updateFieldCard = (instanceId: string, patch: FieldPlayOpts) => {
+        setBoard((prev) => {
+            if (!prev) return prev;
+            return {
+                ...prev,
+                field: prev.field.map((card) =>
+                    card.instanceId === instanceId ? { ...card, ...patch } : card
+                ),
+            };
+        });
+    };
+
+    const stripFieldState = (card: BoardCard): BoardCard => ({
+        instanceId: card.instanceId,
+        cardId: card.cardId,
+        name: card.name,
+        imageUrl: card.imageUrl,
+    });
 
     const returnToHand = (instanceId: string) => {
         setBoard((prev) => {
             if (!prev) return prev;
             const card = prev.field.find((c) => c.instanceId === instanceId);
             if (!card) return prev;
-            const { x: _x, y: _y, ...rest } = card;
             return {
                 ...prev,
                 field: prev.field.filter((c) => c.instanceId !== instanceId),
-                hand: [...prev.hand, rest],
+                hand: [...prev.hand, stripFieldState(card)],
             };
         });
     };
@@ -147,7 +175,7 @@ const GameRoom: React.FC = () => {
                 ...prev,
                 hand: prev.hand.filter((c) => c.instanceId !== instanceId),
                 field: prev.field.filter((c) => c.instanceId !== instanceId),
-                graveyard: [...prev.graveyard, card],
+                graveyard: [...prev.graveyard, stripFieldState(card)],
             };
         });
     };
@@ -172,8 +200,11 @@ const GameRoom: React.FC = () => {
                 activePlayerId={activePlayerId}
                 myPlayMode={playMode}
                 myField={board?.field ?? []}
+                gameType={gameType}
                 onMoveFieldCard={moveOnField}
                 onReturnToHand={returnToHand}
+                onToGraveyard={toGraveyard}
+                onUpdateFieldCard={updateFieldCard}
             />
             <RightPanel
                 remoteStream={remoteStream}
@@ -189,6 +220,7 @@ const GameRoom: React.FC = () => {
             {playMode === 'digital' && board && (
                 <DigitalHand
                     board={board}
+                    gameType={gameType}
                     draggingId={draggingId}
                     setDraggingId={setDraggingId}
                     onDraw={() => setBoard((prev) => (prev ? drawFrom(prev, 'library') : prev))}

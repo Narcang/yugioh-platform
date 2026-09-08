@@ -9,6 +9,8 @@ export interface BoardCard {
     /** 0–1, relative to the field. Ignored in hand/library. */
     x?: number;
     y?: number;
+    faceDown?: boolean;
+    position?: 'attack' | 'defense';
 }
 
 export interface PlayerBoard {
@@ -40,7 +42,32 @@ export function toPublicBoard(board: PlayerBoard): PublicBoardView {
         extraCount: board.extra.length,
         handCount: board.hand.length,
         graveyardCount: board.graveyard.length,
-        field: board.field,
+        field: board.field.map((card) =>
+            card.faceDown
+                ? {
+                      instanceId: card.instanceId,
+                      cardId: '',
+                      name: '',
+                      imageUrl: '',
+                      x: card.x,
+                      y: card.y,
+                      faceDown: true,
+                      position: card.position,
+                  }
+                : card
+        ),
+    };
+}
+
+export function usesBattlePosition(gameType: string): boolean {
+    return gameType === 'Yugioh';
+}
+
+export function nextFieldSlot(field: BoardCard[]): { x: number; y: number } {
+    const i = field.length;
+    return {
+        x: 0.2 + (i % 5) * 0.15,
+        y: 0.4 + Math.floor(i / 5) * 0.22,
     };
 }
 

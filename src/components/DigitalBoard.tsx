@@ -1,25 +1,109 @@
 "use client";
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocale } from '@/context/LocaleContext';
 import type { BoardCard, PlayerBoard } from '@/lib/digitalBoard';
+import { nextFieldSlot, usesBattlePosition } from '@/lib/digitalBoard';
 import { onCardImageError } from '@/lib/decks';
+
+const DRAG_THRESHOLD = 10;
+
+export type FieldPlayOpts = {
+    faceDown?: boolean;
+    position?: 'attack' | 'defense';
+};
+
+type CardMenu = {
+    kind: 'hand' | 'field';
+    card: BoardCard;
+    x: number;
+    y: number;
+};
+
+function CardFace({
+    card,
+    hideIdentity,
+    ownerPeek,
+}: {
+    card: BoardCard;
+    hideIdentity: boolean;
+    ownerPeek?: boolean;
+}) {
+    if (hideIdentity && !ownerPeek) {
+        return <span className="digital-card-back" aria-hidden />;
+    }
+    return (
+        <>
+            <img src={card.imageUrl} alt="" draggable={false} onError={onCardImageError} />
+            {ownerPeek && card.faceDown && <span className="digital-card-veil" />}
+        </>
+    );
+}
+
+function CardActionMenu({
+    x,
+    y,
+    children,
+    onClose,
+}: {
+    x: number;
+    y: number;
+    children: React.ReactNode;
+    onClose: () => void;
+}) {
+    useEffect(() => {
+        const close = (event: PointerEvent) => {
+            if ((event.target as HTMLElement | null)?.closest('[data-card-menu]')) return;
+            onClose();
+        };
+        window.addEventListener('pointerdown', close);
+        return () => window.removeEventListener('pointerdown', close);
+    }, [onClose]);
+
+    const width = 220;
+    const height = 280;
+    const left = Math.min(Math.max(8, x), window.innerWidth - width - 8);
+    const top = Math.min(Math.max(8, y), window.innerHeight - height - 8);
+
+    return createPortal(
+        <div
+            className="digital-card-menu"
+            data-card-menu
+            style={{ left, top }}
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
+        >
+            {children}
+        </div>,
+        document.body
+    );
+}
 
 interface DigitalFieldProps {
     field: BoardCard[];
     dropId: string;
     readOnly?: boolean;
+    gameType?: string;
     onMove?: (instanceId: string, x: number, y: number) => void;
     onReturnToHand?: (instanceId: string) => void;
+    onToGraveyard?: (instanceId: string) => void;
+    onUpdateCard?: (instanceId: string, patch: FieldPlayOpts) => void;
 }
 
 export const DigitalField: React.FC<DigitalFieldProps> = ({
     field,
     dropId,
     readOnly,
+    gameType = '',
     onMove,
     onReturnToHand,
+    onToGraveyard,
+    onUpdateCard,
 }) => {
+    const { t } = useLocale();
     const fieldRef = useRef<HTMLDivElement>(null);
+    const [menu, setMenu] = useState<CardMenu | null>(null);
+    const battle = usesBattlePosition(gameType);
 
     const relativePos = (clientX: number, clientY: number) => {
         const box = fieldRef.current?.getBoundingClientRect();
@@ -37,8 +121,15 @@ export const DigitalField: React.FC<DigitalFieldProps> = ({
         const pointerId = event.pointerId;
         const target = event.currentTarget as HTMLElement;
         target.setPointerCapture(pointerId);
+        const startX = event.clientX;
+        const startY = event.clientY;
+        let dragging = false;
 
         const move = (ev: PointerEvent) => {
+            const dist = Math.hypot(ev.clientX - startX, ev.clientY - startY);
+            if (!dragging && dist < DRAG_THRESHOLD) return;
+            dragging = true;
+            setMenu(null);
             const { x, y } = relativePos(ev.clientX, ev.clientY);
             onMove(card.instanceId, x, y);
         };
@@ -46,10 +137,14 @@ export const DigitalField: React.FC<DigitalFieldProps> = ({
             target.releasePointerCapture(pointerId);
             target.removeEventListener('pointermove', move);
             target.removeEventListener('pointerup', up);
-            const under = document.elementFromPoint(ev.clientX, ev.clientY);
-            if (onReturnToHand && under?.closest('[data-digital-hand]')) {
-                onReturnToHand(card.instanceId);
+            if (dragging) {
+                const under = document.elementFromPoint(ev.clientX, ev.clientY);
+                if (onReturnToHand && under?.closest('[data-digital-hand]')) {
+                    onReturnToHand(card.instanceId);
+                }
+                return;
             }
+            setMenu({ kind: 'field', card, x: ev.clientX, y: ev.clientY });
         };
         target.addEventListener('pointermove', move);
         target.addEventListener('pointerup', up);
@@ -62,36 +157,98 @@ export const DigitalField: React.FC<DigitalFieldProps> = ({
             data-digital-field={dropId}
             onClick={(event) => event.stopPropagation()}
         >
-            {field.map((card) => (
-                <button
-                    key={card.instanceId}
-                    type="button"
-                    className="digital-field-card"
-                    style={{ left: `${(card.x ?? 0.5) * 100}%`, top: `${(card.y ?? 0.5) * 100}%` }}
-                    onPointerDown={(e) => handlePointerDown(e, card)}
-                    onDoubleClick={() => onReturnToHand?.(card.instanceId)}
-                    aria-label={card.name}
-                >
-                    <img src={card.imageUrl} alt={card.name} draggable={false} onError={onCardImageError} />
-                </button>
-            ))}
+            {field.map((card) => {
+                const defense = card.position === 'defense';
+                const hideIdentity = Boolean(readOnly && card.faceDown);
+                return (
+                    <button
+                        key={card.instanceId}
+                        type="button"
+                        className={`digital-field-card${defense ? ' is-defense' : ''}${card.faceDown ? ' is-facedown' : ''}`}
+                        style={{ left: `${(card.x ?? 0.5) * 100}%`, top: `${(card.y ?? 0.5) * 100}%` }}
+                        onPointerDown={(e) => handlePointerDown(e, card)}
+                        aria-label={hideIdentity ? t.play.cover : card.name}
+                    >
+                        <CardFace card={card} hideIdentity={hideIdentity} ownerPeek={!readOnly && card.faceDown} />
+                    </button>
+                );
+            })}
+
+            {menu?.kind === 'field' && (() => {
+                const pos = menu.card.position ?? 'attack';
+                return (
+                <CardActionMenu x={menu.x} y={menu.y} onClose={() => setMenu(null)}>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            onToGraveyard?.(menu.card.instanceId);
+                            setMenu(null);
+                        }}
+                    >
+                        {t.play.toGraveyard}
+                    </button>
+                    {battle && pos !== 'attack' && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                onUpdateCard?.(menu.card.instanceId, { position: 'attack' });
+                                setMenu(null);
+                            }}
+                        >
+                            {t.play.toAttack}
+                        </button>
+                    )}
+                    {battle && pos !== 'defense' && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                onUpdateCard?.(menu.card.instanceId, { position: 'defense' });
+                                setMenu(null);
+                            }}
+                        >
+                            {t.play.toDefense}
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            onUpdateCard?.(menu.card.instanceId, { faceDown: !menu.card.faceDown });
+                            setMenu(null);
+                        }}
+                    >
+                        {menu.card.faceDown ? t.play.reveal : t.play.cover}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            onReturnToHand?.(menu.card.instanceId);
+                            setMenu(null);
+                        }}
+                    >
+                        {t.play.toHand}
+                    </button>
+                </CardActionMenu>
+                );
+            })()}
         </div>
     );
 };
 
 interface DigitalHandProps {
     board: PlayerBoard;
+    gameType: string;
     onDraw: () => void;
     onDrawExtra: () => void;
     onShuffle: () => void;
     onToGraveyard: (instanceId: string) => void;
     draggingId: string | null;
     setDraggingId: (id: string | null) => void;
-    onDropOnField: (instanceId: string, x: number, y: number) => void;
+    onDropOnField: (instanceId: string, x: number, y: number, opts?: FieldPlayOpts) => void;
 }
 
 export const DigitalHand: React.FC<DigitalHandProps> = ({
     board,
+    gameType,
     onDraw,
     onDrawExtra,
     onShuffle,
@@ -101,43 +258,65 @@ export const DigitalHand: React.FC<DigitalHandProps> = ({
     onDropOnField,
 }) => {
     const { t } = useLocale();
+    const [menu, setMenu] = useState<CardMenu | null>(null);
+    const battle = usesBattlePosition(gameType);
+
+    const playCard = (card: BoardCard, opts: FieldPlayOpts) => {
+        const slot = nextFieldSlot(board.field);
+        onDropOnField(card.instanceId, slot.x, slot.y, opts);
+        setMenu(null);
+    };
 
     const handlePointerDown = (event: React.PointerEvent, card: BoardCard) => {
         event.preventDefault();
         const pointerId = event.pointerId;
         const target = event.currentTarget as HTMLElement;
         target.setPointerCapture(pointerId);
-        setDraggingId(card.instanceId);
-
-        const ghost = target.cloneNode(true) as HTMLElement;
-        ghost.classList.add('digital-card-ghost');
-        ghost.style.left = `${event.clientX}px`;
-        ghost.style.top = `${event.clientY}px`;
-        document.body.appendChild(ghost);
+        const startX = event.clientX;
+        const startY = event.clientY;
+        let dragging = false;
+        let ghost: HTMLElement | null = null;
 
         const move = (ev: PointerEvent) => {
-            ghost.style.left = `${ev.clientX}px`;
-            ghost.style.top = `${ev.clientY}px`;
+            const dist = Math.hypot(ev.clientX - startX, ev.clientY - startY);
+            if (!dragging && dist < DRAG_THRESHOLD) return;
+            if (!dragging) {
+                dragging = true;
+                setDraggingId(card.instanceId);
+                setMenu(null);
+                ghost = target.cloneNode(true) as HTMLElement;
+                ghost.classList.add('digital-card-ghost');
+                document.body.appendChild(ghost);
+            }
+            if (ghost) {
+                ghost.style.left = `${ev.clientX}px`;
+                ghost.style.top = `${ev.clientY}px`;
+            }
         };
         const up = (ev: PointerEvent) => {
-            ghost.remove();
+            ghost?.remove();
             target.releasePointerCapture(pointerId);
             target.removeEventListener('pointermove', move);
             target.removeEventListener('pointerup', up);
             setDraggingId(null);
+            if (!dragging) {
+                setMenu({ kind: 'hand', card, x: ev.clientX, y: ev.clientY });
+                return;
+            }
             const under = document.elementFromPoint(ev.clientX, ev.clientY);
-            const field = under?.closest('[data-digital-field="self"]') as HTMLElement | null;
+            const fieldEl = under?.closest('[data-digital-field="self"]') as HTMLElement | null;
             const gy = under?.closest('[data-digital-gy]');
             if (gy) {
                 onToGraveyard(card.instanceId);
                 return;
             }
-            if (field) {
-                const box = field.getBoundingClientRect();
+            if (fieldEl) {
+                const box = fieldEl.getBoundingClientRect();
                 onDropOnField(
                     card.instanceId,
                     Math.min(1, Math.max(0, (ev.clientX - box.left) / box.width)),
                     Math.min(1, Math.max(0, (ev.clientY - box.top) / box.height)),
+                    { faceDown: false, position: 'attack' }
                 );
             }
         };
@@ -181,6 +360,25 @@ export const DigitalHand: React.FC<DigitalHandProps> = ({
                 ))}
             </div>
             <p className="digital-hint">{t.play.hint}</p>
+
+            {menu?.kind === 'hand' && (
+                <CardActionMenu x={menu.x} y={menu.y} onClose={() => setMenu(null)}>
+                    <button type="button" onClick={() => playCard(menu.card, { faceDown: false, position: 'attack' })}>
+                        {t.play.faceUp}
+                    </button>
+                    <button type="button" onClick={() => playCard(menu.card, { faceDown: true, position: 'attack' })}>
+                        {t.play.faceDown}
+                    </button>
+                    {battle && (
+                        <button
+                            type="button"
+                            onClick={() => playCard(menu.card, { faceDown: true, position: 'defense' })}
+                        >
+                            {t.play.setDefense}
+                        </button>
+                    )}
+                </CardActionMenu>
+            )}
         </div>
     );
 };

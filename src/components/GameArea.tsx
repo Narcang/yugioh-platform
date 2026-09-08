@@ -3,7 +3,7 @@ import React, { useRef, useEffect } from 'react';
 import { useMedia } from '@/context/MediaContext';
 import { useLayout } from '@/context/LayoutContext';
 import PlayerOverlay from './PlayerOverlay';
-import { DigitalField } from './DigitalBoard';
+import { DigitalField, type FieldPlayOpts } from './DigitalBoard';
 import type { RemotePeer } from '@/hooks/useWebRTC';
 import type { TeamId } from '@/lib/gameConfig';
 import type { BoardCard } from '@/lib/digitalBoard';
@@ -18,8 +18,11 @@ interface GameAreaProps {
     activePlayerId: string | null;
     myPlayMode?: 'physical' | 'digital';
     myField?: BoardCard[];
+    gameType?: string;
     onMoveFieldCard?: (instanceId: string, x: number, y: number) => void;
     onReturnToHand?: (instanceId: string) => void;
+    onToGraveyard?: (instanceId: string) => void;
+    onUpdateFieldCard?: (instanceId: string, patch: FieldPlayOpts) => void;
 }
 
 /** Renders one remote peer's video feed */
@@ -89,8 +92,11 @@ const GameArea: React.FC<GameAreaProps> = ({
     activePlayerId,
     myPlayMode = 'physical',
     myField = [],
+    gameType = '',
     onMoveFieldCard,
     onReturnToHand,
+    onToGraveyard,
+    onUpdateFieldCard,
 }) => {
     const {
         localStream,
@@ -234,8 +240,11 @@ const GameArea: React.FC<GameAreaProps> = ({
                     <DigitalField
                         field={myField}
                         dropId="self"
+                        gameType={gameType}
                         onMove={onMoveFieldCard}
                         onReturnToHand={onReturnToHand}
+                        onToGraveyard={onToGraveyard}
+                        onUpdateCard={onUpdateFieldCard}
                     />
                 ) : localStream && isVideoEnabled ? (
                     <div className="video-frame">
