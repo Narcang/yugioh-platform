@@ -143,6 +143,9 @@ const it = {
         toLibrary: 'Rimetti nel mazzo',
         toField: 'Metti sul campo',
         emptyZone: 'Nessuna carta',
+        summon: 'Evoca',
+        toExtra: "Rimetti nell'extra",
+        takeToHand: 'Prendi in mano',
         continue: 'Entra nella partita',
     },
     how: {
@@ -333,6 +336,9 @@ const en: Messages = {
         toLibrary: 'Put in deck',
         toField: 'Play to field',
         emptyZone: 'No cards',
+        summon: 'Summon',
+        toExtra: 'Return to Extra',
+        takeToHand: 'Take to hand',
         continue: 'Enter the match',
     },
     how: {
@@ -523,6 +529,9 @@ const es: Messages = {
         toLibrary: 'Poner en el mazo',
         toField: 'Poner en el campo',
         emptyZone: 'Ninguna carta',
+        summon: 'Invocar',
+        toExtra: 'Devolver al Extra',
+        takeToHand: 'Coger en la mano',
         continue: 'Entrar a la partida',
     },
     how: {
@@ -713,6 +722,9 @@ const fr: Messages = {
         toLibrary: 'Remettre dans le deck',
         toField: 'Poser sur le champ',
         emptyZone: 'Aucune carte',
+        summon: 'Invoquer',
+        toExtra: 'Remettre dans l’Extra',
+        takeToHand: 'Prendre en main',
         continue: 'Entrer dans la partie',
     },
     how: {
@@ -903,6 +915,9 @@ const de: Messages = {
         toLibrary: 'Ins Deck legen',
         toField: 'Aufs Feld',
         emptyZone: 'Keine Karten',
+        summon: 'Beschwören',
+        toExtra: 'Ins Extra zurück',
+        takeToHand: 'Auf die Hand nehmen',
         continue: 'Ins Spiel',
     },
     how: {
@@ -1093,6 +1108,9 @@ const pt: Messages = {
         toLibrary: 'Colocar no deck',
         toField: 'Colocar no campo',
         emptyZone: 'Nenhuma carta',
+        summon: 'Invocar',
+        toExtra: 'Devolver ao Extra',
+        takeToHand: 'Pegar na mão',
         continue: 'Entrar na partida',
     },
     how: {

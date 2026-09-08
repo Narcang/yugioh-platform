@@ -29,7 +29,7 @@ export interface PlayerBoard {
 }
 
 export type BoardZone = keyof PlayerBoard;
-export type OpenPile = 'graveyard' | 'exile';
+export type OpenPile = 'graveyard' | 'exile' | 'extra';
 
 const ZONES: BoardZone[] = ['library', 'extra', 'hand', 'field', 'graveyard', 'exile'];
 

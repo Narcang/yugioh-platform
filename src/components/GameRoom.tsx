@@ -156,6 +156,7 @@ const GameRoom: React.FC = () => {
                 onReturnToHand={(id) => relocate(id, 'hand')}
                 onToGraveyard={(id) => relocate(id, 'graveyard')}
                 onToExile={(id) => relocate(id, 'exile')}
+                onToExtra={(id) => relocate(id, 'extra')}
                 onUpdateFieldCard={updateFieldCard}
             />
             <RightPanel
@@ -176,7 +177,6 @@ const GameRoom: React.FC = () => {
                     draggingId={draggingId}
                     setDraggingId={setDraggingId}
                     onDraw={() => setBoard((prev) => (prev ? drawFrom(prev, 'library') : prev))}
-                    onDrawExtra={() => setBoard((prev) => (prev ? drawFrom(prev, 'extra') : prev))}
                     onShuffle={() => setBoard((prev) => (prev ? shuffleLibrary(prev) : prev))}
                     onRelocate={relocate}
                     onDropOnField={dropOnField}

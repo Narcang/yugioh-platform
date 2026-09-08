@@ -23,6 +23,7 @@ interface GameAreaProps {
     onReturnToHand?: (instanceId: string) => void;
     onToGraveyard?: (instanceId: string) => void;
     onToExile?: (instanceId: string) => void;
+    onToExtra?: (instanceId: string) => void;
     onUpdateFieldCard?: (instanceId: string, patch: FieldPlayOpts) => void;
 }
 
@@ -104,6 +105,7 @@ const GameArea: React.FC<GameAreaProps> = ({
     onReturnToHand,
     onToGraveyard,
     onToExile,
+    onToExtra,
     onUpdateFieldCard,
 }) => {
     const {
@@ -253,6 +255,7 @@ const GameArea: React.FC<GameAreaProps> = ({
                         onReturnToHand={onReturnToHand}
                         onToGraveyard={onToGraveyard}
                         onToExile={onToExile}
+                        onToExtra={onToExtra}
                         onUpdateCard={onUpdateFieldCard}
                     />
                 ) : localStream && isVideoEnabled ? (
