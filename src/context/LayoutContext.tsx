@@ -1,6 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { getBaseLifePoints, getFirstPhase, MatchMode, PlayMode } from '@/lib/gameConfig';
+import type { InspectedCard } from '@/lib/digitalBoard';
 
 type LayoutMode = 'grid' | 'fullscreen' | 'boxed'; // grid=50/50, fullscreen=100/0, boxed=PIP
 // 'self' for the local player, otherwise a remote peer id
@@ -54,6 +55,8 @@ interface LayoutContextType {
     setPlayMode: (mode: PlayMode) => void;
     selectedDeckId: string | null;
     setSelectedDeckId: (id: string | null) => void;
+    inspectedCard: InspectedCard | null;
+    setInspectedCard: (card: InspectedCard | null) => void;
 }
 
 const LayoutContext = createContext<LayoutContextType | undefined>(undefined);
@@ -100,6 +103,7 @@ export const LayoutProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const [matchMode, setMatchMode] = useState<MatchMode>('ffa');
     const [playMode, setPlayMode] = useState<PlayMode>('physical');
     const [selectedDeckId, setSelectedDeckId] = useState<string | null>(null);
+    const [inspectedCard, setInspectedCard] = useState<InspectedCard | null>(null);
 
 
     // Timer Countdown
@@ -194,6 +198,8 @@ export const LayoutProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             setPlayMode,
             selectedDeckId,
             setSelectedDeckId,
+            inspectedCard,
+            setInspectedCard,
         }}>
             {children}
         </LayoutContext.Provider>

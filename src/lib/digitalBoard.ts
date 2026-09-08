@@ -13,6 +13,12 @@ export interface BoardCard {
     position?: 'attack' | 'defense';
 }
 
+export interface InspectedCard {
+    instanceId: string;
+    name: string;
+    imageUrl: string;
+}
+
 export interface PlayerBoard {
     library: BoardCard[];
     extra: BoardCard[];

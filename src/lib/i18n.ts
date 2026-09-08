@@ -137,6 +137,7 @@ const it = {
         reveal: 'Scopri',
         cover: 'Copri',
         toHand: 'Riprendi in mano',
+        inView: 'In visione',
         continue: 'Entra nella partita',
     },
     how: {
@@ -321,6 +322,7 @@ const en: Messages = {
         reveal: 'Reveal',
         cover: 'Cover',
         toHand: 'Return to hand',
+        inView: 'Viewing',
         continue: 'Enter the match',
     },
     how: {
@@ -505,6 +507,7 @@ const es: Messages = {
         reveal: 'Descubrir',
         cover: 'Cubrir',
         toHand: 'Volver a la mano',
+        inView: 'En visión',
         continue: 'Entrar a la partida',
     },
     how: {
@@ -689,6 +692,7 @@ const fr: Messages = {
         reveal: 'Révéler',
         cover: 'Couvrir',
         toHand: 'Reprendre en main',
+        inView: 'En vue',
         continue: 'Entrer dans la partie',
     },
     how: {
@@ -873,6 +877,7 @@ const de: Messages = {
         reveal: 'Aufdecken',
         cover: 'Verdecken',
         toHand: 'Zurück auf die Hand',
+        inView: 'Ansicht',
         continue: 'Ins Spiel',
     },
     how: {
@@ -1057,6 +1062,7 @@ const pt: Messages = {
         reveal: 'Revelar',
         cover: 'Cobrir',
         toHand: 'Voltar à mão',
+        inView: 'Em visão',
         continue: 'Entrar na partida',
     },
     how: {

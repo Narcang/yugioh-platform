@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLayout } from '@/context/LayoutContext';
+import { useLocale } from '@/context/LocaleContext';
 import CardSearchInput, { CardSearchResult } from './CardSearchInput';
 
 interface RightPanelProps {
@@ -25,7 +26,8 @@ interface CardData {
 }
 
 const RightPanel: React.FC<RightPanelProps> = ({ remoteStream, onDeclareCard, lastReceivedCard, dataChannelState, iceConnectionState, connectionLogs, sendPing, reconnect }) => {
-    const { gameType, currentRoomId, isCardPanelOpen, setIsCardPanelOpen } = useLayout();
+    const { gameType, currentRoomId, isCardPanelOpen, setIsCardPanelOpen, inspectedCard, setInspectedCard } = useLayout();
+    const { t } = useLocale();
 
     // DEBUG: Log gameType on mount and changes
     useEffect(() => {
@@ -36,13 +38,25 @@ const RightPanel: React.FC<RightPanelProps> = ({ remoteStream, onDeclareCard, la
     const [scannedCards, setScannedCards] = useState<CardData[]>([]);
     const [zoomedCard, setZoomedCard] = useState<CardData | null>(null);
 
+    useEffect(() => {
+        if (inspectedCard) setActiveTab('cards');
+    }, [inspectedCard]);
+
+    const featuredCard = inspectedCard
+        ? {
+              id: inspectedCard.instanceId,
+              name: inspectedCard.name,
+              desc: '',
+              image_url: inspectedCard.imageUrl,
+              image_url_small: inspectedCard.imageUrl,
+          }
+        : scannedCards[0] ?? null;
+
     // Sync: Listen for incoming cards
     useEffect(() => {
         if (lastReceivedCard) {
-            // Check if we already have this card (by scanning ID or similar logic)
-            // But usually we just add it because it's a new event
+            setInspectedCard(null);
             setScannedCards(prev => {
-                // Prevent duplicate if same data comes twice in ms
                 if (prev.length > 0 && prev[0].timestamp === lastReceivedCard.timestamp && prev[0].name === lastReceivedCard.name) {
                     return prev;
                 }
@@ -50,10 +64,11 @@ const RightPanel: React.FC<RightPanelProps> = ({ remoteStream, onDeclareCard, la
             });
             setActiveTab('cards');
         }
-    }, [lastReceivedCard]);
+    }, [lastReceivedCard, setInspectedCard]);
 
     // Handle "Declare" (Clicking a result)
     const handleDeclareCard = async (result: CardSearchResult) => {
+        setInspectedCard(null);
         const tempId = Math.random().toString(36).substr(2, 9);
         const timestamp = Date.now();
 
@@ -227,21 +242,25 @@ const RightPanel: React.FC<RightPanelProps> = ({ remoteStream, onDeclareCard, la
                     <div className="cards-view">
 
                         {/* Latest Card */}
-                        {scannedCards.length > 0 && (
+                        {featuredCard && (
                             <div className="latest-card-section">
-                                <h4 className="section-title">IN GIOCO (ULTIMA)</h4>
+                                <h4 className="section-title">{inspectedCard ? t.play.inView : 'IN GIOCO (ULTIMA)'}</h4>
                                 <div
                                     className="card-display-large"
-                                    onClick={() => setZoomedCard(scannedCards[0])}
+                                    onClick={() => setZoomedCard({
+                                        ...featuredCard,
+                                        timestamp: Date.now(),
+                                    })}
                                 >
-                                    <img src={scannedCards[0].image_url} alt={scannedCards[0].name} />
-                                    <div className="card-name-overlay">{scannedCards[0].name}</div>
+                                    <img src={featuredCard.image_url} alt={featuredCard.name} />
+                                    <div className="card-name-overlay">{featuredCard.name}</div>
                                 </div>
 
-                                {/* INLINE DESCRIPTION */}
-                                <div className="active-card-desc">
-                                    {scannedCards[0].desc}
-                                </div>
+                                {featuredCard.desc ? (
+                                    <div className="active-card-desc">
+                                        {featuredCard.desc}
+                                    </div>
+                                ) : null}
                             </div>
                         )}
 
@@ -251,7 +270,7 @@ const RightPanel: React.FC<RightPanelProps> = ({ remoteStream, onDeclareCard, la
                         <div className="history-section">
                             <h4 className="section-title">STORICO GIOCATE</h4>
                             <div className="history-list">
-                                {scannedCards.slice(1).map(card => (
+                                {(inspectedCard ? scannedCards : scannedCards.slice(1)).map(card => (
                                     <div
                                         key={card.id}
                                         className="history-item"
@@ -264,7 +283,7 @@ const RightPanel: React.FC<RightPanelProps> = ({ remoteStream, onDeclareCard, la
                                         </div>
                                     </div>
                                 ))}
-                                {scannedCards.length <= 1 && (
+                                {(inspectedCard ? scannedCards.length === 0 : scannedCards.length <= 1) && (
                                     <div className="empty-history">Nessuna carta giocata</div>
                                 )}
                             </div>

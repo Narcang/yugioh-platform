@@ -2625,7 +2625,7 @@ input:checked+.slider:before {
   padding: 0;
   border: 0;
   background: none;
-  cursor: grab;
+  cursor: pointer;
   touch-action: none;
   z-index: 5;
 }

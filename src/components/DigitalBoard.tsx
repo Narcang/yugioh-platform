@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocale } from '@/context/LocaleContext';
+import { useLayout } from '@/context/LayoutContext';
 import type { BoardCard, PlayerBoard } from '@/lib/digitalBoard';
 import { nextFieldSlot, usesBattlePosition } from '@/lib/digitalBoard';
 import { onCardImageError } from '@/lib/decks';
@@ -12,6 +13,19 @@ export type FieldPlayOpts = {
     faceDown?: boolean;
     position?: 'attack' | 'defense';
 };
+
+function useInspectCard() {
+    const { setInspectedCard, setIsCardPanelOpen } = useLayout();
+    return (card: BoardCard, hidden?: boolean) => {
+        if (hidden || !card.imageUrl) return;
+        setInspectedCard({
+            instanceId: card.instanceId,
+            name: card.name,
+            imageUrl: card.imageUrl,
+        });
+        setIsCardPanelOpen(true);
+    };
+}
 
 type CardMenu = {
     kind: 'hand' | 'field';
@@ -101,6 +115,7 @@ export const DigitalField: React.FC<DigitalFieldProps> = ({
     onUpdateCard,
 }) => {
     const { t } = useLocale();
+    const inspect = useInspectCard();
     const fieldRef = useRef<HTMLDivElement>(null);
     const [menu, setMenu] = useState<CardMenu | null>(null);
     const battle = usesBattlePosition(gameType);
@@ -115,7 +130,6 @@ export const DigitalField: React.FC<DigitalFieldProps> = ({
     };
 
     const handlePointerDown = (event: React.PointerEvent, card: BoardCard) => {
-        if (readOnly || !onMove) return;
         event.preventDefault();
         event.stopPropagation();
         const pointerId = event.pointerId;
@@ -124,6 +138,19 @@ export const DigitalField: React.FC<DigitalFieldProps> = ({
         const startX = event.clientX;
         const startY = event.clientY;
         let dragging = false;
+        const hidden = Boolean(readOnly && card.faceDown);
+
+        if (readOnly || !onMove) {
+            const up = (ev: PointerEvent) => {
+                target.releasePointerCapture(pointerId);
+                target.removeEventListener('pointerup', up);
+                if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < DRAG_THRESHOLD) {
+                    inspect(card, hidden);
+                }
+            };
+            target.addEventListener('pointerup', up);
+            return;
+        }
 
         const move = (ev: PointerEvent) => {
             const dist = Math.hypot(ev.clientX - startX, ev.clientY - startY);
@@ -144,6 +171,7 @@ export const DigitalField: React.FC<DigitalFieldProps> = ({
                 }
                 return;
             }
+            inspect(card, hidden);
             setMenu({ kind: 'field', card, x: ev.clientX, y: ev.clientY });
         };
         target.addEventListener('pointermove', move);
@@ -258,6 +286,7 @@ export const DigitalHand: React.FC<DigitalHandProps> = ({
     onDropOnField,
 }) => {
     const { t } = useLocale();
+    const inspect = useInspectCard();
     const [menu, setMenu] = useState<CardMenu | null>(null);
     const battle = usesBattlePosition(gameType);
 
@@ -300,6 +329,7 @@ export const DigitalHand: React.FC<DigitalHandProps> = ({
             target.removeEventListener('pointerup', up);
             setDraggingId(null);
             if (!dragging) {
+                inspect(card);
                 setMenu({ kind: 'hand', card, x: ev.clientX, y: ev.clientY });
                 return;
             }
