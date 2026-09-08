@@ -64,7 +64,7 @@ const it: SeoCopy = {
     about: {
         title: 'Chi siamo',
         description:
-            'PlayTCG.Online è un progetto Be2Bit. Heritage di gioco dal 1996 con Artematica: videogiochi, card game e adesso il tavolo TCG online.',
+            'PlayTCG.Online è un progetto Be2Bit. Heritage dal 1996 con Artematica: videogiochi, card game, il fantacalcio ufficiale su Facebook da 500.000 giocatori e adesso il tavolo TCG online.',
         keywords: ['chi siamo PlayTCG', 'Be2Bit', 'Artematica'],
     },
 };
@@ -116,7 +116,7 @@ const en: SeoCopy = {
     about: {
         title: 'About',
         description:
-            'PlayTCG.Online is a Be2Bit project. Gaming heritage since 1996 with Artematica: videogames, card games, and now the online TCG table.',
+            'PlayTCG.Online is a Be2Bit project. Gaming heritage since 1996 with Artematica: videogames, card games, the official Facebook fantasy football with 500,000 players, and now the online TCG table.',
         keywords: ['about PlayTCG', 'Be2Bit', 'Artematica'],
     },
 };
@@ -159,7 +159,7 @@ const es: SeoCopy = {
     about: {
         title: 'Quiénes somos',
         description:
-            'PlayTCG.Online es un proyecto de Be2Bit. Herencia de juego desde 1996 con Artematica: videojuegos, card games y ahora la mesa TCG online.',
+            'PlayTCG.Online es un proyecto de Be2Bit. Herencia de juego desde 1996 con Artematica: videojuegos, card games, el fantasy de fútbol oficial en Facebook con 500.000 jugadores y ahora la mesa TCG online.',
         keywords: ['quiénes somos PlayTCG', 'Be2Bit', 'Artematica'],
     },
 };
@@ -202,7 +202,7 @@ const fr: SeoCopy = {
     about: {
         title: 'À propos',
         description:
-            'PlayTCG.Online est un projet Be2Bit. Héritage jeu depuis 1996 avec Artematica : jeux vidéo, card games, puis la table TCG en ligne.',
+            'PlayTCG.Online est un projet Be2Bit. Héritage jeu depuis 1996 avec Artematica : jeux vidéo, card games, le fantasy football officiel sur Facebook à 500 000 joueurs, puis la table TCG en ligne.',
         keywords: ['à propos PlayTCG', 'Be2Bit', 'Artematica'],
     },
 };
@@ -245,7 +245,7 @@ const de: SeoCopy = {
     about: {
         title: 'Über uns',
         description:
-            'PlayTCG.Online ist ein Be2Bit-Projekt. Gaming-Erbe seit 1996 mit Artematica: Videospiele, Kartenspiele und jetzt der Online-TCG-Tisch.',
+            'PlayTCG.Online ist ein Be2Bit-Projekt. Gaming-Erbe seit 1996 mit Artematica: Videospiele, Kartenspiele, das offizielle Fantasy-Fußball auf Facebook mit 500.000 Spielern und jetzt der Online-TCG-Tisch.',
         keywords: ['über PlayTCG', 'Be2Bit', 'Artematica'],
     },
 };
@@ -288,7 +288,7 @@ const pt: SeoCopy = {
     about: {
         title: 'Sobre',
         description:
-            'A PlayTCG.Online é um projeto Be2Bit. Herança de jogo desde 1996 com a Artematica: videojogos, card games e agora a mesa TCG online.',
+            'A PlayTCG.Online é um projeto Be2Bit. Herança de jogo desde 1996 com a Artematica: videojogos, card games, o fantacalcio oficial no Facebook com 500.000 jogadores e agora a mesa TCG online.',
         keywords: ['sobre PlayTCG', 'Be2Bit', 'Artematica'],
     },
 };

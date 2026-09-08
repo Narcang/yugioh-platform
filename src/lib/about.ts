@@ -1,4 +1,5 @@
 export const BE2BIT_URL = 'https://be2bit.com/';
+export const BE2BIT_WORKS_URL = 'https://be2bit.com/lavori/';
 export const BE2BIT_CONTACTS_URL = 'https://be2bit.com/contatti';
 export const BE2BIT_LEGAL_NAME = 'Be2Bit Ltd';
 export const BE2BIT_VAT = 'MT21599411';

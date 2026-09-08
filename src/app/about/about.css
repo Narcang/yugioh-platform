@@ -203,6 +203,12 @@
   font-size: 0.92rem;
 }
 
+.about-studio-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 18px;
+}
+
 .about-studio a:hover {
   text-decoration: underline;
 }

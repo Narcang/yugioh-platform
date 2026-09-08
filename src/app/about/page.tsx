@@ -8,6 +8,7 @@ import {
   ARTEMATICA_LOGO,
   BE2BIT_LOGO,
   BE2BIT_URL,
+  BE2BIT_WORKS_URL,
 } from '@/lib/about';
 
 function BrandMark({ src, name }: { src: string; name: string }) {
@@ -72,9 +73,14 @@ export default function AboutPage() {
             <BrandMark src={BE2BIT_LOGO} name="Be2Bit" />
           </div>
           <p>{t.be2bitBody}</p>
-          <a href={BE2BIT_URL} target="_blank" rel="noopener noreferrer">
-            {t.discoverBe2bit}
-          </a>
+          <div className="about-studio-links">
+            <a href={BE2BIT_URL} target="_blank" rel="noopener noreferrer">
+              {t.discoverBe2bit}
+            </a>
+            <a href={BE2BIT_WORKS_URL} target="_blank" rel="noopener noreferrer">
+              {t.seeWorks}
+            </a>
+          </div>
         </article>
         <article className="about-studio">
           <p className="about-studio-role">{t.artematicaRole}</p>

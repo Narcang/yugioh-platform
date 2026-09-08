@@ -24,6 +24,7 @@ export interface AboutCopy {
     artematicaRole: string;
     artematicaBody: string;
     discoverBe2bit: string;
+    seeWorks: string;
     discoverHeritage: string;
     closeTitle: string;
     closeBody: string;
@@ -55,7 +56,7 @@ const it: AboutCopy = {
     era2026Body: "Una piattaforma pensata per riportare online l'esperienza del tavolo da gioco.",
     threadTitle: 'Non un salto di genere. Una linea continua.',
     threadBody:
-        'Artematica aveva già sviluppato Heroes Card Battle, un card game multiplayer per Cartoon Network. PlayTCG non è “abbiamo fatto videogiochi e adesso facciamo un sito TCG”: è l’evoluzione di decenni di lavoro su videogiochi e card game, portata sul tavolo di carta che già avete in casa.',
+        'Abbiamo fatto altri giochi di carte, tra cui Heroes Card Battle, il card game multiplayer per Cartoon Network. I numeri più alti, però, li ha avuti il fantacalcio ufficiale su Facebook: all’epoca il più attivo, con 500.000 giocatori registrati. PlayTCG non è “abbiamo fatto videogiochi e adesso facciamo un sito TCG”: è l’evoluzione di decenni di lavoro su community di gioco, portata sul tavolo di carta che già avete in casa.',
     studioKicker: 'Developed by Be2Bit. Gaming heritage since 1996.',
     be2bitRole: 'Il progetto',
     be2bitBody:
@@ -64,6 +65,7 @@ const it: AboutCopy = {
     artematicaBody:
         'La storia di gioco risale ad Artematica, fondata nel 1996: videogiochi, produzioni su licenza e progetti multiplayer sviluppati in quasi tre decenni.',
     discoverBe2bit: 'Scopri Be2Bit',
+    seeWorks: 'I lavori',
     discoverHeritage: 'La nostra heritage',
     closeTitle: 'Il tavolo, da chi il tavolo lo ha già costruito.',
     closeBody: 'Apri una stanza, invita gli amici, inquadra il playmat.',
@@ -89,7 +91,7 @@ const en: AboutCopy = {
     era2026Body: 'A platform built to bring the tabletop experience online.',
     threadTitle: 'Not a side project. A continuation.',
     threadBody:
-        'Artematica had already shipped Heroes Card Battle, a multiplayer card game for Cartoon Network. PlayTCG is not “we made videogames, now we made a TCG site”. It is decades of videogame and card-game work, brought to the paper table you already play on.',
+        'We have shipped other card games, including Heroes Card Battle, a multiplayer title for Cartoon Network. The biggest numbers, though, came from the official fantasy-football game on Facebook: then the most active, with 500,000 registered players. PlayTCG is not “we made videogames, now we made a TCG site”. It is decades of work on play communities, brought to the paper table you already play on.',
     studioKicker: 'Developed by Be2Bit. Gaming heritage since 1996.',
     be2bitRole: 'The studio',
     be2bitBody:
@@ -98,6 +100,7 @@ const en: AboutCopy = {
     artematicaBody:
         'Its gaming heritage goes back to Artematica, founded in 1996: videogames, licensed productions and multiplayer projects across almost three decades.',
     discoverBe2bit: 'Discover Be2Bit',
+    seeWorks: 'Our work',
     discoverHeritage: 'Our gaming heritage',
     closeTitle: 'A table, from people who already built tables.',
     closeBody: 'Open a room, invite friends, frame the playmat.',
@@ -123,7 +126,7 @@ const es: AboutCopy = {
     era2026Body: 'Una plataforma para llevar online la experiencia de la mesa de juego.',
     threadTitle: 'No es un salto. Es una línea.',
     threadBody:
-        'Artematica ya había desarrollado Heroes Card Battle, un card game multijugador para Cartoon Network. PlayTCG no es “hicimos videojuegos y ahora un sitio TCG”: es décadas de videojuegos y card games, llevadas a la mesa de cartas que ya tienes en casa.',
+        'Hemos hecho otros juegos de cartas, entre ellos Heroes Card Battle, un card game multijugador para Cartoon Network. Los números más altos, sin embargo, los tuvo el fantasy de fútbol oficial en Facebook: entonces el más activo, con 500.000 jugadores registrados. PlayTCG no es “hicimos videojuegos y ahora un sitio TCG”: es décadas de trabajo en comunidades de juego, llevadas a la mesa de cartas que ya tienes en casa.',
     studioKicker: 'Developed by Be2Bit. Gaming heritage since 1996.',
     be2bitRole: 'El proyecto',
     be2bitBody:
@@ -132,6 +135,7 @@ const es: AboutCopy = {
     artematicaBody:
         'La historia de juego vuelve a Artematica, fundada en 1996: videojuegos, producciones con licencia y proyectos multijugador durante casi tres décadas.',
     discoverBe2bit: 'Descubre Be2Bit',
+    seeWorks: 'Los trabajos',
     discoverHeritage: 'Nuestra herencia',
     closeTitle: 'Una mesa, de quien ya ha construido mesas.',
     closeBody: 'Abre una sala, invita a tus amigos, encuadra el playmat.',
@@ -157,7 +161,7 @@ const fr: AboutCopy = {
     era2026Body: 'Une plateforme pensée pour ramener l’expérience de table en ligne.',
     threadTitle: 'Pas un détour. Une continuité.',
     threadBody:
-        'Artematica avait déjà développé Heroes Card Battle, un card game multijoueur pour Cartoon Network. PlayTCG n’est pas « on a fait des jeux vidéo, maintenant un site TCG » : c’est des décennies de jeux vidéo et de card games, amenées à la table de cartes que vous avez déjà.',
+        'Nous avons fait d’autres jeux de cartes, dont Heroes Card Battle, un card game multijoueur pour Cartoon Network. Les plus gros chiffres, eux, viennent du fantasy football officiel sur Facebook : alors le plus actif, avec 500 000 joueurs inscrits. PlayTCG n’est pas « on a fait des jeux vidéo, maintenant un site TCG » : c’est des décennies de travail sur des communautés de jeu, amenées à la table de cartes que vous avez déjà.',
     studioKicker: 'Developed by Be2Bit. Gaming heritage since 1996.',
     be2bitRole: 'Le projet',
     be2bitBody:
@@ -166,6 +170,7 @@ const fr: AboutCopy = {
     artematicaBody:
         'L’héritage jeu remonte à Artematica, fondée en 1996 : jeux vidéo, productions sous licence et projets multijoueurs pendant près de trois décennies.',
     discoverBe2bit: 'Découvrir Be2Bit',
+    seeWorks: 'Les travaux',
     discoverHeritage: 'Notre héritage',
     closeTitle: 'Une table, par ceux qui en ont déjà construit.',
     closeBody: 'Ouvre une salle, invite tes amis, cadre le playmat.',
@@ -191,7 +196,7 @@ const de: AboutCopy = {
     era2026Body: 'Eine Plattform, die das Tischgefühl online zurückbringt.',
     threadTitle: 'Kein Seitensprung. Eine Linie.',
     threadBody:
-        'Artematica hatte bereits Heroes Card Battle entwickelt, ein Multiplayer-Kartenspiel für Cartoon Network. PlayTCG ist nicht „wir haben Videospiele gemacht, jetzt eine TCG-Seite“: Es ist Jahrzehnte Arbeit an Videospielen und Kartenspielen, auf den Papiertisch, den ihr schon habt.',
+        'Wir haben weitere Kartenspiele gemacht, darunter Heroes Card Battle, ein Multiplayer-Kartenspiel für Cartoon Network. Die größten Zahlen aber hatte das offizielle Fantasy-Fußball auf Facebook: damals das aktivste, mit 500.000 registrierten Spielern. PlayTCG ist nicht „wir haben Videospiele gemacht, jetzt eine TCG-Seite“: Es sind Jahrzehnte Arbeit an Spiel-Communitys, auf den Papiertisch, den ihr schon habt.',
     studioKicker: 'Developed by Be2Bit. Gaming heritage since 1996.',
     be2bitRole: 'Das Projekt',
     be2bitBody:
@@ -200,6 +205,7 @@ const de: AboutCopy = {
     artematicaBody:
         'Die Spielgeschichte reicht zu Artematica, 1996 gegründet: Videospiele, Lizenzproduktionen und Multiplayer-Projekte über fast drei Jahrzehnte.',
     discoverBe2bit: 'Be2Bit entdecken',
+    seeWorks: 'Die Arbeiten',
     discoverHeritage: 'Unser Gaming-Erbe',
     closeTitle: 'Ein Tisch, von Leuten, die schon Tische gebaut haben.',
     closeBody: 'Raum öffnen, Freunde einladen, Playmat ins Bild.',
@@ -225,7 +231,7 @@ const pt: AboutCopy = {
     era2026Body: 'Uma plataforma para trazer a experiência da mesa para o online.',
     threadTitle: 'Não é um desvio. É continuação.',
     threadBody:
-        'A Artematica já tinha desenvolvido Heroes Card Battle, um card game multiplayer para o Cartoon Network. A PlayTCG não é “fizemos videojogos e agora um site de TCG”: são décadas de videojogos e card games, levadas à mesa de cartas que já têm em casa.',
+        'Fizemos outros jogos de cartas, entre eles Heroes Card Battle, um card game multiplayer para o Cartoon Network. Os maiores números, porém, vieram do fantacalcio oficial no Facebook: na época o mais ativo, com 500.000 jogadores cadastrados. A PlayTCG não é “fizemos videojogos e agora um site de TCG”: são décadas de trabalho em comunidades de jogo, levadas à mesa de cartas que já têm em casa.',
     studioKicker: 'Developed by Be2Bit. Gaming heritage since 1996.',
     be2bitRole: 'O projeto',
     be2bitBody:
@@ -234,6 +240,7 @@ const pt: AboutCopy = {
     artematicaBody:
         'A história de jogo volta à Artematica, fundada em 1996: videojogos, produções licenciadas e projetos multiplayer ao longo de quase três décadas.',
     discoverBe2bit: 'Descobrir a Be2Bit',
+    seeWorks: 'Os trabalhos',
     discoverHeritage: 'A nossa herança',
     closeTitle: 'Uma mesa, de quem já construiu mesas.',
     closeBody: 'Abre uma sala, convida os amigos, enquadra o playmat.',
@@ -246,37 +253,37 @@ export const HOME_STORY: Record<Locale, HomeStoryCopy> = {
     it: {
         line: 'Fatta per i giocatori. Trenta anni di sviluppo alle spalle.',
         byline:
-            'PlayTCG.Online è sviluppata da Be2Bit, e continua l’heritage di gioco di Artematica dal 1996.',
+            'PlayTCG.Online è sviluppata da Be2Bit, e continua l’heritage di gioco di Artematica dal 1996 — card game, piattaforme e il fantacalcio ufficiale su Facebook da 500.000 giocatori.',
         link: 'La nostra storia',
     },
     en: {
         line: 'Built for players. Backed by 30 years of game development.',
         byline:
-            'PlayTCG.Online is developed by Be2Bit, continuing the gaming heritage of Artematica since 1996.',
+            'PlayTCG.Online is developed by Be2Bit, continuing the gaming heritage of Artematica since 1996 — card games, platforms, and the official Facebook fantasy football with 500,000 players.',
         link: 'Discover our story',
     },
     es: {
         line: 'Hecha para jugadores. Treinta años de desarrollo detrás.',
         byline:
-            'PlayTCG.Online la desarrolla Be2Bit, continuando la herencia de Artematica desde 1996.',
+            'PlayTCG.Online la desarrolla Be2Bit, continuando la herencia de Artematica desde 1996: card games, plataformas y el fantasy de fútbol oficial en Facebook con 500.000 jugadores.',
         link: 'Nuestra historia',
     },
     fr: {
         line: 'Faite pour les joueurs. Trente ans de développement derrière.',
         byline:
-            'PlayTCG.Online est développée par Be2Bit, dans la lignée d’Artematica depuis 1996.',
+            'PlayTCG.Online est développée par Be2Bit, dans la lignée d’Artematica depuis 1996 : card games, plateformes, et le fantasy football officiel sur Facebook à 500 000 joueurs.',
         link: 'Notre histoire',
     },
     de: {
         line: 'Für Spieler gebaut. Dreißig Jahre Spieleentwicklung dahinter.',
         byline:
-            'PlayTCG.Online wird von Be2Bit entwickelt und führt das Gaming-Erbe von Artematica seit 1996 fort.',
+            'PlayTCG.Online wird von Be2Bit entwickelt und führt das Gaming-Erbe von Artematica seit 1996 fort — Kartenspiele, Plattformen und das offizielle Fantasy-Fußball auf Facebook mit 500.000 Spielern.',
         link: 'Unsere Geschichte',
     },
     pt: {
         line: 'Feita para jogadores. Trinta anos de desenvolvimento por trás.',
         byline:
-            'A PlayTCG.Online é desenvolvida pela Be2Bit, na herança da Artematica desde 1996.',
+            'A PlayTCG.Online é desenvolvida pela Be2Bit, na herança da Artematica desde 1996: card games, plataformas e o fantacalcio oficial no Facebook com 500.000 jogadores.',
         link: 'A nossa história',
     },
 };
