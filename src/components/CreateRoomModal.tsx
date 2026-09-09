@@ -9,8 +9,6 @@ import {
     getDefaultPlayerCount,
     getAllowedMatchModes,
     getDefaultMatchMode,
-    getMatchModeLabel,
-    getPlayerCountLabel,
     getBaseLifePoints,
     GAME_FORMATS,
     isSkillLevel,
@@ -31,6 +29,7 @@ export interface RoomData {
     format: string;
     description: string;
     isPublic: boolean;
+    password: string | null;
     language: string;
     maxPlayers: number;
     matchMode: MatchMode;
@@ -45,6 +44,7 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClose, onCr
     const [format, setFormat] = useState(GAME_FORMATS['Yugioh'][0]);
     const [language, setLanguage] = useState('ITA');
     const [isPublic, setIsPublic] = useState(true);
+    const [password, setPassword] = useState('');
     const [description, setDescription] = useState('');
     const [maxPlayers, setMaxPlayers] = useState(() => getDefaultPlayerCount('Yugioh', GAME_FORMATS['Yugioh'][0]));
     const [matchMode, setMatchMode] = useState<MatchMode>('ffa');
@@ -56,6 +56,15 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClose, onCr
     const allowedPlayerCounts = getAllowedPlayerCounts(gameType, format);
     const allowedMatchModes = getAllowedMatchModes(maxPlayers);
     const baseLife = getBaseLifePoints(gameType, format);
+
+    const modeLabel = (mode: MatchMode, players: number) => {
+        if (players === 2) return t.lobby.mode1v1;
+        if (mode === 'teams') return t.lobby.modeTeams;
+        return t.lobby.modeFfa;
+    };
+
+    const playerCountLabel = (count: number) =>
+        count === 2 ? t.lobby.players2 : t.lobby.playersN.replace('{n}', String(count));
 
     // Update format when game type changes
     useEffect(() => {
@@ -76,14 +85,19 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClose, onCr
 
     if (!isOpen) return null;
 
+    const passwordOk = isPublic || password.trim().length >= 4;
+    const canSubmit = Boolean(name.trim()) && passwordOk && !(playMode === 'digital' && !deckId);
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        if (!canSubmit) return;
         onCreate({
-            name,
+            name: name.trim(),
             gameType,
             format,
             isPublic,
-            description,
+            password: isPublic ? null : password.trim(),
+            description: description.trim(),
             language,
             maxPlayers,
             matchMode,
@@ -92,26 +106,27 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClose, onCr
             skillLevel,
         });
         onClose();
-        // Reset form
         setName('');
         setDescription('');
+        setPassword('');
+        setIsPublic(true);
     };
 
     return (
         <div className="modal-overlay">
             <div className="create-room-modal">
                 <div className="modal-header">
-                    <h2>Crea nuova partita</h2>
+                    <h2>{t.lobby.createTitle}</h2>
                     <button className="close-btn" onClick={onClose}>&times;</button>
                 </div>
 
                 <form onSubmit={handleSubmit} className="modal-form">
                     <div className="form-section">
-                        <label className="input-label">Nome Lobby</label>
+                        <label className="input-label">{t.lobby.createName}</label>
                         <input
                             type="text"
                             className="text-input"
-                            placeholder="Inserisci il nome della stanza..."
+                            placeholder={t.lobby.createNamePh}
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             required
@@ -120,7 +135,7 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClose, onCr
 
                     <div className="form-row" style={{ display: 'flex', gap: '12px' }}>
                         <div className="form-section" style={{ flex: 1 }}>
-                            <label className="input-label">Gioco</label>
+                            <label className="input-label">{t.lobby.createGame}</label>
                             <select
                                 className="select-input"
                                 value={gameType}
@@ -132,7 +147,7 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClose, onCr
                             </select>
                         </div>
                         <div className="form-section" style={{ flex: 1 }}>
-                            <label className="input-label">Lingua</label>
+                            <label className="input-label">{t.lobby.createLanguage}</label>
                             <select
                                 className="select-input"
                                 value={language}
@@ -143,12 +158,13 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClose, onCr
                                 <option value="ESP">Español</option>
                                 <option value="DEU">Deutsch</option>
                                 <option value="FRA">Français</option>
+                                <option value="POR">Português</option>
                             </select>
                         </div>
                     </div>
 
                     <div className="form-section">
-                        <label className="input-label">Formato</label>
+                        <label className="input-label">{t.lobby.createFormat}</label>
                         <select
                             className="select-input"
                             value={format}
@@ -162,7 +178,7 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClose, onCr
 
                     <div className="form-row" style={{ display: 'flex', gap: '12px' }}>
                         <div className="form-section" style={{ flex: 1 }}>
-                            <label className="input-label">Giocatori</label>
+                            <label className="input-label">{t.lobby.createPlayers}</label>
                             <select
                                 className="select-input"
                                 value={maxPlayers}
@@ -170,12 +186,12 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClose, onCr
                                 disabled={allowedPlayerCounts.length === 1}
                             >
                                 {allowedPlayerCounts.map(count => (
-                                    <option key={count} value={count}>{getPlayerCountLabel(count)}</option>
+                                    <option key={count} value={count}>{playerCountLabel(count)}</option>
                                 ))}
                             </select>
                         </div>
                         <div className="form-section" style={{ flex: 1 }}>
-                            <label className="input-label">Modalità</label>
+                            <label className="input-label">{t.lobby.createMode}</label>
                             <select
                                 className="select-input"
                                 value={matchMode}
@@ -183,7 +199,7 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClose, onCr
                                 disabled={allowedMatchModes.length === 1}
                             >
                                 {allowedMatchModes.map(mode => (
-                                    <option key={mode} value={mode}>{getMatchModeLabel(mode, maxPlayers)}</option>
+                                    <option key={mode} value={mode}>{modeLabel(mode, maxPlayers)}</option>
                                 ))}
                             </select>
                         </div>
@@ -191,9 +207,9 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClose, onCr
 
                     <p className="helper-text" style={{ marginTop: '-8px' }}>
                         {allowedPlayerCounts.length === 1
-                            ? `${gameType} ${format} si gioca solo in 1 contro 1.`
-                            : `${maxPlayers} giocatori, ${getMatchModeLabel(matchMode, maxPlayers).toLowerCase()}.`}
-                        {' '}Vita iniziale: {baseLife} per giocatore.
+                            ? t.lobby.createOnly1v1.replace('{game}', gameType).replace('{format}', format)
+                            : t.lobby.createSummary.replace('{n}', String(maxPlayers)).replace('{mode}', modeLabel(matchMode, maxPlayers).toLowerCase())}
+                        {' '}{t.lobby.createLife.replace('{lp}', String(baseLife))}
                     </p>
 
                     <div className="form-section">
@@ -226,7 +242,7 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClose, onCr
 
                     <div className="form-section checkbox-section">
                         <label className="toggle-switch-container">
-                            <span className="input-label" style={{ marginBottom: 0 }}>Partita Pubblica</span>
+                            <span className="input-label" style={{ marginBottom: 0 }}>{t.lobby.publicMatch}</span>
                             <label className="toggle-switch">
                                 <input
                                     type="checkbox"
@@ -237,15 +253,32 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClose, onCr
                             </label>
                         </label>
                         <p className="helper-text">
-                            {isPublic ? 'Chiunque può unirsi alla partita.' : 'La partita sarà accessibile solo tramite invito.'}
+                            {isPublic ? t.lobby.publicHint : t.lobby.privateHint}
                         </p>
                     </div>
 
+                    {!isPublic && (
+                        <div className="form-section">
+                            <label className="input-label">{t.lobby.roomPassword}</label>
+                            <input
+                                type="password"
+                                className="text-input"
+                                placeholder={t.lobby.roomPasswordPh}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                autoComplete="new-password"
+                                minLength={4}
+                                required
+                            />
+                            <p className="helper-text">{t.lobby.roomPasswordNeed}</p>
+                        </div>
+                    )}
+
                     <div className="form-section">
-                        <label className="input-label">Descrizione (Facoltativa)</label>
+                        <label className="input-label">{t.lobby.roomDescription}</label>
                         <textarea
                             className="text-input textarea"
-                            placeholder="Aggiungi dettagli..."
+                            placeholder={t.lobby.roomDescriptionPh}
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             rows={3}
@@ -253,13 +286,13 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClose, onCr
                     </div>
 
                     <div className="modal-footer">
-                        <button type="button" className="btn-secondary" onClick={onClose}>Annulla</button>
+                        <button type="button" className="btn-secondary" onClick={onClose}>{t.lobby.cancel}</button>
                         <button
                             type="submit"
                             className="btn-primary"
-                            disabled={playMode === 'digital' && !deckId}
+                            disabled={!canSubmit}
                         >
-                            Crea Lobby
+                            {t.lobby.createSubmit}
                         </button>
                     </div>
                 </form>

@@ -4,6 +4,7 @@ import Sidebar from '@/components/Sidebar';
 import RightPanel from '@/components/RightPanel';
 import GameArea from '@/components/GameArea';
 import DiceModal from '@/components/DiceModal';
+import TableGuideModal from '@/components/TableGuideModal';
 import TurnNotification from '@/components/TurnNotification';
 import PhaseNotification from '@/components/PhaseNotification';
 import { DigitalHand, type FieldPlayOpts } from '@/components/DigitalBoard';
@@ -41,6 +42,8 @@ const GameRoom: React.FC = () => {
         sendPhase,
         sendBoard,
         sendTokens,
+        sendRoll,
+        latestReceivedRoll,
         latestReceivedPhase,
         myId,
         myTeam,
@@ -220,7 +223,12 @@ const GameRoom: React.FC = () => {
                 />
             )}
 
-            <DiceModal />
+            <DiceModal
+                selfName={username}
+                sendRoll={sendRoll}
+                latestReceivedRoll={latestReceivedRoll}
+            />
+            <TableGuideModal />
             <TokenPalette onPlace={placeToken} />
             <TurnNotification />
             <PhaseNotification />

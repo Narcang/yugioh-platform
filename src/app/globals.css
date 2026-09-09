@@ -1006,6 +1006,59 @@ input:checked+.slider:before {
   font-size: 64px;
 }
 
+.dice-roll-who {
+  margin: 0;
+  color: #9CA3AF;
+  font-size: 13px;
+  text-align: center;
+}
+
+.table-guide-modal {
+  width: 420px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.guide-header {
+  padding: 20px 20px 8px;
+}
+
+.guide-header .view-title {
+  margin: 0 0 6px;
+}
+
+.guide-lead {
+  margin: 0;
+  color: #9CA3AF;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.guide-list {
+  list-style: none;
+  padding: 8px 0;
+  margin: 0;
+}
+
+.guide-item {
+  padding: 10px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.guide-item-title {
+  font-weight: 700;
+  color: #fff;
+  font-size: 13px;
+}
+
+.guide-item-body {
+  color: #9CA3AF;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .item-icon {
   font-size: 18px;
   width: 24px;

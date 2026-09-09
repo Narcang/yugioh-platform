@@ -19,7 +19,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sendPhase, passTurn, isMyTurn, active
     const { isMicMuted, isVideoEnabled, toggleMic, toggleVideo, facingMode, hasMultipleCameras, flipCamera } = useMedia();
     const { user, profile } = useAuth();
     const { t } = useLocale();
-    const { layoutMode, spotlightTarget, setLayoutMode, setSpotlightTarget, isSidebarCollapsed, setIsSidebarCollapsed, setIsSettingsOpen, setIsDiceModalOpen, isTokenPaletteOpen, setIsTokenPaletteOpen, isCardPanelOpen, setIsCardPanelOpen, currentRoomId, currentPhase, setCurrentPhase, gameType } = useLayout();
+    const { layoutMode, spotlightTarget, setLayoutMode, setSpotlightTarget, isSidebarCollapsed, setIsSidebarCollapsed, setIsSettingsOpen, setIsDiceModalOpen, setIsTableGuideOpen, isTokenPaletteOpen, setIsTokenPaletteOpen, isCardPanelOpen, setIsCardPanelOpen, currentRoomId, currentPhase, setCurrentPhase, gameType } = useLayout();
 
     const GAME_PHASES: Record<string, string[]> = {
         'Yugioh': ['Draw Phase', 'Standby Phase', 'Main Phase 1', 'Battle Phase', 'Main Phase 2', 'End Phase'],
@@ -238,11 +238,17 @@ const Sidebar: React.FC<SidebarProps> = ({ sendPhase, passTurn, isMyTurn, active
                 >
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="8" /><path d="M12 8v8M8 12h8" /></svg>
                 </button>
+                <button
+                    className="icon-btn mobile-only"
+                    title={t.play.guide}
+                    onClick={() => setIsTableGuideOpen(true)}
+                >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="4" /><line x1="4.93" y1="4.93" x2="9.17" y2="9.17" /><line x1="14.83" y1="14.83" x2="19.07" y2="19.07" /><line x1="14.83" y1="9.17" x2="19.07" y2="4.93" /><line x1="4.93" y1="19.07" x2="9.17" y2="14.83" /></svg>
+                </button>
             </div>
 
             <div className="divider" style={{ width: '40%', height: '1px', background: 'var(--border-color)', margin: '10px auto' }}></div>
 
-            {/* 11. Tokens (replaces unused shortcuts), 12. FAQ, 13. Intro */}
             <div className="sidebar-group help-group">
                 <button
                     className={`icon-btn ${isTokenPaletteOpen ? 'active' : ''}`}
@@ -251,11 +257,12 @@ const Sidebar: React.FC<SidebarProps> = ({ sendPhase, passTurn, isMyTurn, active
                 >
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="8" /><path d="M12 8v8M8 12h8" /></svg>
                 </button>
-                <button className="icon-btn" title="FAQ">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
-                </button>
-                <button className="icon-btn" title="Visualizza Introduzione">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="4" /><line x1="4.93" y1="4.93" x2="9.17" y2="9.17" /><line x1="14.83" y1="14.83" x2="19.07" y2="19.07" /><line x1="14.83" y1="9.17" x2="19.07" y2="4.93" /><line x1="14.83" y1="9.17" x2="18.36" y2="5.64" /><line x1="4.93" y1="19.07" x2="9.17" y2="14.83" /></svg>
+                <button
+                    className="icon-btn"
+                    title={t.play.guide}
+                    onClick={() => setIsTableGuideOpen(true)}
+                >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="4" /><line x1="4.93" y1="4.93" x2="9.17" y2="9.17" /><line x1="14.83" y1="14.83" x2="19.07" y2="19.07" /><line x1="14.83" y1="9.17" x2="19.07" y2="4.93" /><line x1="4.93" y1="19.07" x2="9.17" y2="14.83" /></svg>
                 </button>
             </div>
 

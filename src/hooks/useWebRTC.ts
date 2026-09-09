@@ -5,6 +5,7 @@ import { RealtimeChannel } from '@supabase/supabase-js';
 import { MatchMode, PlayMode, TeamId, autoTeamFor, buildTurnOrder } from '@/lib/gameConfig';
 import type { BoardCard, PublicBoardView } from '@/lib/digitalBoard';
 import type { TableToken } from '@/lib/tokens';
+import type { DiceRoll } from '@/lib/dice';
 
 const ICE_SERVERS = {
     iceServers: [
@@ -110,6 +111,7 @@ export const useWebRTC = (
 
     const [latestReceivedCard, setLatestReceivedCard] = useState<any | null>(null);
     const [latestReceivedPhase, setLatestReceivedPhase] = useState<string | null>(null);
+    const [latestReceivedRoll, setLatestReceivedRoll] = useState<DiceRoll | null>(null);
 
     /** Player whose turn it is, kept in sync across the mesh */
     const [activePlayerId, setActivePlayerId] = useState<string | null>(null);
@@ -228,6 +230,10 @@ export const useWebRTC = (
                     }
                     case 'tokens-update': {
                         upsertPeer(peerId, { tokens: Array.isArray(parsed.data) ? parsed.data : [] });
+                        break;
+                    }
+                    case 'dice-roll': {
+                        setLatestReceivedRoll(parsed.data as DiceRoll);
                         break;
                     }
                 }
@@ -482,6 +488,10 @@ export const useWebRTC = (
                 if (payload.from === myId) return;
                 upsertPeer(payload.from, { tokens: Array.isArray(payload.data) ? payload.data : [] });
             })
+            .on('broadcast', { event: 'dice-roll' }, ({ payload }) => {
+                if (payload.from === myId) return;
+                setLatestReceivedRoll(payload.data as DiceRoll);
+            })
             .subscribe(async (status) => {
                 addLog(`Supabase: ${status}`);
                 if (status === 'SUBSCRIBED') {
@@ -571,6 +581,15 @@ export const useWebRTC = (
     const sendPhase = useCallback((phase: string) => broadcast('phase-update', phase), [broadcast]);
     const sendBoard = useCallback((board: PublicBoardView) => broadcast('board-update', board), [broadcast]);
     const sendTokens = useCallback((tokens: TableToken[]) => broadcast('tokens-update', tokens), [broadcast]);
+    const sendRoll = useCallback((roll: DiceRoll) => {
+        broadcast('dice-roll', roll);
+        // One-shot event: also send on Realtime so a closed data channel cannot drop it.
+        channel.current?.send({
+            type: 'broadcast',
+            event: 'dice-roll',
+            payload: { from: clientId.current, data: roll },
+        }).catch((e) => console.error('Supabase send error (dice-roll):', e));
+    }, [broadcast]);
 
     const sendPing = useCallback(() => broadcast('ping', Date.now()), [broadcast]);
 
@@ -660,6 +679,8 @@ export const useWebRTC = (
         sendPhase,
         sendBoard,
         sendTokens,
+        sendRoll,
+        latestReceivedRoll,
         latestReceivedPhase,
         myId,
         myTeam,

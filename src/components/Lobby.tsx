@@ -9,7 +9,7 @@ import SiteNav from './SiteNav';
 
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
-import { getFirstPhase, getMatchModeLabel, isSkillLevel, MatchMode, PlayMode, skillLabelKey, SkillLevel } from '@/lib/gameConfig';
+import { getFirstPhase, isSkillLevel, MatchMode, PlayMode, skillLabelKey, SkillLevel } from '@/lib/gameConfig';
 import { useLocale } from '@/context/LocaleContext';
 
 const Lobby: React.FC = () => {
@@ -63,6 +63,8 @@ const Lobby: React.FC = () => {
                     id: r.id,
                     // Use username from profilesMap if found, else fallback to room.host_name
                     host: profilesMap[r.host_id] || r.host_name,
+                    name: r.settings?.name || '',
+                    description: r.settings?.description || '',
                     format: r.format,
                     language: r.language,
                     currentPlayers: r.current_players,
@@ -175,10 +177,12 @@ const Lobby: React.FC = () => {
                 is_public: data.isPublic,
                 current_players: 1,
                 max_players: data.maxPlayers,
-                password: data.isPublic ? null : '123', // TODO: Add password field to modal
+                password: data.isPublic ? null : data.password,
                 settings: {
                     gameType: data.gameType,
                     matchMode: data.matchMode,
+                    name: data.name,
+                    ...(data.description ? { description: data.description } : {}),
                     ...(data.skillLevel ? { skillLevel: data.skillLevel } : {}),
                 }
             };
@@ -384,20 +388,30 @@ const Lobby: React.FC = () => {
                                 const isFull = room.currentPlayers >= room.maxPlayers;
                                 return (
                                     <div key={room.id} className={`room-item ${isFull ? 'full' : ''}`}>
-                                        <div style={{ flex: 2.5, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                            <span style={{ fontWeight: 600 }}>{room.host}</span>
-                                            {room.isPublic ? (
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" style={{ opacity: 0.8 }}>
-                                                    <title>{t.lobby.public}</title>
-                                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                                                    <path d="M7 11V7a5 5 0 0 1 10 0" />
-                                                </svg>
-                                            ) : (
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" style={{ opacity: 0.8 }}>
-                                                    <title>{t.lobby.private}</title>
-                                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                                                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                                                </svg>
+                                        <div style={{ flex: 2.5, display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                <span style={{ fontWeight: 600 }}>{room.name || room.host}</span>
+                                                {room.isPublic ? (
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" style={{ opacity: 0.8, flexShrink: 0 }}>
+                                                        <title>{t.lobby.public}</title>
+                                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                                        <path d="M7 11V7a5 5 0 0 1 10 0" />
+                                                    </svg>
+                                                ) : (
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" style={{ opacity: 0.8, flexShrink: 0 }}>
+                                                        <title>{t.lobby.private}</title>
+                                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                                    </svg>
+                                                )}
+                                            </div>
+                                            {room.name && (
+                                                <span style={{ color: '#9CA3AF', fontSize: '12px' }}>{room.host}</span>
+                                            )}
+                                            {room.description && (
+                                                <span style={{ color: '#9CA3AF', fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    {room.description}
+                                                </span>
                                             )}
                                         </div>
                                         <div style={{ flex: 1.5, display: 'flex', flexDirection: 'column' }}>
@@ -410,7 +424,7 @@ const Lobby: React.FC = () => {
                                             )}
                                             {room.maxPlayers > 2 && (
                                                 <span style={{ color: '#F0C75E', fontSize: '11px' }}>
-                                                    {getMatchModeLabel(room.matchMode, room.maxPlayers)}
+                                                    {room.matchMode === 'teams' ? t.lobby.modeTeams : t.lobby.modeFfa}
                                                 </span>
                                             )}
                                         </div>
