@@ -5,6 +5,8 @@ import { useLocale } from '@/context/LocaleContext';
 import { useLayout } from '@/context/LayoutContext';
 import type { BoardCard, BoardZone, OpenPile, PlayerBoard } from '@/lib/digitalBoard';
 import { nextFieldSlot, usesBattlePosition } from '@/lib/digitalBoard';
+import type { TableToken, TokenDrop } from '@/lib/tokens';
+import { CardTokens } from '@/components/Tokens';
 import { onCardImageError } from '@/lib/decks';
 
 const DRAG_THRESHOLD = 10;
@@ -229,6 +231,9 @@ interface DigitalFieldProps {
     onToExile?: (instanceId: string) => void;
     onToExtra?: (instanceId: string) => void;
     onUpdateCard?: (instanceId: string, patch: FieldPlayOpts) => void;
+    tokens?: TableToken[];
+    onMoveToken?: (id: string, drop: NonNullable<TokenDrop>) => void;
+    onChangeToken?: (id: string, patch: { count?: number } | 'remove') => void;
 }
 
 export const DigitalField: React.FC<DigitalFieldProps> = ({
@@ -244,6 +249,9 @@ export const DigitalField: React.FC<DigitalFieldProps> = ({
     onToExile,
     onToExtra,
     onUpdateCard,
+    tokens = [],
+    onMoveToken,
+    onChangeToken,
 }) => {
     const { t } = useLocale();
     const inspect = useInspectCard();
@@ -351,10 +359,18 @@ export const DigitalField: React.FC<DigitalFieldProps> = ({
                         type="button"
                         className={`digital-field-card${defense ? ' is-defense' : ''}${card.faceDown ? ' is-facedown' : ''}`}
                         style={{ left: `${(card.x ?? 0.5) * 100}%`, top: `${(card.y ?? 0.5) * 100}%` }}
+                        data-digital-card={card.instanceId}
                         onPointerDown={(e) => handlePointerDown(e, card)}
                         aria-label={hideIdentity ? t.play.cover : card.name}
                     >
                         <CardFace card={card} hideIdentity={hideIdentity} ownerPeek={!readOnly && card.faceDown} />
+                        <CardTokens
+                            tokens={tokens.filter((item) => item.attachedTo === card.instanceId)}
+                            gameType={gameType}
+                            readOnly={readOnly}
+                            onMove={onMoveToken}
+                            onChange={onChangeToken}
+                        />
                     </button>
                 );
             })}

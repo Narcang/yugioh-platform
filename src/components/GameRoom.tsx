@@ -7,6 +7,7 @@ import DiceModal from '@/components/DiceModal';
 import TurnNotification from '@/components/TurnNotification';
 import PhaseNotification from '@/components/PhaseNotification';
 import { DigitalHand, type FieldPlayOpts } from '@/components/DigitalBoard';
+import { TokenPalette } from '@/components/Tokens';
 import { useLayout } from '@/context/LayoutContext';
 import { useMedia } from '@/context/MediaContext';
 import { useAuth } from '@/context/AuthContext';
@@ -22,6 +23,7 @@ import {
     type BoardZone,
     type PlayerBoard,
 } from '@/lib/digitalBoard';
+import { applyTokenDrop, tokensLeavingCard, type TableToken, type TokenDrop } from '@/lib/tokens';
 
 const GameRoom: React.FC = () => {
     const { currentRoomId, matchMode, playMode, selectedDeckId, gameType } = useLayout();
@@ -38,6 +40,7 @@ const GameRoom: React.FC = () => {
         sendLP,
         sendPhase,
         sendBoard,
+        sendTokens,
         latestReceivedPhase,
         myId,
         myTeam,
@@ -56,6 +59,11 @@ const GameRoom: React.FC = () => {
     const { setCurrentPhase, applyTurn, setCurrentTurn, currentTurn, isTurnChanging } = useLayout();
     const [board, setBoard] = useState<PlayerBoard | null>(null);
     const [draggingId, setDraggingId] = useState<string | null>(null);
+    const [tokens, setTokens] = useState<TableToken[]>([]);
+
+    useEffect(() => {
+        setTokens([]);
+    }, [currentRoomId]);
 
     useEffect(() => {
         if (playMode !== 'digital' || !selectedDeckId) {
@@ -76,6 +84,10 @@ const GameRoom: React.FC = () => {
         if (playMode !== 'digital' || !board) return;
         sendBoard(toPublicBoard(board));
     }, [board, playMode, sendBoard]);
+
+    useEffect(() => {
+        sendTokens(tokens);
+    }, [tokens, sendTokens]);
 
     useEffect(() => {
         if (latestReceivedPhase && currentTurn === 'opponent' && !isTurnChanging) {
@@ -117,6 +129,9 @@ const GameRoom: React.FC = () => {
 
     const relocate = (instanceId: string, zone: BoardZone, opts?: FieldPlayOpts) => {
         setBoard((prev) => (prev ? moveCard(prev, instanceId, zone, opts) : prev));
+        if (zone !== 'field') {
+            setTokens((prev) => tokensLeavingCard(prev, instanceId));
+        }
     };
 
     const updateFieldCard = (instanceId: string, patch: FieldPlayOpts) => {
@@ -128,6 +143,25 @@ const GameRoom: React.FC = () => {
                     card.instanceId === instanceId ? { ...card, ...patch } : card
                 ),
             };
+        });
+    };
+
+    const placeToken = (kind: string, drop: NonNullable<TokenDrop>) => {
+        setTokens((prev) => applyTokenDrop(prev, null, kind, drop, gameType));
+    };
+
+    const moveToken = (id: string, drop: NonNullable<TokenDrop>) => {
+        setTokens((prev) => {
+            const current = prev.find((item) => item.id === id);
+            if (!current) return prev;
+            return applyTokenDrop(prev, id, current.kind, drop, gameType);
+        });
+    };
+
+    const changeToken = (id: string, patch: { count?: number } | 'remove') => {
+        setTokens((prev) => {
+            if (patch === 'remove') return prev.filter((item) => item.id !== id);
+            return prev.map((item) => (item.id === id ? { ...item, ...patch } : item));
         });
     };
 
@@ -158,6 +192,9 @@ const GameRoom: React.FC = () => {
                 onToExile={(id) => relocate(id, 'exile')}
                 onToExtra={(id) => relocate(id, 'extra')}
                 onUpdateFieldCard={updateFieldCard}
+                tokens={tokens}
+                onMoveToken={moveToken}
+                onChangeToken={changeToken}
             />
             <RightPanel
                 remoteStream={remoteStream}
@@ -184,6 +221,7 @@ const GameRoom: React.FC = () => {
             )}
 
             <DiceModal />
+            <TokenPalette onPlace={placeToken} />
             <TurnNotification />
             <PhaseNotification />
         </div>

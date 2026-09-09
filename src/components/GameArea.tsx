@@ -7,6 +7,8 @@ import { DigitalField, type FieldPlayOpts } from './DigitalBoard';
 import type { RemotePeer } from '@/hooks/useWebRTC';
 import type { TeamId } from '@/lib/gameConfig';
 import type { BoardCard } from '@/lib/digitalBoard';
+import type { TableToken, TokenDrop } from '@/lib/tokens';
+import { TokenOverlay } from './Tokens';
 
 interface GameAreaProps {
     peers: RemotePeer[];
@@ -25,6 +27,9 @@ interface GameAreaProps {
     onToExile?: (instanceId: string) => void;
     onToExtra?: (instanceId: string) => void;
     onUpdateFieldCard?: (instanceId: string, patch: FieldPlayOpts) => void;
+    tokens?: TableToken[];
+    onMoveToken?: (id: string, drop: NonNullable<TokenDrop>) => void;
+    onChangeToken?: (id: string, patch: { count?: number } | 'remove') => void;
 }
 
 /** Renders one remote peer's video feed */
@@ -33,7 +38,8 @@ const RemoteSlot: React.FC<{
     baseLifePoints: number;
     fitMode: 'cover' | 'contain';
     teamLabel?: string;
-}> = ({ peer, baseLifePoints, fitMode, teamLabel }) => {
+    gameType?: string;
+}> = ({ peer, baseLifePoints, fitMode, teamLabel, gameType = '' }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
 
     useEffect(() => {
@@ -77,8 +83,12 @@ const RemoteSlot: React.FC<{
                     exile={peer.exile}
                     dropId={peer.id}
                     readOnly
+                    gameType={gameType}
+                    tokens={peer.tokens}
                 />
             )}
+
+            <TokenOverlay tokens={peer.tokens ?? []} gameType={gameType} readOnly />
 
             <PlayerOverlay
                 name={peer.username}
@@ -107,6 +117,9 @@ const GameArea: React.FC<GameAreaProps> = ({
     onToExile,
     onToExtra,
     onUpdateFieldCard,
+    tokens = [],
+    onMoveToken,
+    onChangeToken,
 }) => {
     const {
         localStream,
@@ -210,6 +223,7 @@ const GameArea: React.FC<GameAreaProps> = ({
                     <div
                         key={target}
                         className={`player-slot remote ${getSlotClass(target)} ${peer && peer.id === activePlayerId ? 'active-turn' : ''}`}
+                        data-player-seat={peer?.id}
                         onClick={() => peer && handlePlayerClick(target)}
                         style={{ cursor: peer ? 'pointer' : 'default' }}
                     >
@@ -219,6 +233,7 @@ const GameArea: React.FC<GameAreaProps> = ({
                                 baseLifePoints={baseLifePoints}
                                 fitMode={videoFitMode}
                                 teamLabel={showTeams ? peer.team ?? undefined : undefined}
+                                gameType={gameType}
                             />
                         ) : (
                             <div className="video-placeholder">
@@ -234,6 +249,7 @@ const GameArea: React.FC<GameAreaProps> = ({
             {/* Local player */}
             <div
                 className={`player-slot self ${getSlotClass('self')} ${activePlayerId === myId ? 'active-turn' : ''} ${myPlayMode === 'digital' ? 'digital-seat' : ''}`}
+                data-player-seat="self"
                 onClick={() => handlePlayerClick('self')}
                 onTouchStart={myPlayMode === 'digital' ? undefined : handlePinchStart}
                 onTouchMove={myPlayMode === 'digital' ? undefined : handlePinchMove}
@@ -251,12 +267,15 @@ const GameArea: React.FC<GameAreaProps> = ({
                         field={myField}
                         dropId="self"
                         gameType={gameType}
+                        tokens={tokens}
                         onMove={onMoveFieldCard}
                         onReturnToHand={onReturnToHand}
                         onToGraveyard={onToGraveyard}
                         onToExile={onToExile}
                         onToExtra={onToExtra}
                         onUpdateCard={onUpdateFieldCard}
+                        onMoveToken={onMoveToken}
+                        onChangeToken={onChangeToken}
                     />
                 ) : localStream && isVideoEnabled ? (
                     <div className="video-frame">
@@ -281,6 +300,13 @@ const GameArea: React.FC<GameAreaProps> = ({
                         )}
                     </div>
                 )}
+
+                <TokenOverlay
+                    tokens={tokens}
+                    gameType={gameType}
+                    onMove={onMoveToken}
+                    onChange={onChangeToken}
+                />
 
                 <PlayerOverlay
                     key={`self-${currentRoomId}-${baseLifePoints}`}

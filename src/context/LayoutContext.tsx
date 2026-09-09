@@ -15,6 +15,7 @@ interface LayoutContextType {
     isSettingsOpen: boolean;
     autoSwitchSpotlight: boolean;
     isDiceModalOpen: boolean;
+    isTokenPaletteOpen: boolean;
     /** Mobile only: the card panel slides up as a sheet instead of docking */
     isCardPanelOpen: boolean;
     setIsCardPanelOpen: (isOpen: boolean) => void;
@@ -38,6 +39,7 @@ interface LayoutContextType {
     setIsSettingsOpen: (isOpen: boolean) => void;
     setAutoSwitchSpotlight: (autoSwitch: boolean) => void;
     setIsDiceModalOpen: (isOpen: boolean) => void;
+    setIsTokenPaletteOpen: (isOpen: boolean) => void;
     setAppView: (view: 'landing' | 'lobby' | 'game') => void;
     setCurrentRoomId: (id: string | null) => void;
     currentPhase: string;
@@ -68,6 +70,7 @@ export const LayoutProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [autoSwitchSpotlight, setAutoSwitchSpotlight] = useState(false);
     const [isDiceModalOpen, setIsDiceModalOpen] = useState(false);
+    const [isTokenPaletteOpen, setIsTokenPaletteOpen] = useState(false);
     const [isCardPanelOpen, setIsCardPanelOpen] = useState(false);
     const [appView, setAppView] = useState<'landing' | 'lobby' | 'game'>('landing');
     const [currentRoomId, setCurrentRoomId] = useState<string | null>(null);
@@ -160,6 +163,7 @@ export const LayoutProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             isSettingsOpen,
             autoSwitchSpotlight,
             isDiceModalOpen,
+            isTokenPaletteOpen,
             isCardPanelOpen,
             setIsCardPanelOpen,
             appView,
@@ -170,6 +174,7 @@ export const LayoutProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             setIsSettingsOpen,
             setAutoSwitchSpotlight,
             setIsDiceModalOpen,
+            setIsTokenPaletteOpen,
             setAppView,
             setCurrentRoomId,
             videoFitMode,

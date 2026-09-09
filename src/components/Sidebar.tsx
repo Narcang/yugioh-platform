@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useMedia } from '@/context/MediaContext';
 import { useLayout } from '@/context/LayoutContext';
 import { useAuth } from '@/context/AuthContext';
+import { useLocale } from '@/context/LocaleContext';
 
 interface SidebarProps {
     sendPhase: (phase: string) => void;
@@ -17,7 +18,8 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ sendPhase, passTurn, isMyTurn, activePlayerName, turnPosition, playerCount }) => {
     const { isMicMuted, isVideoEnabled, toggleMic, toggleVideo, facingMode, hasMultipleCameras, flipCamera } = useMedia();
     const { user, profile } = useAuth();
-    const { layoutMode, spotlightTarget, setLayoutMode, setSpotlightTarget, isSidebarCollapsed, setIsSidebarCollapsed, setIsSettingsOpen, setIsDiceModalOpen, isCardPanelOpen, setIsCardPanelOpen, currentRoomId, currentPhase, setCurrentPhase, gameType } = useLayout();
+    const { t } = useLocale();
+    const { layoutMode, spotlightTarget, setLayoutMode, setSpotlightTarget, isSidebarCollapsed, setIsSidebarCollapsed, setIsSettingsOpen, setIsDiceModalOpen, isTokenPaletteOpen, setIsTokenPaletteOpen, isCardPanelOpen, setIsCardPanelOpen, currentRoomId, currentPhase, setCurrentPhase, gameType } = useLayout();
 
     const GAME_PHASES: Record<string, string[]> = {
         'Yugioh': ['Draw Phase', 'Standby Phase', 'Main Phase 1', 'Battle Phase', 'Main Phase 2', 'End Phase'],
@@ -229,14 +231,25 @@ const Sidebar: React.FC<SidebarProps> = ({ sendPhase, passTurn, isMyTurn, active
                 <button className="icon-btn" title="Tira i dadi o lancia una moneta" onClick={() => setIsDiceModalOpen(true)}>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><circle cx="7.5" cy="7.5" r="1.5" /><circle cx="7.5" cy="16.5" r="1.5" /><circle cx="16.5" cy="7.5" r="1.5" /><circle cx="16.5" cy="16.5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="7.5" r="1.5" /><circle cx="12" cy="16.5" r="1.5" /></svg>
                 </button>
+                <button
+                    className={`icon-btn mobile-only ${isTokenPaletteOpen ? 'active' : ''}`}
+                    title={t.play.tokens}
+                    onClick={() => setIsTokenPaletteOpen(!isTokenPaletteOpen)}
+                >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="8" /><path d="M12 8v8M8 12h8" /></svg>
+                </button>
             </div>
 
             <div className="divider" style={{ width: '40%', height: '1px', background: 'var(--border-color)', margin: '10px auto' }}></div>
 
-            {/* 11. Shortcuts, 12. FAQ, 13. Intro */}
+            {/* 11. Tokens (replaces unused shortcuts), 12. FAQ, 13. Intro */}
             <div className="sidebar-group help-group">
-                <button className="icon-btn" title="Tasti di scelta Rapida">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z" /></svg>
+                <button
+                    className={`icon-btn ${isTokenPaletteOpen ? 'active' : ''}`}
+                    title={t.play.tokens}
+                    onClick={() => setIsTokenPaletteOpen(!isTokenPaletteOpen)}
+                >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="8" /><path d="M12 8v8M8 12h8" /></svg>
                 </button>
                 <button className="icon-btn" title="FAQ">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>

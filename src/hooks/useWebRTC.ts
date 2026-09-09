@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { MatchMode, PlayMode, TeamId, autoTeamFor, buildTurnOrder } from '@/lib/gameConfig';
 import type { BoardCard, PublicBoardView } from '@/lib/digitalBoard';
+import type { TableToken } from '@/lib/tokens';
 
 const ICE_SERVERS = {
     iceServers: [
@@ -52,6 +53,7 @@ export interface RemotePeer {
     exile: BoardCard[];
     libraryCount: number;
     handCount: number;
+    tokens: TableToken[];
 }
 
 interface PeerMeta {
@@ -145,6 +147,7 @@ export const useWebRTC = (
                     exile: patch.exile ?? [],
                     libraryCount: patch.libraryCount ?? 0,
                     handCount: patch.handCount ?? 0,
+                    tokens: patch.tokens ?? [],
                 }];
             }
             const next = [...prev];
@@ -221,6 +224,10 @@ export const useWebRTC = (
                             libraryCount: view.libraryCount ?? 0,
                             handCount: view.handCount ?? 0,
                         });
+                        break;
+                    }
+                    case 'tokens-update': {
+                        upsertPeer(peerId, { tokens: Array.isArray(parsed.data) ? parsed.data : [] });
                         break;
                     }
                 }
@@ -471,6 +478,10 @@ export const useWebRTC = (
                     handCount: view.handCount ?? 0,
                 });
             })
+            .on('broadcast', { event: 'tokens-update' }, ({ payload }) => {
+                if (payload.from === myId) return;
+                upsertPeer(payload.from, { tokens: Array.isArray(payload.data) ? payload.data : [] });
+            })
             .subscribe(async (status) => {
                 addLog(`Supabase: ${status}`);
                 if (status === 'SUBSCRIBED') {
@@ -559,6 +570,7 @@ export const useWebRTC = (
     const sendLP = useCallback((lp: number) => broadcast('lp-update', lp), [broadcast]);
     const sendPhase = useCallback((phase: string) => broadcast('phase-update', phase), [broadcast]);
     const sendBoard = useCallback((board: PublicBoardView) => broadcast('board-update', board), [broadcast]);
+    const sendTokens = useCallback((tokens: TableToken[]) => broadcast('tokens-update', tokens), [broadcast]);
 
     const sendPing = useCallback(() => broadcast('ping', Date.now()), [broadcast]);
 
@@ -647,6 +659,7 @@ export const useWebRTC = (
         sendLP,
         sendPhase,
         sendBoard,
+        sendTokens,
         latestReceivedPhase,
         myId,
         myTeam,
