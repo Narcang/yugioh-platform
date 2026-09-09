@@ -9,7 +9,7 @@ import SiteNav from './SiteNav';
 
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
-import { getFirstPhase, getMatchModeLabel, MatchMode, PlayMode } from '@/lib/gameConfig';
+import { getFirstPhase, getMatchModeLabel, isSkillLevel, MatchMode, PlayMode, skillLabelKey, SkillLevel } from '@/lib/gameConfig';
 import { useLocale } from '@/context/LocaleContext';
 
 const Lobby: React.FC = () => {
@@ -71,7 +71,8 @@ const Lobby: React.FC = () => {
                     password: r.password,
                     hostId: r.host_id,
                     gameType: r.settings?.gameType || 'Yugioh', // Fallback for old rooms
-                    matchMode: (r.settings?.matchMode as MatchMode) || 'ffa'
+                    matchMode: (r.settings?.matchMode as MatchMode) || 'ffa',
+                    skillLevel: isSkillLevel(r.settings?.skillLevel) ? r.settings.skillLevel as SkillLevel : null,
                 }));
                 setRooms(mappedRooms);
             }
@@ -177,7 +178,8 @@ const Lobby: React.FC = () => {
                 password: data.isPublic ? null : '123', // TODO: Add password field to modal
                 settings: {
                     gameType: data.gameType,
-                    matchMode: data.matchMode
+                    matchMode: data.matchMode,
+                    ...(data.skillLevel ? { skillLevel: data.skillLevel } : {}),
                 }
             };
 
@@ -401,6 +403,11 @@ const Lobby: React.FC = () => {
                                         <div style={{ flex: 1.5, display: 'flex', flexDirection: 'column' }}>
                                             <span style={{ fontWeight: 'bold', fontSize: '13px' }}>{room.gameType}</span>
                                             <span style={{ color: '#9CA3AF', fontSize: '12px' }}>{room.format}</span>
+                                            {room.skillLevel && (
+                                                <span style={{ color: '#F0C75E', fontSize: '11px' }}>
+                                                    {t.lobby.skill[skillLabelKey(room.gameType, room.skillLevel)]}
+                                                </span>
+                                            )}
                                             {room.maxPlayers > 2 && (
                                                 <span style={{ color: '#F0C75E', fontSize: '11px' }}>
                                                     {getMatchModeLabel(room.matchMode, room.maxPlayers)}

@@ -146,6 +146,51 @@ export function getPlayerCountLabel(count: number): string {
   return count === 2 ? '2 giocatori (1v1)' : `${count} giocatori`;
 }
 
+/** Table power / expected deck strength. Higher is more competitive. */
+export type SkillLevel = 1 | 2 | 3 | 4 | 5;
+
+export const SKILL_LEVELS: SkillLevel[] = [1, 2, 3, 4, 5];
+
+export function isSkillLevel(value: unknown): value is SkillLevel {
+  return value === 1 || value === 2 || value === 3 || value === 4 || value === 5;
+}
+
+/**
+ * i18n key under lobby.skill for the given game and step.
+ * Magic uses Commander brackets; other games use community power language.
+ */
+export function skillLabelKey(gameType: string, level: SkillLevel): keyof SkillLabelKeys {
+  const prefix =
+    gameType === 'Magic' ? 'magic' :
+    gameType === 'Yugioh' ? 'yugioh' :
+    gameType === 'Pokemon' ? 'pokemon' :
+    'other';
+  return `${prefix}${level}` as keyof SkillLabelKeys;
+}
+
+export type SkillLabelKeys = {
+  magic1: string;
+  magic2: string;
+  magic3: string;
+  magic4: string;
+  magic5: string;
+  yugioh1: string;
+  yugioh2: string;
+  yugioh3: string;
+  yugioh4: string;
+  yugioh5: string;
+  pokemon1: string;
+  pokemon2: string;
+  pokemon3: string;
+  pokemon4: string;
+  pokemon5: string;
+  other1: string;
+  other2: string;
+  other3: string;
+  other4: string;
+  other5: string;
+};
+
 /**
  * Balanced default team for a player, derived only from the sorted list of
  * player ids so that every client computes the same assignment.

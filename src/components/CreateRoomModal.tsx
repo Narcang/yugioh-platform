@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import {
     MatchMode,
     PlayMode,
+    SkillLevel,
+    SKILL_LEVELS,
     getAllowedPlayerCounts,
     getDefaultPlayerCount,
     getAllowedMatchModes,
@@ -11,8 +13,11 @@ import {
     getPlayerCountLabel,
     getBaseLifePoints,
     GAME_FORMATS,
+    isSkillLevel,
+    skillLabelKey,
 } from '@/lib/gameConfig';
 import { PlayModePicker } from '@/components/PlayModePicker';
+import { useLocale } from '@/context/LocaleContext';
 
 interface CreateRoomModalProps {
     isOpen: boolean;
@@ -31,6 +36,7 @@ export interface RoomData {
     matchMode: MatchMode;
     playMode: PlayMode;
     deckId: string | null;
+    skillLevel: SkillLevel | null;
 }
 
 const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClose, onCreate }) => {
@@ -44,6 +50,8 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClose, onCr
     const [matchMode, setMatchMode] = useState<MatchMode>('ffa');
     const [playMode, setPlayMode] = useState<PlayMode>('physical');
     const [deckId, setDeckId] = useState('');
+    const [skillLevel, setSkillLevel] = useState<SkillLevel | null>(null);
+    const { t } = useLocale();
 
     const allowedPlayerCounts = getAllowedPlayerCounts(gameType, format);
     const allowedMatchModes = getAllowedMatchModes(maxPlayers);
@@ -81,6 +89,7 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClose, onCr
             matchMode,
             playMode,
             deckId: playMode === 'digital' ? deckId || null : null,
+            skillLevel,
         });
         onClose();
         // Reset form
@@ -186,6 +195,26 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClose, onCr
                             : `${maxPlayers} giocatori, ${getMatchModeLabel(matchMode, maxPlayers).toLowerCase()}.`}
                         {' '}Vita iniziale: {baseLife} per giocatore.
                     </p>
+
+                    <div className="form-section">
+                        <label className="input-label">{t.lobby.skillLevel}</label>
+                        <select
+                            className="select-input"
+                            value={skillLevel ?? ''}
+                            onChange={(e) => {
+                                const next = Number(e.target.value);
+                                setSkillLevel(isSkillLevel(next) ? next : null);
+                            }}
+                        >
+                            <option value="">{t.lobby.skillAny}</option>
+                            {SKILL_LEVELS.map((level) => (
+                                <option key={level} value={level}>
+                                    {t.lobby.skill[skillLabelKey(gameType, level)]}
+                                </option>
+                            ))}
+                        </select>
+                        <p className="helper-text">{t.lobby.skillHint}</p>
+                    </div>
 
                     <PlayModePicker
                         gameType={gameType}
