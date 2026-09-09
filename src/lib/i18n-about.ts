@@ -63,7 +63,7 @@ const it: AboutCopy = {
         'PlayTCG.Online è un progetto Be2Bit. Be2Bit sviluppa piattaforme digitali, videogiochi ed esperienze interattive.',
     artematicaRole: 'L’heritage',
     artematicaBody:
-        'La storia di gioco risale ad Artematica, fondata nel 1996: videogiochi, produzioni su licenza e progetti multiplayer sviluppati in quasi tre decenni.',
+        'Continua l’heritage di gioco di Artematica dal 1996 — card game, piattaforme e il fantacalcio ufficiale su Facebook da 500.000 giocatori.',
     discoverBe2bit: 'Scopri Be2Bit',
     seeWorks: 'I lavori',
     discoverHeritage: 'La nostra heritage',
@@ -98,7 +98,7 @@ const en: AboutCopy = {
         'PlayTCG.Online is a Be2Bit project. Be2Bit develops digital platforms, videogames and interactive experiences.',
     artematicaRole: 'The heritage',
     artematicaBody:
-        'Its gaming heritage goes back to Artematica, founded in 1996: videogames, licensed productions and multiplayer projects across almost three decades.',
+        'It continues the gaming heritage of Artematica since 1996 — card games, platforms, and the official Facebook fantasy football with 500,000 players.',
     discoverBe2bit: 'Discover Be2Bit',
     seeWorks: 'Our work',
     discoverHeritage: 'Our gaming heritage',
@@ -133,7 +133,7 @@ const es: AboutCopy = {
         'PlayTCG.Online es un proyecto de Be2Bit. Be2Bit desarrolla plataformas digitales, videojuegos y experiencias interactivas.',
     artematicaRole: 'La herencia',
     artematicaBody:
-        'La historia de juego vuelve a Artematica, fundada en 1996: videojuegos, producciones con licencia y proyectos multijugador durante casi tres décadas.',
+        'Continúa la herencia de juego de Artematica desde 1996: card games, plataformas y el fantasy de fútbol oficial en Facebook con 500.000 jugadores.',
     discoverBe2bit: 'Descubre Be2Bit',
     seeWorks: 'Los trabajos',
     discoverHeritage: 'Nuestra herencia',
@@ -168,7 +168,7 @@ const fr: AboutCopy = {
         'PlayTCG.Online est un projet Be2Bit. Be2Bit développe des plateformes numériques, des jeux vidéo et des expériences interactives.',
     artematicaRole: 'L’héritage',
     artematicaBody:
-        'L’héritage jeu remonte à Artematica, fondée en 1996 : jeux vidéo, productions sous licence et projets multijoueurs pendant près de trois décennies.',
+        'Ça continue l’héritage jeu d’Artematica depuis 1996 : card games, plateformes, et le fantasy football officiel sur Facebook à 500 000 joueurs.',
     discoverBe2bit: 'Découvrir Be2Bit',
     seeWorks: 'Les travaux',
     discoverHeritage: 'Notre héritage',
@@ -203,7 +203,7 @@ const de: AboutCopy = {
         'PlayTCG.Online ist ein Be2Bit-Projekt. Be2Bit entwickelt digitale Plattformen, Videospiele und interaktive Erlebnisse.',
     artematicaRole: 'Das Erbe',
     artematicaBody:
-        'Die Spielgeschichte reicht zu Artematica, 1996 gegründet: Videospiele, Lizenzproduktionen und Multiplayer-Projekte über fast drei Jahrzehnte.',
+        'Es führt das Gaming-Erbe von Artematica seit 1996 fort — Kartenspiele, Plattformen und das offizielle Fantasy-Fußball auf Facebook mit 500.000 Spielern.',
     discoverBe2bit: 'Be2Bit entdecken',
     seeWorks: 'Die Arbeiten',
     discoverHeritage: 'Unser Gaming-Erbe',
@@ -238,7 +238,7 @@ const pt: AboutCopy = {
         'A PlayTCG.Online é um projeto Be2Bit. A Be2Bit desenvolve plataformas digitais, videojogos e experiências interativas.',
     artematicaRole: 'A herança',
     artematicaBody:
-        'A história de jogo volta à Artematica, fundada em 1996: videojogos, produções licenciadas e projetos multiplayer ao longo de quase três décadas.',
+        'Continua a herança de jogo da Artematica desde 1996: card games, plataformas e o fantacalcio oficial no Facebook com 500.000 jogadores.',
     discoverBe2bit: 'Descobrir a Be2Bit',
     seeWorks: 'Os trabalhos',
     discoverHeritage: 'A nossa herança',
@@ -253,37 +253,37 @@ export const HOME_STORY: Record<Locale, HomeStoryCopy> = {
     it: {
         line: 'Fatta per i giocatori. Trenta anni di sviluppo alle spalle.',
         byline:
-            'PlayTCG.Online è sviluppata da Be2Bit, e continua l’heritage di gioco di Artematica dal 1996 — card game, piattaforme e il fantacalcio ufficiale su Facebook da 500.000 giocatori.',
+            'PlayTCG.Online è sviluppata da Be2Bit.',
         link: 'La nostra storia',
     },
     en: {
         line: 'Built for players. Backed by 30 years of game development.',
         byline:
-            'PlayTCG.Online is developed by Be2Bit, continuing the gaming heritage of Artematica since 1996 — card games, platforms, and the official Facebook fantasy football with 500,000 players.',
+            'PlayTCG.Online is developed by Be2Bit.',
         link: 'Discover our story',
     },
     es: {
         line: 'Hecha para jugadores. Treinta años de desarrollo detrás.',
         byline:
-            'PlayTCG.Online la desarrolla Be2Bit, continuando la herencia de Artematica desde 1996: card games, plataformas y el fantasy de fútbol oficial en Facebook con 500.000 jugadores.',
+            'PlayTCG.Online la desarrolla Be2Bit.',
         link: 'Nuestra historia',
     },
     fr: {
         line: 'Faite pour les joueurs. Trente ans de développement derrière.',
         byline:
-            'PlayTCG.Online est développée par Be2Bit, dans la lignée d’Artematica depuis 1996 : card games, plateformes, et le fantasy football officiel sur Facebook à 500 000 joueurs.',
+            'PlayTCG.Online est développée par Be2Bit.',
         link: 'Notre histoire',
     },
     de: {
         line: 'Für Spieler gebaut. Dreißig Jahre Spieleentwicklung dahinter.',
         byline:
-            'PlayTCG.Online wird von Be2Bit entwickelt und führt das Gaming-Erbe von Artematica seit 1996 fort — Kartenspiele, Plattformen und das offizielle Fantasy-Fußball auf Facebook mit 500.000 Spielern.',
+            'PlayTCG.Online wird von Be2Bit entwickelt.',
         link: 'Unsere Geschichte',
     },
     pt: {
         line: 'Feita para jogadores. Trinta anos de desenvolvimento por trás.',
         byline:
-            'A PlayTCG.Online é desenvolvida pela Be2Bit, na herança da Artematica desde 1996: card games, plataformas e o fantacalcio oficial no Facebook com 500.000 jogadores.',
+            'A PlayTCG.Online é desenvolvida pela Be2Bit.',
         link: 'A nossa história',
     },
 };
