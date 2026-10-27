@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import styles from './ScannerLab.module.css';
+import RecognizedCardPreview from './RecognizedCardPreview';
 
 type Candidate = { id: string; name: string; artId: string; inliers: number; ratio: number; similarity: number };
 type ScanResult = { match: boolean; candidate: Candidate | null; candidates: Candidate[]; detected: boolean };
@@ -108,7 +109,7 @@ export default function ScannerLab() {
    </section>
    <section className={styles.panel} aria-label="Risultato">
     <h2>{confirmed ? 'Carta riconosciuta' : 'In attesa di una carta'}</h2>
-    {confirmed ? <><h3>{confirmed.name}</h3><p>Identificativo: <strong>{confirmed.id}</strong></p><p>{confirmed.inliers} punti visivi coerenti.</p><p className={styles.note}>L’illustrazione identifica la carta. Edizione, lingua e rarità della stampa non sono determinate.</p></> : <p className={styles.note}>Il risultato viene confermato solo quando i dettagli visivi sono sufficienti. Con la webcam servono due letture consecutive.</p>}
+    {confirmed ? <><h3>{confirmed.name}</h3><RecognizedCardPreview key={confirmed.artId} artId={confirmed.artId} name={confirmed.name} /><p>Identificativo: <strong>{confirmed.id}</strong></p><p>{confirmed.inliers} punti visivi coerenti.</p><p className={styles.note}>L’illustrazione identifica la carta. Edizione, lingua e rarità della stampa non sono determinate.</p></> : <p className={styles.note}>Il risultato viene confermato solo quando i dettagli visivi sono sufficienti. Con la webcam servono due letture consecutive.</p>}
     {!confirmed && !!result?.candidates.length && <details><summary>Possibili corrispondenze · non confermate</summary><ul>{result.candidates.map(c => <li key={c.artId}>{c.name} · {c.inliers} punti</li>)}</ul></details>}
     <hr /><p className={styles.note}>{count ? `${count.toLocaleString('it-IT')} illustrazioni di riferimento.` : 'Preparazione del catalogo…'} Le immagini della webcam e le foto caricate restano sul dispositivo.</p>
     <p className={styles.note}>Prima prova: carta verticale, intera e ben illuminata. Poi prova ad allontanarla, inclinarla e cambiare luce. Per ora nessuna lettura di codici o numeri seriali.</p>

@@ -9,7 +9,7 @@ Open `/scanner` in an HTTPS browser. This is an isolated test page; the match ta
 - Compare normalized grayscale artwork thumbnails to shortlist twelve references, using separate crops for regular and Pendulum cards. If the outer boundary is missing or occluded, search eighty central square windows across four scales and verify up to sixteen artwork candidates geometrically; the guide is no longer assumed to be the actual card boundary.
 - Match ORB keypoints, apply the nearest-neighbor ratio test, and require a coherent RANSAC homography. Confirm only with at least ten inliers, a 50% inlier ratio, and a margin over a different card ID. Live video requires the same ID in two consecutive results.
 - Return the canonical card ID, including for alternate artwork IDs. The name is the English catalogue name. Edition, rarity, print language and serial/set-code OCR are not inferred.
-- Webcam frames and uploaded photos stay on the device. Only same-origin reference index/shards are fetched. No recognition service, database mutation, or secret key is required.
+- Webcam frames and uploaded photos stay on the device. Only same-origin reference index/shards and the confirmed card preview are fetched. No recognition service, database mutation, or secret key is required.
 
 ## Reference data
 
@@ -30,3 +30,5 @@ Real-camera regression: an additional frame with an occluded outer border is rec
 Latency revision: reference packs contain at most eight illustrations; fetch required packs concurrently, retain up to 128 packs, and recheck the previous geometrically confirmed reference before downloading or verifying other candidates. A tracked result still requires at least 20 inliers and 65% consistency. The capture scheduler checks every 300 ms and never overlaps requests. Worker progress messages do not clear the in-flight flag.
 
 On the same real-camera frame, transferred reference payload fell from 15,518,801 bytes to 1,192,720 bytes. Follow-up frames shifted by 3/2 and 6/4 pixels were recognized without further downloads. Local revised timings were 390 ms cold, 115/106 ms tracked; these are local measurements, not a controlled remote-device speed comparison. The 60-case benchmark passes as a continuous sequence (later variants exercise tracking); these are not 60 independent cold starts.
+
+Confirmed-card preview: the reusable RecognizedCardPreview component shows the complete card for the recognized artwork ID and opens the full-size reference on demand. A numeric-ID-only same-origin image route retrieves the reference once through the framework data cache and CDN cache. Preview loading or failure does not block recognition; desktop/mobile layout, invalid-ID rejection, and graceful image failure were checked.
