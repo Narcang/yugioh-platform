@@ -5,7 +5,7 @@ self.Module = { onRuntimeInitialized() { cvReadyResolve(); } };
 importScripts('/scanner/opencv.js');
 if (self.cv?.Mat) cvReadyResolve();
 else if (self.cv) self.cv.onRuntimeInitialized = () => cvReadyResolve();
-let entries = [], ready = false;
+let entries = [], ready = false, lastArtId = null;
 const shards = new Map();
 function normalized(bytes) {
  const mean = bytes.reduce((a,b)=>a+b,0)/bytes.length;
@@ -33,7 +33,11 @@ function windowSearch(frame) {
   try{cv.cvtColor(roi,gray,cv.COLOR_RGBA2GRAY);cv.resize(gray,small,new cv.Size(8,8),0,0,cv.INTER_AREA);if(Math.max(...small.data)-Math.min(...small.data)>18)windows.push({r:{x,y,size},vector:normalized(small.data)});}finally{roi.delete();small.delete();gray.delete();}
  }
  if(!windows.length)return [];
- return entries.map(entry=>{let similarity=-1,rect;for(const w of windows){let dot=0;for(let i=0;i<64;i++)dot+=w.vector[i]*entry.small[i];if(dot>similarity){similarity=dot;rect=w.r;}}return {entry,similarity,rect};}).sort((a,b)=>b.similarity-a.similarity).slice(0,16);
+ const all=entries.map(entry=>{let similarity=-1,rect;for(const w of windows){let dot=0;for(let i=0;i<64;i++)dot+=w.vector[i]*entry.small[i];if(dot>similarity){similarity=dot;rect=w.r;}}return {entry,similarity,rect};}).sort((a,b)=>b.similarity-a.similarity);
+ const top=all.slice(0,16);
+ const tracked=lastArtId&&all.find(c=>c.entry.artId===lastArtId);
+ if(tracked&&!top.includes(tracked))top.push(tracked);
+ return top;
 }
 function smallVector(gray) {
  const raw=Uint8Array.from(atob(gray),c=>c.charCodeAt(0)),small=[];
@@ -85,15 +89,18 @@ function extract(frame) {
  try{cv.warpPerspective(frame,card,transform,new cv.Size(252,366));return {card,detected,points};}
  finally{src.delete();dst.delete();transform.delete();}
 }
-async function reference(entry) {
+function referencePack(entry) {
  let promise=shards.get(entry.shard);
  if(!promise){
   promise=fetch(`/scanner/yugioh/refs-${entry.shard}.json`).then(r=>{if(!r.ok)throw Error('Riferimenti non disponibili');return r.json();});
   shards.set(entry.shard,promise);
-  if(shards.size>16)shards.delete(shards.keys().next().value);
+  if(shards.size>128)shards.delete(shards.keys().next().value);
  }
+ return promise;
+}
+async function reference(entry) {
  try {
-  const data=await promise, binary=atob(data[entry.artId]);
+  const data=await referencePack(entry), binary=atob(data[entry.artId]);
   const bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));
   const bitmap=await createImageBitmap(new Blob([bytes],{type:'image/jpeg'}));
   const canvas=new OffscreenCanvas(bitmap.width,bitmap.height), ctx=canvas.getContext('2d');
@@ -126,6 +133,11 @@ function geometric(query,ref) {
   return {inliers,ratio:inliers/(qp.length/2)};
  }finally{matcher.delete();matches.delete();src?.delete();dst?.delete();h?.delete();mask?.delete();}
 }
+async function verifyCandidate(candidate,frame,qn,qp) {
+ const image=await reference(candidate.entry);let f,windowImage,windowFeatures;
+ try{f=features(image);if(candidate.rect){windowImage=windowArt(frame,candidate.rect);windowFeatures=features(windowImage);}const g=geometric(windowFeatures || (candidate.entry.pendulum?qp:qn),f);return {id:candidate.entry.id,name:candidate.entry.name,artId:candidate.entry.artId,similarity:candidate.similarity,...g};}
+ finally{image.delete();f?.keys.delete();f?.desc.delete();windowImage?.delete();windowFeatures?.keys.delete();windowFeatures?.desc.delete();}
+}
 self.onmessage=async ({data})=>{
  try{
   if(data.type==='init'){
@@ -136,22 +148,30 @@ self.onmessage=async ({data})=>{
    ready=true;self.postMessage({type:'ready',count:entries.length,failures:index.failures});return;
   }
   if(data.type!=='scan'||!ready)return;
+  const started=performance.now();
   const frame=cv.matFromImageData(data.image), extracted=extract(frame), normal=art(extracted.card,false), pendulum=art(extracted.card,true);
   let qn,qp;
   try{
    const vn=vector(normal),vp=vector(pendulum);
    const ranked=(extracted.detected || Math.abs(frame.cols/frame.rows-252/366)<.09) ? entries.map(e=>{const q=e.pendulum?vp:vn;let dot=0;for(let i=0;i<256;i++)dot+=q[i]*e.vector[i];return {entry:e,similarity:dot};}).sort((a,b)=>b.similarity-a.similarity).slice(0,12) : windowSearch(frame);
+   if(lastArtId&&!ranked.some(c=>c.entry.artId===lastArtId)){const entry=entries.find(e=>e.artId===lastArtId);if(entry)ranked.unshift({entry,similarity:0});}
    qn=features(normal);qp=features(pendulum);
+   const tracked=lastArtId&&ranked.find(c=>c.entry.artId===lastArtId);
+   if(tracked){
+    const hit=await verifyCandidate(tracked,frame,qn,qp);
+    if(hit.inliers>=20&&hit.ratio>=.65){self.postMessage({type:'result',ms:Math.round(performance.now()-started),match:true,candidate:hit,candidates:[hit],detected:extracted.detected,points:extracted.points,tracked:true});return;}
+   }
+   self.postMessage({type:'progress',message:'Confronto dei dettagli della carta…'});
+   await Promise.all(ranked.map(c=>referencePack(c.entry)));
    const candidates=[];
    for(const candidate of ranked){
-    const image=await reference(candidate.entry);let f,windowImage,windowFeatures;
-    try{f=features(image);if(candidate.rect){windowImage=windowArt(frame,candidate.rect);windowFeatures=features(windowImage);}const g=geometric(windowFeatures || (candidate.entry.pendulum?qp:qn),f);candidates.push({id:candidate.entry.id,name:candidate.entry.name,artId:candidate.entry.artId,similarity:candidate.similarity,...g});}
-    finally{image.delete();f?.keys.delete();f?.desc.delete();windowImage?.delete();windowFeatures?.keys.delete();windowFeatures?.desc.delete();}
+    candidates.push(await verifyCandidate(candidate,frame,qn,qp));
    }
    candidates.sort((a,b)=>b.inliers-a.inliers||b.similarity-a.similarity);
    const winner=candidates[0], runner=candidates.find(c=>c.id!==winner.id);
    const match=!!winner&&winner.inliers>=10&&winner.ratio>=.5&&(!runner||winner.inliers>=runner.inliers*1.5+2);
-   self.postMessage({type:'result',match,candidate:match?winner:null,candidates:candidates.slice(0,3),detected:extracted.detected,points:extracted.points});
+   if(match)lastArtId=winner.artId;
+   self.postMessage({type:'result',ms:Math.round(performance.now()-started),match,candidate:match?winner:null,candidates:candidates.slice(0,3),detected:extracted.detected,points:extracted.points});
   }finally{frame.delete();extracted.card.delete();normal.delete();pendulum.delete();qn?.keys.delete();qn?.desc.delete();qp?.keys.delete();qp?.desc.delete();}
  }catch(error){self.postMessage({type:'error',message:error.message||'Errore durante il riconoscimento'});}
 };

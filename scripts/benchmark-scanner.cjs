@@ -20,14 +20,14 @@ const {chromium}=require('playwright');
    const start=Date.now();
    const r=await page.evaluate(async url=>{
     const im=await createImageBitmap(await (await fetch(url)).blob());const c=document.createElement('canvas');c.width=im.width;c.height=im.height;const ctx=c.getContext('2d');ctx.drawImage(im,0,0);im.close();
-    return await new Promise(resolve=>{window.testWorker.onmessage=({data})=>resolve(data);window.testWorker.postMessage({type:'scan',image:ctx.getImageData(0,0,c.width,c.height)})});
+    return await new Promise(resolve=>{window.testWorker.onmessage=({data})=>{if(data.type!=='progress')resolve(data)};window.testWorker.postMessage({type:'scan',image:ctx.getImageData(0,0,c.width,c.height)})});
    },'data:image/png;base64,'+buffer.toString('base64'));
    results.push({id,kind,match:r.match,found:r.candidate?.id,top:r.candidates?.[0]?.id,points:r.candidates?.[0]?.inliers,error:r.message,ms:Date.now()-start});
    console.log(JSON.stringify(results.at(-1)));
   }
  }
  const negative=await sharp({create:{width:640,height:480,channels:3,background:'#445566'}}).png().toBuffer();
- const n=await page.evaluate(async url=>{const im=await createImageBitmap(await(await fetch(url)).blob());const c=document.createElement('canvas');c.width=im.width;c.height=im.height;const ctx=c.getContext('2d');ctx.drawImage(im,0,0);return await new Promise(resolve=>{window.testWorker.onmessage=({data})=>resolve(data);window.testWorker.postMessage({type:'scan',image:ctx.getImageData(0,0,c.width,c.height)})})},'data:image/png;base64,'+negative.toString('base64'));
+ const n=await page.evaluate(async url=>{const im=await createImageBitmap(await(await fetch(url)).blob());const c=document.createElement('canvas');c.width=im.width;c.height=im.height;const ctx=c.getContext('2d');ctx.drawImage(im,0,0);return await new Promise(resolve=>{window.testWorker.onmessage=({data})=>{if(data.type!=='progress')resolve(data)};window.testWorker.postMessage({type:'scan',image:ctx.getImageData(0,0,c.width,c.height)})})},'data:image/png;base64,'+negative.toString('base64'));
  console.log('NEGATIVE',n.match,n.message);
  const expected=id=>String(catalog.find(c=>c.card_images.some(im=>String(im.id)===id)).id);
  const failures=results.filter(r=>!r.match||r.found!==expected(r.id)||r.error);

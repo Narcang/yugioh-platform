@@ -15,6 +15,7 @@ export default function ScannerLab() {
  const pending = useRef<{ id: string; count: number }>({ id: '', count: 0 });
  const [ready, setReady] = useState(false);
  const [count, setCount] = useState(0);
+ const [scanMs, setScanMs] = useState<number | null>(null);
  const [active, setActive] = useState(false);
  const [aspectRatio, setAspectRatio] = useState(4 / 3);
  const [status, setStatus] = useState('Caricamento del motore e del catalogo…');
@@ -26,9 +27,11 @@ export default function ScannerLab() {
   worker.current = instance;
   instance.onmessage = ({ data }) => {
    if (data.type === 'ready') { setReady(true); setCount(data.count); setStatus('Pronto. Avvia la webcam oppure carica una foto.'); return; }
+   if (data.type === 'progress') { setStatus(data.message); return; }
    busy.current = false;
    if (data.type === 'error') { setStatus(data.message); return; }
    if (data.type === 'result') {
+    if (typeof data.ms === 'number') setScanMs(data.ms);
     setResult(data);
     if (data.match && data.candidate) {
      const id = data.candidate.id;
@@ -56,7 +59,7 @@ export default function ScannerLab() {
    ctx.drawImage(element, 0, 0, canvas.width, canvas.height);
    busy.current = true;
    worker.current.postMessage({ type: 'scan', image: ctx.getImageData(0, 0, canvas.width, canvas.height) });
-  }, 900);
+  }, 300);
   return () => window.clearInterval(timer);
  }, [active]);
 
@@ -101,6 +104,7 @@ export default function ScannerLab() {
      <label className={!ready || active ? styles.disabled : ''}>Carica una foto<input type="file" accept="image/jpeg,image/png,image/webp" disabled={!ready || active} onChange={e => { void upload(e.target.files?.[0]); e.target.value = ''; }} /></label>
     </div>
     <p role="status" aria-live="polite" className={styles.status}>{status}</p>
+    {scanMs !== null && <p className={styles.note}>Ultima analisi: {(scanMs / 1000).toFixed(1)} s</p>}
    </section>
    <section className={styles.panel} aria-label="Risultato">
     <h2>{confirmed ? 'Carta riconosciuta' : 'In attesa di una carta'}</h2>

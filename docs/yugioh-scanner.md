@@ -13,7 +13,7 @@ Open `/scanner` in an HTTPS browser. This is an isolated test page; the match ta
 
 ## Reference data
 
-Snapshot from the same YGOPRODeck provider used by the existing Yu-Gi-Oh! integration: 14,645 cards, 14,817 illustrations, zero download failures. Reference artwork is downloaded once, cropped, and re-hosted in 128 compressed shards; the application never hotlinks the provider during scans. Source: https://ygoprodeck.com/api-guide/
+Snapshot from the same YGOPRODeck provider used by the existing Yu-Gi-Oh! integration: 14,645 cards, 14,817 illustrations, zero download failures. Reference artwork is downloaded once, cropped, and re-hosted in small packs of at most eight illustrations; the application never hotlinks the provider during scans. Source: https://ygoprodeck.com/api-guide/
 
 `node scripts/build-scanner-index.mjs` rebuilds from a cached provider snapshot under `.scanner-cache` (override with `SCANNER_CACHE_DIR`), downloading missing source images once. Remove the cached `catalog.json` deliberately when updating the snapshot. Generated references and the OpenCV distribution are excluded from Git. `prebuild` copies the pinned OpenCV package and generates the catalogue once during the Vercel build. That first build requires access to the provider API and image CDN and can take several minutes. The browser subsequently fetches only the generated same-origin assets.
 
@@ -25,4 +25,8 @@ These synthetic tests derive from catalogue reference images. They do not valida
 
 TypeScript and targeted ESLint checks pass. A local production build uses placeholder Supabase values to satisfy pre-existing modules; deployed preview must use the project's existing Preview environment settings.
 
-Real-camera regression: an additional frame with an occluded outer border is recognized with 81 geometrically consistent points through the window fallback. A heavily blurred frame remains unconfirmed. Personal camera images are not included in the repository.
+Real-camera regression: an additional frame with an occluded outer border is recognized with geometrically consistent points through the window fallback. A heavily blurred frame remains unconfirmed. Personal camera images are not included in the repository.
+
+Latency revision: reference packs contain at most eight illustrations; fetch required packs concurrently, retain up to 128 packs, and recheck the previous geometrically confirmed reference before downloading or verifying other candidates. A tracked result still requires at least 20 inliers and 65% consistency. The capture scheduler checks every 300 ms and never overlaps requests. Worker progress messages do not clear the in-flight flag.
+
+On the same real-camera frame, transferred reference payload fell from 15,518,801 bytes to 1,192,720 bytes. Follow-up frames shifted by 3/2 and 6/4 pixels were recognized without further downloads. Local revised timings were 390 ms cold, 115/106 ms tracked; these are local measurements, not a controlled remote-device speed comparison. The 60-case benchmark passes as a continuous sequence (later variants exercise tracking); these are not 60 independent cold starts.
