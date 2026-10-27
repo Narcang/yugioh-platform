@@ -6,7 +6,7 @@ Open `/scanner` in an HTTPS browser. This is an isolated test page; the match ta
 
 - Download a local reference index, then process frames inside a Web Worker using OpenCV 4.12 (Apache-2.0).
 - Detect a quadrilateral card boundary and correct perspective. When detection fails, use the visible central guide. Cards should be upright and occupy a substantial part of the frame.
-- Compare normalized grayscale artwork thumbnails to shortlist twelve references, using separate crops for regular and Pendulum cards.
+- Compare normalized grayscale artwork thumbnails to shortlist twelve references, using separate crops for regular and Pendulum cards. If the outer boundary is missing or occluded, search eighty central square windows across four scales and verify up to sixteen artwork candidates geometrically; the guide is no longer assumed to be the actual card boundary.
 - Match ORB keypoints, apply the nearest-neighbor ratio test, and require a coherent RANSAC homography. Confirm only with at least ten inliers, a 50% inlier ratio, and a margin over a different card ID. Live video requires the same ID in two consecutive results.
 - Return the canonical card ID, including for alternate artwork IDs. The name is the English catalogue name. Edition, rarity, print language and serial/set-code OCR are not inferred.
 - Webcam frames and uploaded photos stay on the device. Only same-origin reference index/shards are fetched. No recognition service, database mutation, or secret key is required.
@@ -24,3 +24,5 @@ Snapshot from the same YGOPRODeck provider used by the existing Yu-Gi-Oh! integr
 These synthetic tests derive from catalogue reference images. They do not validate real webcams, reflections, sleeves, extreme perspective, partial occlusion, adversarial false positives, all cards, or physical cards in other languages. A real-card test is required before production rollout. In particular, sharing an illustration across languages is the basis for language independence; it has not yet been physically tested.
 
 TypeScript and targeted ESLint checks pass. A local production build uses placeholder Supabase values to satisfy pre-existing modules; deployed preview must use the project's existing Preview environment settings.
+
+Real-camera regression: an additional frame with an occluded outer border is recognized with 81 geometrically consistent points through the window fallback. A heavily blurred frame remains unconfirmed. Personal camera images are not included in the repository.
