@@ -5,7 +5,8 @@ self.Module = { onRuntimeInitialized() { cvReadyResolve(); } };
 importScripts('/scanner/opencv.js');
 if (self.cv?.Mat) cvReadyResolve();
 else if (self.cv) self.cv.onRuntimeInitialized = () => cvReadyResolve();
-let entries = [], ready = false, lastArtId = null;
+let entries = [], ready = false, lastArtId = null, game = 'yugioh', hashSize = 16;
+function secondary(entry){return game==='pokemon'?entry.cropMode==='full':entry.pendulum;}
 const shards = new Map();
 function normalized(bytes) {
  const mean = bytes.reduce((a,b)=>a+b,0)/bytes.length;
@@ -17,20 +18,20 @@ function normalized(bytes) {
 }
 function vector(mat) {
  const small=new cv.Mat(), gray=new cv.Mat();
- try { cv.cvtColor(mat,gray,cv.COLOR_RGBA2GRAY); cv.resize(gray,small,new cv.Size(16,16),0,0,cv.INTER_AREA); return normalized(small.data); }
+ try { cv.cvtColor(mat,gray,cv.COLOR_RGBA2GRAY); cv.resize(gray,small,new cv.Size(hashSize,hashSize),0,0,cv.INTER_AREA); return normalized(small.data); }
  finally{small.delete();gray.delete();}
 }
 function windowArt(frame,r) {
- const crop=frame.roi(new cv.Rect(r.x,r.y,r.size,r.size)), result=new cv.Mat();
+ const crop=frame.roi(new cv.Rect(r.x,r.y,r.width||r.size,r.size)), result=new cv.Mat();
  cv.resize(crop,result,new cv.Size(192,192));crop.delete();return result;
 }
 function windowSearch(frame) {
  const windows=[];
  for(const scale of [.24,.32,.4,.48])for(const cx of [.3,.4,.5,.6,.7])for(const cy of [.3,.4,.5,.6]){
-  const size=Math.round(frame.rows*scale),x=Math.round(frame.cols*cx-size/2),y=Math.round(frame.rows*cy-size/2);
-  if(x<0||y<0||x+size>frame.cols||y+size>frame.rows)continue;
-  const roi=frame.roi(new cv.Rect(x,y,size,size)),small=new cv.Mat(),gray=new cv.Mat();
-  try{cv.cvtColor(roi,gray,cv.COLOR_RGBA2GRAY);cv.resize(gray,small,new cv.Size(8,8),0,0,cv.INTER_AREA);if(Math.max(...small.data)-Math.min(...small.data)>18)windows.push({r:{x,y,size},vector:normalized(small.data)});}finally{roi.delete();small.delete();gray.delete();}
+  const size=Math.round(frame.rows*scale),width=Math.round(size*(game==='pokemon'?1.52:1)),x=Math.round(frame.cols*cx-width/2),y=Math.round(frame.rows*cy-size/2);
+  if(x<0||y<0||x+width>frame.cols||y+size>frame.rows)continue;
+  const roi=frame.roi(new cv.Rect(x,y,width,size)),small=new cv.Mat(),gray=new cv.Mat();
+  try{cv.cvtColor(roi,gray,cv.COLOR_RGBA2GRAY);cv.resize(gray,small,new cv.Size(8,8),0,0,cv.INTER_AREA);if(Math.max(...small.data)-Math.min(...small.data)>18)windows.push({r:{x,y,size,width},vector:normalized(small.data)});}finally{roi.delete();small.delete();gray.delete();}
  }
  if(!windows.length)return [];
  const all=entries.map(entry=>{let similarity=-1,rect;for(const w of windows){let dot=0;for(let i=0;i<64;i++)dot+=w.vector[i]*entry.small[i];if(dot>similarity){similarity=dot;rect=w.r;}}return {entry,similarity,rect};}).sort((a,b)=>b.similarity-a.similarity);
@@ -41,11 +42,12 @@ function windowSearch(frame) {
 }
 function smallVector(gray) {
  const raw=Uint8Array.from(atob(gray),c=>c.charCodeAt(0)),small=[];
+ if(raw.length===64)return normalized(raw);
  for(let y=0;y<8;y++)for(let x=0;x<8;x++){const i=y*32+x*2;small.push((raw[i]+raw[i+1]+raw[i+16]+raw[i+17])/4);}
  return normalized(small);
 }
 function art(card,pendulum) {
- const r=pendulum?[.07,.18,.86,.43]:[.12,.18,.76,.52];
+ const r=game==='pokemon'?(pendulum?[.025,.025,.95,.95]:[.08,.16,.84,.38]):(pendulum?[.07,.18,.86,.43]:[.12,.18,.76,.52]);
  const crop=card.roi(new cv.Rect(Math.round(card.cols*r[0]),Math.round(card.rows*r[1]),Math.round(card.cols*r[2]),Math.round(card.rows*r[3])));
  const result=new cv.Mat();
  cv.resize(crop,result,new cv.Size(192,192));crop.delete();return result;
@@ -92,7 +94,7 @@ function extract(frame) {
 function referencePack(entry) {
  let promise=shards.get(entry.shard);
  if(!promise){
-  promise=fetch(`/scanner/yugioh/refs-${entry.shard}.json`).then(r=>{if(!r.ok)throw Error('Riferimenti non disponibili');return r.json();});
+  promise=fetch(`/scanner/${game}/refs-${entry.shard}.json`).then(r=>{if(!r.ok)throw Error('Riferimenti non disponibili');return r.json();});
   shards.set(entry.shard,promise);
   if(shards.size>128)shards.delete(shards.keys().next().value);
  }
@@ -135,17 +137,18 @@ function geometric(query,ref) {
 }
 async function verifyCandidate(candidate,frame,qn,qp) {
  const image=await reference(candidate.entry);let f,windowImage,windowFeatures;
- try{f=features(image);if(candidate.rect){windowImage=windowArt(frame,candidate.rect);windowFeatures=features(windowImage);}const g=geometric(windowFeatures || (candidate.entry.pendulum?qp:qn),f);return {id:candidate.entry.id,name:candidate.entry.name,artId:candidate.entry.artId,similarity:candidate.similarity,...g};}
+ try{f=features(image);if(candidate.rect){windowImage=windowArt(frame,candidate.rect);windowFeatures=features(windowImage);}const g=geometric(windowFeatures || (secondary(candidate.entry)?qp:qn),f);return {id:candidate.entry.id,name:candidate.entry.name,artId:candidate.entry.artId,setName:candidate.entry.setName,number:candidate.entry.number,similarity:candidate.similarity,...g};}
  finally{image.delete();f?.keys.delete();f?.desc.delete();windowImage?.delete();windowFeatures?.keys.delete();windowFeatures?.desc.delete();}
 }
 self.onmessage=async ({data})=>{
  try{
   if(data.type==='init'){
+   game=data.game==='pokemon'?'pokemon':'yugioh';lastArtId=null;ready=false;shards.clear();entries=[];
    await cvReady;
-   const response=await fetch('/scanner/yugioh/index.json');if(!response.ok)throw Error('Catalogo scanner non disponibile');
-   const index=await response.json();
+   const response=await fetch(`/scanner/${game}/index.json`);if(!response.ok)throw Error('Catalogo scanner non disponibile');
+   const index=await response.json();hashSize=index.hashSize||16;
    entries=index.entries.map(e=>({...e,small:smallVector(e.gray),vector:normalized(Uint8Array.from(atob(e.gray),c=>c.charCodeAt(0)))}));
-   ready=true;self.postMessage({type:'ready',count:entries.length,failures:index.failures});return;
+   ready=true;self.postMessage({type:'ready',count:game==='pokemon'?index.total-index.failures:entries.length,failures:index.failures});return;
   }
   if(data.type!=='scan'||!ready)return;
   const started=performance.now();
@@ -153,7 +156,7 @@ self.onmessage=async ({data})=>{
   let qn,qp;
   try{
    const vn=vector(normal),vp=vector(pendulum);
-   const ranked=(extracted.detected || Math.abs(frame.cols/frame.rows-252/366)<.09) ? entries.map(e=>{const q=e.pendulum?vp:vn;let dot=0;for(let i=0;i<256;i++)dot+=q[i]*e.vector[i];return {entry:e,similarity:dot};}).sort((a,b)=>b.similarity-a.similarity).slice(0,12) : windowSearch(frame);
+   const ranked=(extracted.detected || Math.abs(frame.cols/frame.rows-252/366)<.09) ? entries.map(e=>{const q=secondary(e)?vp:vn;let dot=0;for(let i=0;i<q.length;i++)dot+=q[i]*e.vector[i];return {entry:e,similarity:dot};}).sort((a,b)=>b.similarity-a.similarity).slice(0,12) : windowSearch(frame);
    if(lastArtId&&!ranked.some(c=>c.entry.artId===lastArtId)){const entry=entries.find(e=>e.artId===lastArtId);if(entry)ranked.unshift({entry,similarity:0});}
    qn=features(normal);qp=features(pendulum);
    const tracked=lastArtId&&ranked.find(c=>c.entry.artId===lastArtId);
@@ -168,7 +171,7 @@ self.onmessage=async ({data})=>{
     candidates.push(await verifyCandidate(candidate,frame,qn,qp));
    }
    candidates.sort((a,b)=>b.inliers-a.inliers||b.similarity-a.similarity);
-   const winner=candidates[0], runner=candidates.find(c=>c.id!==winner.id);
+   const winner=candidates[0], runner=candidates.find(c=>game==='pokemon'?c.name!==winner.name:c.id!==winner.id);
    const match=!!winner&&winner.inliers>=10&&winner.ratio>=.5&&(!runner||winner.inliers>=runner.inliers*1.5+2);
    if(match)lastArtId=winner.artId;
    self.postMessage({type:'result',ms:Math.round(performance.now()-started),match,candidate:match?winner:null,candidates:candidates.slice(0,3),detected:extracted.detected,points:extracted.points});

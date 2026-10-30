@@ -4,10 +4,10 @@ import { useState } from 'react';
 import styles from './RecognizedCardPreview.module.css';
 
 /** Mount with key={artId} so loading/error state resets when the artwork changes. */
-export default function RecognizedCardPreview({ artId, name }: { artId: string; name: string }) {
+export default function RecognizedCardPreview({ artId, name, game='yugioh' }: { artId: string; name: string; game?: 'yugioh'|'pokemon' }) {
  const [loaded, setLoaded] = useState(false);
  const [failed, setFailed] = useState(false);
- const src = `/api/scanner/image/${encodeURIComponent(artId)}`;
+ const src = `/api/scanner/${game==='pokemon'?'pokemon-image':'image'}/${encodeURIComponent(artId)}`;
  return <figure className={styles.figure}>
   <div className={styles.frame}>
    {!loaded && !failed && <p className={styles.message} role="status">Caricamento anteprima…</p>}
