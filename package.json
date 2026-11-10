@@ -8,10 +8,13 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "node scripts/seed-cards.mjs",
-    "seed:banlist": "node scripts/seed-cards.mjs banlist"
+    "seed:banlist": "node scripts/seed-cards.mjs banlist",
+    "prebuild": "node scripts/prepare-scanner.mjs",
+    "scanner:index": "node scripts/build-scanner-index.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.91.0",
+    "@techstark/opencv-js": "4.12.0-release.1",
     "next": "16.1.4",
     "react": "19.2.3",
     "react-dom": "19.2.3"
@@ -23,6 +26,8 @@
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.4",
+    "playwright": "1.62.1",
+    "sharp": "0.34.5",
     "typescript": "^5"
   }
 }

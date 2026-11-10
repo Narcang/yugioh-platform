@@ -1,0 +1,40 @@
+{
+  "yugioh": { "label": "Yu-Gi-Oh!" },
+  "pokemon": { "label": "Pokémon" },
+  "magic": {
+    "label": "Magic: The Gathering",
+    "table": "magic_cards",
+    "select": "id,name,image_url,image_large,set_name,collector_number,oracle_id,layout",
+    "hosts": ["cards.scryfall.io"],
+    "regular": [0.075, 0.15, 0.85, 0.4],
+    "full": [0.025, 0.025, 0.95, 0.95],
+    "minCards": 30000
+  },
+  "onepiece": {
+    "label": "One Piece",
+    "table": "onepiece_cards",
+    "select": "id,name,image_url,set_name,set_code,card_type",
+    "hosts": ["static.dotgg.gg"],
+    "regular": [0.07, 0.17, 0.86, 0.45],
+    "full": [0.025, 0.025, 0.95, 0.95],
+    "minCards": 2500
+  },
+  "dragonball": {
+    "label": "Dragon Ball Fusion World",
+    "table": "dragonball_cards",
+    "select": "id,name,image_url,image_large,set_code,card_type",
+    "hosts": ["www.dbs-cardgame.com"],
+    "regular": [0.08, 0.14, 0.84, 0.5],
+    "full": [0.025, 0.025, 0.95, 0.95],
+    "minCards": 1500
+  },
+  "riftbound": {
+    "label": "Riftbound",
+    "table": "riftbound_cards",
+    "select": "id,name,image_url,image_large,set_code,collector_number,card_type",
+    "hosts": ["cdn.riftscribe.gg"],
+    "regular": [0.06, 0.15, 0.88, 0.45],
+    "full": [0.025, 0.025, 0.95, 0.95],
+    "minCards": 800
+  }
+}

@@ -45,3 +45,13 @@ next-env.d.ts
 
 .vercel
 .env*.local
+
+# Generated scanner references and local source cache
+/public/scanner/opencv.js
+/public/scanner/yugioh/
+/.scanner-cache/
+/public/scanner/pokemon/
+/public/scanner/magic/
+/public/scanner/onepiece/
+/public/scanner/dragonball/
+/public/scanner/riftbound/
