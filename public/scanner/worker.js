@@ -5,8 +5,9 @@ self.Module = { onRuntimeInitialized() { cvReadyResolve(); } };
 importScripts('/scanner/opencv.js');
 if (self.cv?.Mat) cvReadyResolve();
 else if (self.cv) self.cv.onRuntimeInitialized = () => cvReadyResolve();
-let entries = [], ready = false, lastArtId = null, game = 'yugioh', hashSize = 16;
-function secondary(entry){return game==='pokemon'?entry.cropMode==='full':entry.pendulum;}
+let entries = [], ready = false, lastArtId = null, game = 'yugioh', hashSize = 16, profile = null;
+function secondary(entry){return game==='yugioh'?entry.pendulum:entry.cropMode==='full';}
+function identity(entry){return entry.identity || (game==='pokemon'?entry.name:entry.id);}
 const shards = new Map();
 function normalized(bytes) {
  const mean = bytes.reduce((a,b)=>a+b,0)/bytes.length;
@@ -28,7 +29,9 @@ function windowArt(frame,r) {
 function windowSearch(frame) {
  const windows=[];
  for(const scale of [.24,.32,.4,.48])for(const cx of [.3,.4,.5,.6,.7])for(const cy of [.3,.4,.5,.6]){
-  const size=Math.round(frame.rows*scale),width=Math.round(size*(game==='pokemon'?1.52:1)),x=Math.round(frame.cols*cx-width/2),y=Math.round(frame.rows*cy-size/2);
+  const r=profile?.regular;
+  const aspect=r?(252*r[2])/(366*r[3]):(game==='pokemon'?1.52:1);
+  const size=Math.round(frame.rows*scale),width=Math.round(size*aspect),x=Math.round(frame.cols*cx-width/2),y=Math.round(frame.rows*cy-size/2);
   if(x<0||y<0||x+width>frame.cols||y+size>frame.rows)continue;
   const roi=frame.roi(new cv.Rect(x,y,width,size)),small=new cv.Mat(),gray=new cv.Mat();
   try{cv.cvtColor(roi,gray,cv.COLOR_RGBA2GRAY);cv.resize(gray,small,new cv.Size(8,8),0,0,cv.INTER_AREA);if(Math.max(...small.data)-Math.min(...small.data)>18)windows.push({r:{x,y,size,width},vector:normalized(small.data)});}finally{roi.delete();small.delete();gray.delete();}
@@ -47,14 +50,14 @@ function smallVector(gray) {
  return normalized(small);
 }
 function art(card,pendulum) {
- const r=game==='pokemon'?(pendulum?[.025,.025,.95,.95]:[.08,.16,.84,.38]):(pendulum?[.07,.18,.86,.43]:[.12,.18,.76,.52]);
+ const r=profile?profile[pendulum?'full':'regular']:(game==='pokemon'?(pendulum?[.025,.025,.95,.95]:[.08,.16,.84,.38]):(pendulum?[.07,.18,.86,.43]:[.12,.18,.76,.52]));
  const crop=card.roi(new cv.Rect(Math.round(card.cols*r[0]),Math.round(card.rows*r[1]),Math.round(card.cols*r[2]),Math.round(card.rows*r[3])));
  const result=new cv.Mat();
  cv.resize(crop,result,new cv.Size(192,192));crop.delete();return result;
 }
 function extract(frame) {
  const gray=new cv.Mat(), blur=new cv.Mat(), edges=new cv.Mat(), contours=new cv.MatVector(), hierarchy=new cv.Mat();
- let points=null, best=0;
+ let points=null, best=0, hullPoints=null, hullBest=0;
  try {
   cv.cvtColor(frame,gray,cv.COLOR_RGBA2GRAY);cv.GaussianBlur(gray,blur,new cv.Size(5,5),0);cv.Canny(blur,edges,35,110);
   const kernel=cv.Mat.ones(5,5,cv.CV_8U);
@@ -65,6 +68,18 @@ function extract(frame) {
    try{
     const area=cv.contourArea(c);
     if(area<frame.rows*frame.cols*.07||area>frame.rows*frame.cols*.97||area<=best)continue;
+    if(profile){
+     const hull=new cv.Mat();
+     try{
+      cv.convexHull(c,hull);
+      const box=cv.minAreaRect(hull),boxArea=box.size.width*box.size.height;
+      const ratio=Math.min(box.size.width,box.size.height)/Math.max(box.size.width,box.size.height);
+      if(boxArea>hullBest&&boxArea<frame.rows*frame.cols*.96&&ratio>.56&&ratio<.82&&cv.contourArea(hull)>boxArea*.85){
+       const p=cv.RotatedRect.points(box),s=p.map(v=>v.x+v.y),d=p.map(v=>v.x-v.y);
+       hullPoints=[p[s.indexOf(Math.min(...s))],p[d.indexOf(Math.max(...d))],p[s.indexOf(Math.max(...s))],p[d.indexOf(Math.min(...d))]];hullBest=boxArea;
+      }
+     }finally{hull.delete();}
+    }
     cv.approxPolyDP(c,approx,cv.arcLength(c,true)*.025,true);
     if(approx.rows!==4||!cv.isContourConvex(approx))continue;
     const p=Array.from({length:4},(_,j)=>({x:approx.data32S[j*2],y:approx.data32S[j*2+1]}));
@@ -73,11 +88,18 @@ function extract(frame) {
     if(new Set(ordered).size!==4)continue;
     const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
     const ratio=(dist(ordered[0],ordered[1])+dist(ordered[2],ordered[3]))/(dist(ordered[0],ordered[3])+dist(ordered[1],ordered[2]));
-    if(ratio<.48||ratio>.88)continue;
+    if((ratio<.48||ratio>.88)&&!(profile&&ratio>1.2&&ratio<2.08))continue;
     points=ordered;best=area;
    }finally{c.delete();approx.delete();}
   }
  }finally{gray.delete();blur.delete();edges.delete();contours.delete();hierarchy.delete();}
+ if(!points&&hullPoints){points=hullPoints;}
+ // A tightly cropped card image already has its outer boundary. Interior printed borders
+ // must not shift the crop profile relative to the catalogue reference.
+ const frameRatio=frame.cols/frame.rows;
+ if(profile&&(Math.abs(frameRatio-252/366)<.06||Math.abs(frameRatio-1.4)<.025)){
+  points=[{x:0,y:0},{x:frame.cols-1,y:0},{x:frame.cols-1,y:frame.rows-1},{x:0,y:frame.rows-1}];
+ }
  let detected=!!points;
  if(!points){
   // Explicit guide, not a claim of automatic detection.
@@ -132,23 +154,32 @@ function geometric(query,ref) {
   h=cv.findHomography(src,dst,cv.RANSAC,4,mask);
   if(h.empty())return {inliers:0,ratio:0};
   const inliers=Array.from(mask.data).reduce((a,b)=>a+b,0);
+  if(profile&&inliers){
+   const xs=[],ys=[];
+   for(let i=0;i<mask.data.length;i++)if(mask.data[i]){xs.push(qp[i*2]);ys.push(qp[i*2+1]);}
+   // Shared set symbols or a small patch of rules text cannot establish the artwork identity.
+   const w=Math.max(...xs)-Math.min(...xs),h=Math.max(...ys)-Math.min(...ys);
+   if(w<192*.2||h<192*.2||w*h<192*192*.08)return {inliers:0,ratio:0};
+  }
   return {inliers,ratio:inliers/(qp.length/2)};
  }finally{matcher.delete();matches.delete();src?.delete();dst?.delete();h?.delete();mask?.delete();}
 }
 async function verifyCandidate(candidate,frame,qn,qp) {
  const image=await reference(candidate.entry);let f,windowImage,windowFeatures;
- try{f=features(image);if(candidate.rect){windowImage=windowArt(frame,candidate.rect);windowFeatures=features(windowImage);}const g=geometric(windowFeatures || (secondary(candidate.entry)?qp:qn),f);return {id:candidate.entry.id,name:candidate.entry.name,artId:candidate.entry.artId,setName:candidate.entry.setName,number:candidate.entry.number,similarity:candidate.similarity,...g};}
+ try{f=features(image);if(candidate.rect){windowImage=windowArt(frame,candidate.rect);windowFeatures=features(windowImage);}const g=geometric(windowFeatures || (secondary(candidate.entry)?qp:qn),f);return {id:candidate.entry.id,identity:identity(candidate.entry),name:candidate.entry.name,artId:candidate.entry.artId,setName:candidate.entry.setName,number:candidate.entry.number,similarity:candidate.similarity,...g};}
  finally{image.delete();f?.keys.delete();f?.desc.delete();windowImage?.delete();windowFeatures?.keys.delete();windowFeatures?.desc.delete();}
 }
 self.onmessage=async ({data})=>{
  try{
   if(data.type==='init'){
-   game=data.game==='pokemon'?'pokemon':'yugioh';lastArtId=null;ready=false;shards.clear();entries=[];
+   const selected=data.game||'yugioh';
+   if(!['yugioh','pokemon','magic','onepiece','dragonball','riftbound'].includes(selected))throw Error('Gioco non supportato');
+   game=selected;lastArtId=null;ready=false;shards.clear();entries=[];
    await cvReady;
    const response=await fetch(`/scanner/${game}/index.json`);if(!response.ok)throw Error('Catalogo scanner non disponibile');
-   const index=await response.json();hashSize=index.hashSize||16;
+   const index=await response.json();hashSize=index.hashSize||16;profile=index.profile||null;
    entries=index.entries.map(e=>({...e,small:smallVector(e.gray),vector:normalized(Uint8Array.from(atob(e.gray),c=>c.charCodeAt(0)))}));
-   ready=true;self.postMessage({type:'ready',count:game==='pokemon'?index.total-index.failures:entries.length,failures:index.failures});return;
+   ready=true;self.postMessage({type:'ready',count:game==='yugioh'?entries.length:index.total-index.failures,failures:index.failures});return;
   }
   if(data.type!=='scan'||!ready)return;
   const started=performance.now();
@@ -171,7 +202,7 @@ self.onmessage=async ({data})=>{
     candidates.push(await verifyCandidate(candidate,frame,qn,qp));
    }
    candidates.sort((a,b)=>b.inliers-a.inliers||b.similarity-a.similarity);
-   const winner=candidates[0], runner=candidates.find(c=>game==='pokemon'?c.name!==winner.name:c.id!==winner.id);
+   const winner=candidates[0], runner=candidates.find(c=>c.identity!==winner.identity);
    const match=!!winner&&winner.inliers>=10&&winner.ratio>=.5&&(!runner||winner.inliers>=runner.inliers*1.5+2);
    if(match)lastArtId=winner.artId;
    self.postMessage({type:'result',ms:Math.round(performance.now()-started),match,candidate:match?winner:null,candidates:candidates.slice(0,3),detected:extracted.detected,points:extracted.points});

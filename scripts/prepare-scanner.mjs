@@ -7,3 +7,7 @@ for(const [game,version,script] of [['yugioh',2,'scripts/build-scanner-index.mjs
  try {const index=JSON.parse(await fs.readFile(`public/scanner/${game}/index.json`,'utf8'));if(index.version!==version)throw Error('Rebuild required');}
  catch {const result=spawnSync(process.execPath,[script],{stdio:'inherit',env:process.env});if(result.status!==0)process.exit(result.status||1);}
 }
+for(const game of ['magic','onepiece','dragonball','riftbound']){
+ try {const index=JSON.parse(await fs.readFile(`public/scanner/${game}/index.json`,'utf8'));if(index.version!==1)throw Error('Rebuild required');}
+ catch {const result=spawnSync(process.execPath,['scripts/build-multigame-scanner-index.mjs',game],{stdio:'inherit',env:process.env});if(result.status!==0)process.exit(result.status||1);}
+}
